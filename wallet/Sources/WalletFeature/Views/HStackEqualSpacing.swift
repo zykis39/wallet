@@ -42,11 +42,10 @@ struct HStackEqualSpacingLayout: Layout {
         let initialHeight = proposal.replacingUnspecifiedDimensions().height
             let initialWidth = proposal.replacingUnspecifiedDimensions().width
         let maxSubviewWidth = initialWidth / CGFloat(columnsNumber)
-        
         for (index, subview) in subviews.enumerated() {
             let size: CGSize = subview.sizeThatFits(ProposedViewSize(width: maxSubviewWidth, height: initialHeight))
             let x = CGFloat(index) * maxSubviewWidth + (maxSubviewWidth - size.width) / 2
-            let position = CGPoint(x: x, y: 0)
+            let position = CGPoint(x: x + bounds.origin.x, y: 0 + bounds.origin.y)
             let proposal = ProposedViewSize(size)
             subview.place(at: position, proposal: proposal)
         }

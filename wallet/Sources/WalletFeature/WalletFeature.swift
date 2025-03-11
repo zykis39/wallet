@@ -22,10 +22,10 @@ struct WalletFeature {
     
     var body: some Reducer<State, Action> {
         Reduce { state, action in
-            switch action {
-            case let .createTransaction(transaction):
-                break
-            }
+//            switch action {
+//            case let .createTransaction(transaction):
+//                break
+//            }
             
             return .none
         }

@@ -20,7 +20,16 @@ public struct WalletItemView: View {
         item.currency.representation + " \(Int(item.amount))"
     }
     
-    @State var dragAmount: CGSize = .zero
+    var simpleDrag: some Gesture {
+        DragGesture()
+            .onChanged({ value in
+                offset = value.translation
+            })
+            .onEnded { _ in
+                offset = .zero
+            }
+    }
+    @State private var offset: CGSize = .zero
     
     public init(item: WalletItem) {
         self.item = item
@@ -32,18 +41,16 @@ public struct WalletItemView: View {
                 .lineLimit(1)
             Circle()
                 .fill(color)
-                .draggable(item)
                 .frame(width: 50, height: 50)
+                .offset(offset)
             Text(currencyAmount)
                 .foregroundStyle(color)
+                .lineLimit(1)
         }
-        .dropDestination(for: WalletItem.self, action: { items, location in
-            return true
-        })
-        .border(Color.red)
+        .gesture(simpleDrag)
+        .border(.red)
     }
 }
-
 
 struct WalletItemView_Previews: PreviewProvider {
     static var previews: some View {

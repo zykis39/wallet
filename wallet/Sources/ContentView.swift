@@ -35,27 +35,27 @@ struct ContentView: View {
 
     public var body: some View {
         VStack(alignment: .leading) {
-            TabView {
-                ForEach(0 ..< accountPages.keys.count) { page in
-                    HStackEqualSpacingLayout(columnsNumber: Constants.elementsInRow, minElementWidth: Constants.minColumnWidth, maxElementWidth: Constants.maxColumnWidth) {
-                        ForEach(accountPages[page] ?? []) { pageItem in
-                            WalletItemView(item: pageItem)
-                        }
-                    }
+            HStackEqualSpacingLayout(columnsNumber: Constants.elementsInRow, minElementWidth: Constants.minColumnWidth, maxElementWidth: Constants.maxColumnWidth) {
+                ForEach(accountPages[0]!) { pageItem in
+                    WalletItemView(item: pageItem)
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
             .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: 100)
+            // FIXME: Выставляем в зависимости от активного (dragging) элемента
+            .zIndex(1)
             .border(.red)
             
             ScrollView(.vertical) {
                 LazyVGrid(columns: accountColumns, alignment: .center, spacing: Constants.rowSpacing) {
-                    ForEach(store.expences) { item in
+                    ForEach(store.expences, id: \.id) { item in
                         WalletItemView(item: item)
                     }
                 }
             }
             .scrollDisabled(true)
+            .scrollClipDisabled()
+            // FIXME: Выставляем в зависимости от активного (dragging) элемента
+            .zIndex(0)
             .border(.green)
         }
     }

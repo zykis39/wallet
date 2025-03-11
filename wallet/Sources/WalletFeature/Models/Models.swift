@@ -37,9 +37,8 @@ public struct WalletTransaction: Codable, Equatable {
 public struct WalletItem: Codable, Hashable, Identifiable {
     public enum WalletItemType: Codable, Equatable {
         case account, expenses
-    }
-    public var id: UUID { return UUID() }
-    
+    }    
+    public var id: UUID = UUID()
     let type: WalletItemType
     let name: String
     let icon: String
