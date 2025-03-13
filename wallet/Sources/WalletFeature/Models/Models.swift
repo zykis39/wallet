@@ -60,6 +60,8 @@ extension WalletItem: Transferable {
 }
 
 extension WalletItem {
+    static let none: Self = .init(type: .account, name: "", icon: "", currency: .RUB, amount: 0.0)
+    
     // default accounts
     static let defaultAccounts: [Self] = [card, cash]
     static let card: Self = .init(type: .account, name: "Карта", icon: "card", currency: .RUB, amount: 0.0)

@@ -21,18 +21,22 @@ public struct WalletItemView: View {
     }
     
     var simpleDrag: some Gesture {
-        DragGesture()
+        DragGesture(coordinateSpace: .named("WalletSpace"))
             .onChanged({ value in
                 offset = value.translation
+                globalLocation = value.location
             })
             .onEnded { _ in
                 offset = .zero
             }
     }
     @State private var offset: CGSize = .zero
+    @State private var globalLocation: CGPoint = .zero
+    private let highlighted: Bool
     
-    public init(item: WalletItem) {
+    public init(item: WalletItem, highlighted: Bool) {
         self.item = item
+        self.highlighted = highlighted
     }
 
     public var body: some View {
@@ -48,12 +52,31 @@ public struct WalletItemView: View {
                 .lineLimit(1)
         }
         .gesture(simpleDrag)
-        .border(.red)
+        .border(highlighted ? .green : .red)
+        .preference(key: WalletItemPreferenceKey.self, value: offset == .zero ? .empty : .init(item: item, location: globalLocation))
     }
 }
 
+struct WalletItemPreferenceData: Equatable {
+    let item: WalletItem?
+    let location: CGPoint
+    
+    static let empty: Self = .init(item: nil, location: .zero)
+}
+
+struct WalletItemPreferenceKey: PreferenceKey {
+    typealias Value = WalletItemPreferenceData
+    
+    static var defaultValue: WalletItemPreferenceData = .init(item: nil, location: .zero)
+    static func reduce(value: inout WalletItemPreferenceData, nextValue: () -> WalletItemPreferenceData) {
+        guard let _ = nextValue().item else { return }
+        value = nextValue()
+    }
+}
+
+
 struct WalletItemView_Previews: PreviewProvider {
     static var previews: some View {
-        WalletItemView(item: .cash)
+        WalletItemView(item: .cash, highlighted: true)
     }
 }
