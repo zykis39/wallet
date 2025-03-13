@@ -8,7 +8,12 @@
 import SwiftUI
 
 public struct WalletItemView: View {
-    private var item: WalletItem
+    private let item: WalletItem
+    private let highlighted: Bool
+    private let globalDropLocation: CGPoint?
+    @State private var offset: CGSize = .zero
+    @State private var globalLocation: CGPoint = .zero
+    @State private var isItemDraggedOver: Bool = false
     
     private var color: Color {
         switch item.type {
@@ -16,27 +21,29 @@ public struct WalletItemView: View {
         case .expenses: return .green
         }
     }
+    
     private var currencyAmount: String {
         item.currency.representation + " \(Int(item.amount))"
     }
     
-    var simpleDrag: some Gesture {
+    private var simpleDrag: some Gesture {
         DragGesture(coordinateSpace: .named("WalletSpace"))
             .onChanged({ value in
                 offset = value.translation
                 globalLocation = value.location
             })
             .onEnded { _ in
+                // find source item (self)
+                // find destination item
+                // perform drop action source->destination
                 offset = .zero
             }
     }
-    @State private var offset: CGSize = .zero
-    @State private var globalLocation: CGPoint = .zero
-    private let highlighted: Bool
     
-    public init(item: WalletItem, highlighted: Bool) {
+    public init(item: WalletItem, highlighted: Bool, globalDropLocation: CGPoint? = nil) {
         self.item = item
         self.highlighted = highlighted
+        self.globalDropLocation = globalDropLocation
     }
 
     public var body: some View {
@@ -51,8 +58,17 @@ public struct WalletItemView: View {
                 .foregroundStyle(color)
                 .lineLimit(1)
         }
+        .background {
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill((geometry.frame(in: .named("WalletSpace")).contains(globalDropLocation ?? .zero)) ? Color.green.opacity(0.2) : .clear)
+                    .stroke(highlighted ? .yellow : .clear,
+                            style: .init(lineWidth: 2, lineCap: .butt, lineJoin: .miter, miterLimit: 4, dash: [5, 10], dashPhase: 0))
+                    .padding(-4)
+            }
+        }
         .gesture(simpleDrag)
-        .border(highlighted ? .green : .red)
+        .border(.red)
         .preference(key: WalletItemPreferenceKey.self, value: offset == .zero ? .empty : .init(item: item, location: globalLocation))
     }
 }
