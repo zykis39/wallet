@@ -1,6 +1,22 @@
 import SwiftUI
 import ComposableArchitecture
 
+private struct DropItemKey: EnvironmentKey {
+    typealias Value = WalletItem?
+    
+    static let defaultValue: Value = nil
+}
+
+extension EnvironmentValues {
+    var dropItem: WalletItem? {
+        get { self[DropItemKey.self] }
+        set {
+            guard let item = newValue else { return }
+            self[DropItemKey.self] = item
+        }
+    }
+}
+
 struct ContentView: View {
     let store: StoreOf<WalletFeature>
     
@@ -28,7 +44,9 @@ struct ContentView: View {
         }
     }
     
-    @State private var draggingWalletItemData: WalletItemPreferenceData = .empty
+    @State private var draggingWalletItemData: WalletItemDragPreferenceData = .empty
+    @State private var droppingWalletItemData: WalletItemDropPreferenceData = .init(item: nil)
+    
     private var expensesDragging: Bool {
         guard let item = draggingWalletItemData.item else { return false }
         return store.expences.contains(item)
@@ -58,9 +76,13 @@ struct ContentView: View {
             .zIndex(expensesDragging ? 1 : 0)
             .border(.green)
         }
-        .onPreferenceChange(WalletItemPreferenceKey.self) { value in
+        .onPreferenceChange(WalletItemDragPreferenceKey.self) { value in
             draggingWalletItemData = value
         }
+        .onPreferenceChange(WalletItemDropPreferenceKey.self) { value in
+            droppingWalletItemData = value
+        }
+        .environment(\.dropItem, droppingWalletItemData.item)
         .coordinateSpace(name: "WalletSpace")
     }
 }
