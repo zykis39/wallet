@@ -56,8 +56,8 @@ struct CustomStackView_Previews: PreviewProvider {
     static var previews: some View {
         TabView {
             HStackEqualSpacingLayout(columnsNumber: 4, minElementWidth: 40, maxElementWidth: 120) {
-                WalletItemView(item: .cash, highlighted: false)
-                WalletItemView(item: .cafe, highlighted: false)
+                WalletItemView(item: .cash)
+                WalletItemView(item: .cafe)
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))

@@ -5,8 +5,7 @@ import ComposableArchitecture
 struct WalletApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView(store: Store(initialState: WalletFeature.State(accounts: WalletItem.defaultAccounts, expences: WalletItem.defaultExpenses)) { WalletFeature()
-            })
+            AppView(store: Store(initialState: .initial) { WalletFeature() })
         }
     }
 }

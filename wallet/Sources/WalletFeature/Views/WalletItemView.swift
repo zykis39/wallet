@@ -5,16 +5,17 @@
 //  Created by Артём Зайцев on 08.03.2025.
 //
 
+import ComposableArchitecture
 import SwiftUI
 
 public struct WalletItemView: View {
+    private weak var store: StoreOf<WalletFeature>?
     private let item: WalletItem
-    private let highlighted: Bool
+    
     private let globalDropLocation: CGPoint?
     @Environment(\.dropItem) private var dropItem: WalletItem?
     @State private var offset: CGSize = .zero
     @State private var globalLocation: CGPoint = .zero
-    @State private var isItemDraggedOver: Bool = false
     
     private var color: Color {
         switch item.type {
@@ -34,15 +35,15 @@ public struct WalletItemView: View {
                 globalLocation = value.location
             })
             .onEnded { _ in
-                print("dragged \(item.name) to \(dropItem?.name ?? "")")
-                // TODO: perform drop action source->destination
+                guard let dropItem else { return }
+                store?.send(.onItemDropped(item, dropItem))
                 offset = .zero
             }
     }
     
-    public init(item: WalletItem, highlighted: Bool, globalDropLocation: CGPoint? = nil) {
+    public init(store: StoreOf<WalletFeature>? = nil, item: WalletItem, globalDropLocation: CGPoint? = nil) {
+        self.store = store
         self.item = item
-        self.highlighted = highlighted
         self.globalDropLocation = globalDropLocation
     }
 
@@ -62,7 +63,7 @@ public struct WalletItemView: View {
             GeometryReader { geometry in
                 Rectangle()
                     .fill((dropItem == item) ? .green.opacity(0.2) : .clear)
-                    .stroke(highlighted ? .yellow : .clear,
+                    .stroke(offset == .zero ? .clear : .yellow,
                             style: .init(lineWidth: 2, lineCap: .butt, lineJoin: .miter, miterLimit: 4, dash: [5, 10], dashPhase: 0))
                     .padding(-4)
                     .preference(key: WalletItemDropPreferenceKey.self, value: (geometry.frame(in: .named("WalletSpace")).contains(globalDropLocation ?? .zero)) ? .init(item: item) : .init(item: nil))
@@ -111,6 +112,6 @@ struct WalletItemDropPreferenceKey: PreferenceKey {
 
 struct WalletItemView_Previews: PreviewProvider {
     static var previews: some View {
-        WalletItemView(item: .cash, highlighted: true)
+        WalletItemView(item: .cash)
     }
 }
