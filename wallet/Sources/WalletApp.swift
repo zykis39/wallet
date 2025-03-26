@@ -5,7 +5,10 @@ import ComposableArchitecture
 struct WalletApp: App {
     var body: some Scene {
         WindowGroup {
-            AppView(store: Store(initialState: .initial) { WalletFeature() })
+            AppView(store: Store(initialState: .initial) {
+                WalletFeature()
+                    ._printChanges()
+            })
         }
     }
 }

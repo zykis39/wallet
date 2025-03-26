@@ -12,6 +12,7 @@ struct AppView: View {
     
     init(store: StoreOf<WalletFeature>) {
         self.store = store
+        store.send(.start)
     }
     
     public var body: some View {

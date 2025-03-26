@@ -48,14 +48,14 @@ struct WalletView: View {
     
     private var expensesDragging: Bool {
         guard let item = store.state.dragItem else { return false }
-        return store.expences.contains(item)
+        return store.expenses.contains(item)
     }
     
     public var body: some View {
         VStack(alignment: .leading) {
             // FIXME: wrap into TabView, fix clipping
             HStackEqualSpacingLayout(columnsNumber: Constants.elementsInRow, minElementWidth: Constants.minColumnWidth, maxElementWidth: Constants.maxColumnWidth) {
-                ForEach(accountPages[0]!) { pageItem in
+                ForEach(accountPages[0] ?? []) { pageItem in
                     WalletItemView(store: store, item: pageItem, geometry: geometry)
                 }
             }
@@ -65,7 +65,7 @@ struct WalletView: View {
             
             ScrollView(.vertical) {
                 LazyVGrid(columns: accountColumns, alignment: .center, spacing: Constants.rowSpacing) {
-                    ForEach(store.expences, id: \.id) { item in
+                    ForEach(store.expenses, id: \.id) { item in
                         WalletItemView(store: store, item: item, geometry: geometry)
                     }
                 }
