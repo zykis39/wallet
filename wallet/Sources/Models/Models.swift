@@ -26,16 +26,18 @@ extension UTType {
     }
 }
 
-public struct WalletTransaction: Codable, Equatable {
+public struct WalletTransaction: Codable, Equatable, Sendable {
     let currency: Currency
     let amount: Double
     
     let source: WalletItem
     let destination: WalletItem
+    
+    static let empty: Self = .init(currency: .RUB, amount: 0, source: .none, destination: .none)
 }
 
-public struct WalletItem: Codable, Hashable, Identifiable {
-    public enum WalletItemType: Codable, Equatable {
+public struct WalletItem: Codable, Hashable, Identifiable, Sendable {
+    public enum WalletItemType: Codable, Equatable, Sendable {
         case account, expenses
     }    
     public var id: UUID = UUID()

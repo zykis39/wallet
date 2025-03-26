@@ -9,17 +9,16 @@ import ComposableArchitecture
 import SwiftUI
 
 struct TransactionView: View {
-    weak var store: StoreOf<WalletFeature>!
-    init(store: StoreOf<WalletFeature>? = nil) {
+    var store: StoreOf<TransactionFeature>
+    init(store: StoreOf<TransactionFeature>) {
         self.store = store
     }
     
     var body: some View {
         VStack {
-            /// Навигационный тулбар
             HStack {
                 Button {
-                    store.send(.closeTransaction(false))
+                    store.send(.presentedChanged(false))
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .resizable()
@@ -27,7 +26,7 @@ struct TransactionView: View {
                 }
                 Spacer()
                 Button {
-                    store.send(.closeTransaction(true))
+                    store.send(.presentedChanged(false))
                 } label: {
                     Image(systemName: "checkmark.circle.fill")
                         .resizable()
@@ -36,10 +35,10 @@ struct TransactionView: View {
             }
             Spacer()
             HStack {
-                Text(store.transactionState.transaction.source.name)
-                Text(store.transactionState.transaction.destination.name)
+                Text(store.state.transaction.source.name)
+                Text(store.state.transaction.destination.name)
             }
-            Text("\(store.transactionState.transaction.amount)")
+            Text("\(store.state.transaction.amount)")
             Spacer()
         }
         .padding()

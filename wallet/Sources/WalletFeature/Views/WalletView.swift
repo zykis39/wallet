@@ -18,10 +18,12 @@ extension EnvironmentValues {
 }
 
 struct WalletView: View {
-    weak var store: StoreOf<WalletFeature>?
+    var store: StoreOf<WalletFeature>
+    var geometry: GeometryProxy
     
-    public init(store: StoreOf<WalletFeature>) {
+    public init(store: StoreOf<WalletFeature>, geometry: GeometryProxy) {
         self.store = store
+        self.geometry = geometry
         calculateAccountPages()
     }
     
@@ -36,7 +38,6 @@ struct WalletView: View {
     
     private var accountPages: [Int: [WalletItem]] = [:]
     private mutating func calculateAccountPages() {
-        guard let store else { return }
         for (index, item) in store.accounts.enumerated() {
             let page = index / Constants.elementsInRow
             var pageItems = accountPages[page, default: []]
@@ -45,12 +46,8 @@ struct WalletView: View {
         }
     }
     
-    @State private var draggingWalletItemData: WalletItemDragPreferenceData = .empty
-    @State private var droppingWalletItemData: WalletItemDropPreferenceData = .init(item: nil)
-    
     private var expensesDragging: Bool {
-        guard let store else { return false }
-        guard let item = draggingWalletItemData.item else { return false }
+        guard let item = store.state.dragItem else { return false }
         return store.expences.contains(item)
     }
     
@@ -59,7 +56,7 @@ struct WalletView: View {
             // FIXME: wrap into TabView, fix clipping
             HStackEqualSpacingLayout(columnsNumber: Constants.elementsInRow, minElementWidth: Constants.minColumnWidth, maxElementWidth: Constants.maxColumnWidth) {
                 ForEach(accountPages[0]!) { pageItem in
-                    WalletItemView(store: store, item: pageItem, globalDropLocation: draggingWalletItemData.location)
+                    WalletItemView(store: store, item: pageItem, geometry: geometry)
                 }
             }
             .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: 100)
@@ -68,8 +65,8 @@ struct WalletView: View {
             
             ScrollView(.vertical) {
                 LazyVGrid(columns: accountColumns, alignment: .center, spacing: Constants.rowSpacing) {
-                    ForEach(store?.expences ?? [], id: \.id) { item in
-                        WalletItemView(store: store, item: item, globalDropLocation: draggingWalletItemData.location)
+                    ForEach(store.expences, id: \.id) { item in
+                        WalletItemView(store: store, item: item, geometry: geometry)
                     }
                 }
             }
@@ -78,13 +75,6 @@ struct WalletView: View {
             .zIndex(expensesDragging ? 1 : 0)
             .border(.green)
         }
-        .onPreferenceChange(WalletItemDragPreferenceKey.self) { value in
-            draggingWalletItemData = value
-        }
-        .onPreferenceChange(WalletItemDropPreferenceKey.self) { value in
-            droppingWalletItemData = value
-        }
-        .environment(\.dropItem, droppingWalletItemData.item)
         .coordinateSpace(name: "WalletSpace")
     }
 }

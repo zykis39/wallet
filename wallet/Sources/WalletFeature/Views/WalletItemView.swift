@@ -8,15 +8,27 @@
 import ComposableArchitecture
 import SwiftUI
 
+extension WalletItemView {
+    struct Props {
+        let name: String
+        let currencyAmount: String
+        let isDragging: Bool
+        let isDropping: Bool
+        let dragOffset: CGSize
+        
+        let style: Style
+        
+        struct Style {
+            let color: Color
+        }
+    }
+}
+
 public struct WalletItemView: View {
-    private weak var store: StoreOf<WalletFeature>?
+    public var store: StoreOf<WalletFeature>
     private let item: WalletItem
-    
-    private let globalDropLocation: CGPoint?
-    @Environment(\.dropItem) private var dropItem: WalletItem?
-    @State private var offset: CGSize = .zero
-    @State private var globalLocation: CGPoint = .zero
-    
+    private let geometry: GeometryProxy
+
     private var color: Color {
         switch item.type {
         case .account: return .yellow
@@ -30,21 +42,18 @@ public struct WalletItemView: View {
     
     private var simpleDrag: some Gesture {
         DragGesture(coordinateSpace: .named("WalletSpace"))
-            .onChanged({ value in
-                offset = value.translation
-                globalLocation = value.location
+            .onChanged({ [store] value in
+                store.send(.onItemDragging(value.translation, value.location, item))
             })
-            .onEnded { _ in
-                guard let dropItem else { return }
-                store?.send(.onItemDropped(item, dropItem))
-                offset = .zero
+            .onEnded { [store] _ in
+                store.send(.onDraggingStopped)
             }
     }
     
-    public init(store: StoreOf<WalletFeature>? = nil, item: WalletItem, globalDropLocation: CGPoint? = nil) {
+    public init(store: StoreOf<WalletFeature>, item: WalletItem, geometry: GeometryProxy) {
         self.store = store
         self.item = item
-        self.globalDropLocation = globalDropLocation
+        self.geometry = geometry
     }
 
     public var body: some View {
@@ -54,64 +63,24 @@ public struct WalletItemView: View {
             Circle()
                 .fill(color)
                 .frame(width: 50, height: 50)
-                .offset(offset)
+                .offset(store.state.dragItem == item ? store.state.draggingOffset : .zero)
             Text(currencyAmount)
                 .foregroundStyle(color)
                 .lineLimit(1)
         }
         .background {
-            GeometryReader { geometry in
-                Rectangle()
-                    .fill((dropItem == item) ? .green.opacity(0.2) : .clear)
-                    .stroke(offset == .zero ? .clear : .yellow,
-                            style: .init(lineWidth: 2, lineCap: .butt, lineJoin: .miter, miterLimit: 4, dash: [5, 10], dashPhase: 0))
-                    .padding(-4)
-                    .preference(key: WalletItemDropPreferenceKey.self, value: (geometry.frame(in: .named("WalletSpace")).contains(globalDropLocation ?? .zero)) ? .init(item: item) : .init(item: nil))
-            }
+            Rectangle()
+                .fill((store.state.dropItem == item) ? .green.opacity(0.2) : .clear)
+                .stroke((store.state.dragItem == item) ? .yellow : .clear,
+                        style: .init(lineWidth: 2, lineCap: .butt, lineJoin: .miter, miterLimit: 4, dash: [5, 10], dashPhase: 0))
+                .padding(-4)
         }
         .gesture(simpleDrag)
+        .onGeometryChange(for: CGRect.self) { proxy in
+            proxy.frame(in: .named("WalletSpace"))
+        } action: { newValue in
+            store.send(.itemFrameChanged(item, newValue))
+        }
         .border(.red)
-        .preference(key: WalletItemDragPreferenceKey.self, value: offset == .zero ? .empty : .init(item: item, location: globalLocation))
-    }
-}
-
-struct WalletItemDragPreferenceData: Equatable {
-    let item: WalletItem?
-    let location: CGPoint
-    
-    static let empty: Self = .init(item: nil, location: .zero)
-}
-
-struct WalletItemDragPreferenceKey: PreferenceKey {
-    typealias Value = WalletItemDragPreferenceData
-    
-    static var defaultValue: WalletItemDragPreferenceData = .init(item: nil, location: .zero)
-    static func reduce(value: inout WalletItemDragPreferenceData, nextValue: () -> WalletItemDragPreferenceData) {
-        guard let _ = nextValue().item else { return }
-        value = nextValue()
-    }
-}
-
-struct WalletItemDropPreferenceData: Equatable {
-    let item: WalletItem?
-    
-    static let empty: Self = .init(item: nil)
-}
-
-
-struct WalletItemDropPreferenceKey: PreferenceKey {
-    typealias Value = WalletItemDropPreferenceData
-    
-    static var defaultValue: WalletItemDropPreferenceData = .init(item: nil)
-    static func reduce(value: inout WalletItemDropPreferenceData, nextValue: () -> WalletItemDropPreferenceData) {
-        guard let _ = nextValue().item else { return }
-        value = nextValue()
-    }
-}
-
-
-struct WalletItemView_Previews: PreviewProvider {
-    static var previews: some View {
-        WalletItemView(item: .cash)
     }
 }
