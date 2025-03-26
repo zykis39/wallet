@@ -18,8 +18,9 @@ public struct TransactionFeature: Sendable {
     }
     
     public enum Action: Sendable {
-        case onItemDropped(WalletItem, WalletItem)
         case presentedChanged(Bool)
+        case onItemDropped(WalletItem, WalletItem)
+        case createTransaction(WalletTransaction)
     }
     
     public var body: some Reducer<State, Action> {
@@ -32,6 +33,8 @@ public struct TransactionFeature: Sendable {
                 }
             case let .presentedChanged(presented):
                 state.presented = presented
+                return .none
+            case let .createTransaction(transaction):
                 return .none
             }
         }

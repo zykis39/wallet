@@ -18,7 +18,6 @@ public struct WalletFeature {
         
         var itemFrames: [WalletItem: CGRect] = [:]
         var draggingOffset: CGSize = .zero
-        var dropLocation: CGPoint = .zero
         var dragItem: WalletItem?
         var dropItem: WalletItem?
         
@@ -29,6 +28,13 @@ public struct WalletFeature {
     
     public enum Action: Sendable {
         case transaction(TransactionFeature.Action)
+        
+        // internal
+        case start
+        case readWalletItems
+        case readTransactions
+        case saveWalletItems
+        case saveTransaction(WalletTransaction)
         
         // view
         case itemFrameChanged(WalletItem, CGRect)
@@ -42,12 +48,25 @@ public struct WalletFeature {
         }
         Reduce { state, action in
             switch action {
+            case .start:
+                return .run { send in
+                    await send(.readWalletItems)
+                    await send(.readTransactions)
+                }
+            case .readWalletItems:
+                return .none
+            case .readTransactions:
+                return .none
+            case .saveWalletItems:
+                return .none
+            case let .saveTransaction(transaction):
+                return .none
+                
             case let .itemFrameChanged(item, frame):
                 state.itemFrames[item] = frame
                 return .none
             case let .onItemDragging(offset, point, item):
                 state.draggingOffset = offset
-                state.dropLocation = point
                 state.dragItem = item
 
                 let droppingItemFrames = state.itemFrames.filter { $0.value.contains(point) }
@@ -58,7 +77,6 @@ public struct WalletFeature {
                 let dropItem = state.dropItem
                 
                 state.draggingOffset = .zero
-                state.dropLocation = .zero
                 state.dragItem = nil
                 state.dropItem = nil
                 

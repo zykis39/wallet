@@ -8,22 +8,6 @@
 import ComposableArchitecture
 import SwiftUI
 
-extension WalletItemView {
-    struct Props {
-        let name: String
-        let currencyAmount: String
-        let isDragging: Bool
-        let isDropping: Bool
-        let dragOffset: CGSize
-        
-        let style: Style
-        
-        struct Style {
-            let color: Color
-        }
-    }
-}
-
 public struct WalletItemView: View {
     public var store: StoreOf<WalletFeature>
     private let item: WalletItem
