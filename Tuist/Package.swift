@@ -20,6 +20,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/layoutBox/PinLayout", exact: "1.10.5"),
         .package(url: "https://github.com/pointfreeco/swift-composable-architecture", exact: "1.18.0"),
+        .package(url: "https://github.com/jtrinc/swiftui-currency-field.git", exact: "1.0.0"),
         // Add your own dependencies here:
         // .package(url: "https://github.com/Alamofire/Alamofire", from: "5.0.0"),
         // You can read more about dependencies here: https://docs.tuist.io/documentation/tuist/dependencies

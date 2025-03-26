@@ -12,13 +12,18 @@ public struct TransactionFeature: Sendable {
     @ObservableState
     public struct State: Equatable {
         public var presented: Bool
-        public var transaction: WalletTransaction
         
-        static let initial: Self = .init(presented: false, transaction: .empty)
+        var currency: Currency
+        var amount: Int
+        var source: WalletItem
+        var destination: WalletItem
+        
+        static let initial: Self = .init(presented: false, currency: .RUB, amount: 0, source: .none, destination: .none)
     }
     
     public enum Action: Sendable {
         case presentedChanged(Bool)
+        case amountChanged(Int)
         case onItemDropped(WalletItem, WalletItem)
         case createTransaction(WalletTransaction)
     }
@@ -27,7 +32,8 @@ public struct TransactionFeature: Sendable {
         Reduce { state, action in
             switch action {
             case let .onItemDropped(source, destination):
-                state.transaction = .init(currency: .RUB, amount: 0, source: source, destination: destination)
+                state.source = source
+                state.destination = destination
                 return .run { send in
                     await send(.presentedChanged(true))
                 }
@@ -35,6 +41,9 @@ public struct TransactionFeature: Sendable {
                 state.presented = presented
                 return .none
             case let .createTransaction(transaction):
+                return .none
+            case let .amountChanged(amount):
+                state.amount = amount
                 return .none
             }
         }

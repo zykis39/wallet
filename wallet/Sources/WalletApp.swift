@@ -9,6 +9,7 @@ struct WalletApp: App {
                 WalletFeature()
                     ._printChanges()
             })
+            .preferredColorScheme(.light)
         }
     }
 }

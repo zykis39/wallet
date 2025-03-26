@@ -28,7 +28,7 @@ extension UTType {
 
 public struct WalletTransaction: Codable, Equatable, Sendable {
     let currency: Currency
-    let amount: Double
+    var amount: Double
     
     let source: WalletItem
     let destination: WalletItem

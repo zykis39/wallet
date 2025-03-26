@@ -127,6 +127,15 @@
       }
     },
     {
+      "identity" : "swiftui-currency-field",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jtrinc/swiftui-currency-field.git",
+      "state" : {
+        "revision" : "f534da8bb2e53d63e21c27006d8014bb9619b5cd",
+        "version" : "1.0.0"
+      }
+    },
+    {
       "identity" : "xctest-dynamic-overlay",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
