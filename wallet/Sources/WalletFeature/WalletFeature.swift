@@ -154,26 +154,24 @@ public struct WalletFeature {
                     await send(.transaction(.onItemDropped(dragItem, dropItem)))
                 }
             case let .applyTransaction(transaction):
-                /// TODO: Refactor
+                /// FIXME:
                 /// транзакции не должны применяться частично в случае ошибок
-                
+                /// обновления состояния массивов [WalletItem] не происходит без смены \.id
                 if let sourceIndex = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
                     {
-                    var source = state.accounts[sourceIndex]
-                    source.balance -= transaction.amount
-                    state.accounts[sourceIndex] = source
+                    let newID = UUID()
+                    state.accounts[sourceIndex].id = newID
+                    state.accounts[sourceIndex].balance -= transaction.amount
                 }
-                
-                if let destinationIndex = state.expenses.firstIndex(where: { $0.id == transaction.source.id }) {
-                    var destination = state.expenses[destinationIndex]
-                    destination.balance += transaction.amount
-                    state.expenses[destinationIndex] = destination
-                } else if let destinationIndex = state.accounts.firstIndex(where: { $0.id == transaction.source.id }) {
-                    var destination = state.accounts[destinationIndex]
-                    destination.balance += transaction.amount
-                    state.accounts[destinationIndex] = destination
+                if let destinationIndex = state.expenses.firstIndex(where: { $0.id == transaction.destination.id }) {
+                    let newID = UUID()
+                    state.expenses[destinationIndex].id = newID
+                    state.expenses[destinationIndex].balance += transaction.amount
+                } else if let destinationIndex = state.accounts.firstIndex(where: { $0.id == transaction.destination.id }) {
+                    let newID = UUID()
+                    state.accounts[destinationIndex].id = newID
+                    state.accounts[destinationIndex].balance += transaction.amount
                 }
-
                 return .none
                 
                 // MARK: - Child

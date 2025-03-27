@@ -53,7 +53,7 @@ struct WalletView: View {
         VStack(alignment: .leading) {
             // FIXME: wrap into TabView, fix clipping
             HStackEqualSpacingLayout(columnsNumber: Constants.elementsInRow, minElementWidth: Constants.minColumnWidth, maxElementWidth: Constants.maxColumnWidth) {
-                ForEach(accountPages[0] ?? []) { pageItem in
+                ForEach(accountPages[0] ?? [], id: \.self) { pageItem in
                     WalletItemView(store: store, item: pageItem)
                 }
             }
@@ -63,7 +63,7 @@ struct WalletView: View {
             
             ScrollView(.vertical) {
                 LazyVGrid(columns: accountColumns, alignment: .center, spacing: Constants.rowSpacing) {
-                    ForEach(store.expenses, id: \.id) { item in
+                    ForEach(store.expenses, id: \.self) { item in
                         WalletItemView(store: store, item: item)
                     }
                 }

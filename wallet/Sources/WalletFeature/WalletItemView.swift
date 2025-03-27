@@ -20,7 +20,8 @@ public struct WalletItemView: View {
     }
     
     private var currencyAmount: String {
-        item.currency.representation + " \(Int(item.balance))"
+        let lessThenZero = item.balance < 0
+        return (lessThenZero ? "-" : "") + "\(abs(Int(item.balance / 100)))" + item.currency.representation
     }
     
     private var simpleDrag: some Gesture {

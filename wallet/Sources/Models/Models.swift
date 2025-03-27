@@ -20,12 +20,6 @@ enum Currency: Codable, Equatable {
     }
 }
 
-extension UTType {
-    static var walletItem: UTType {
-        UTType(exportedAs: "wallet.item.type")
-    }
-}
-
 public struct WalletTransaction: Codable, Equatable, Sendable {
     let currency: Currency
     let amount: Int
@@ -51,19 +45,6 @@ public struct WalletItem: Codable, Hashable, Identifiable, Sendable {
     let icon: String
     let currency: Currency
     var balance: Int
-    
-    var inTransactions: [WalletTransaction] {
-        get { [] }
-    }
-    var outTransactions: [WalletTransaction] {
-        get { [] }
-    }
-}
-
-extension WalletItem: Transferable {
-    static public var transferRepresentation: some TransferRepresentation {
-        CodableRepresentation(contentType: .walletItem)
-    }
 }
 
 extension WalletItem {
