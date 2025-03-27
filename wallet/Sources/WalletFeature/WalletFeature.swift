@@ -19,7 +19,10 @@ enum AppStorageKey: String {
 public struct WalletFeature {
     @ObservableState
     public struct State: Equatable {
+        // child
         var transaction: TransactionFeature.State
+        
+        // internal
         var accounts: [WalletItem]
         var expenses: [WalletItem]
         var transactions: [WalletTransaction]
@@ -37,21 +40,22 @@ public struct WalletFeature {
     }
     
     public enum Action: Sendable {
+        // child
+        case transaction(TransactionFeature.Action)
+        
         // internal
         case start
         case readWalletItems
         case readTransactions
         case saveWalletItems
-        case saveTransaction(WalletTransaction)
+        case saveTransactions
         case generateDefaultWalletItems
+        case applyTransaction(WalletTransaction)
         
         // view
         case itemFrameChanged(WalletItem, CGRect)
         case onItemDragging(CGSize, CGPoint, WalletItem)
         case onDraggingStopped
-        
-        // child
-        case transaction(TransactionFeature.Action)
     }
     
     @Dependency(\.defaultAppStorage) var appStorage
@@ -95,8 +99,6 @@ public struct WalletFeature {
                     print("WalletItem decoding error: \(error.localizedDescription)")
                 }
                 return .none
-            case .readTransactions:
-                return .none
             case .saveWalletItems:
                 do {
                     let encodedAccounts = try state.accounts.map {
@@ -114,7 +116,9 @@ public struct WalletFeature {
                 }
                 
                 return .none
-            case let .saveTransaction(transaction):
+            case .readTransactions:
+                return .none
+            case .saveTransactions:
                 return .none
             case .generateDefaultWalletItems:
                 state.accounts = WalletItem.defaultAccounts
@@ -131,7 +135,11 @@ public struct WalletFeature {
                 state.dragItem = item
 
                 let droppingItemFrames = state.itemFrames.filter { $0.value.contains(point) }
-                state.dropItem = droppingItemFrames.keys.first
+                guard let dropItem = droppingItemFrames.keys.first, WalletTransaction.canBePerformed(source: item, destination: dropItem) else {
+                    return .none
+                }
+                
+                state.dropItem = dropItem
                 return .none
             case .onDraggingStopped:
                 let dragItem = state.dragItem
@@ -144,6 +152,35 @@ public struct WalletFeature {
                 guard let dragItem, let dropItem else { return .none }
                 return .run { send in
                     await send(.transaction(.onItemDropped(dragItem, dropItem)))
+                }
+            case let .applyTransaction(transaction):
+                /// TODO: Refactor
+                /// транзакции не должны применяться частично в случае ошибок
+                
+                if let sourceIndex = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
+                    {
+                    var source = state.accounts[sourceIndex]
+                    source.balance -= transaction.amount
+                    state.accounts[sourceIndex] = source
+                }
+                
+                if let destinationIndex = state.expenses.firstIndex(where: { $0.id == transaction.source.id }) {
+                    var destination = state.expenses[destinationIndex]
+                    destination.balance += transaction.amount
+                    state.expenses[destinationIndex] = destination
+                } else if let destinationIndex = state.accounts.firstIndex(where: { $0.id == transaction.source.id }) {
+                    var destination = state.accounts[destinationIndex]
+                    destination.balance += transaction.amount
+                    state.accounts[destinationIndex] = destination
+                }
+
+                return .none
+                
+                // MARK: - Child
+            case let .transaction(.createTransaction(transaction)):
+                state.transactions.append(transaction)
+                return .run { send in
+                    await send(.applyTransaction(transaction))
                 }
             case .transaction:
                 return .none

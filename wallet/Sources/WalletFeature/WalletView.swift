@@ -19,11 +19,9 @@ extension EnvironmentValues {
 
 struct WalletView: View {
     var store: StoreOf<WalletFeature>
-    var geometry: GeometryProxy
     
-    public init(store: StoreOf<WalletFeature>, geometry: GeometryProxy) {
+    public init(store: StoreOf<WalletFeature>) {
         self.store = store
-        self.geometry = geometry
         calculateAccountPages()
     }
     
@@ -56,7 +54,7 @@ struct WalletView: View {
             // FIXME: wrap into TabView, fix clipping
             HStackEqualSpacingLayout(columnsNumber: Constants.elementsInRow, minElementWidth: Constants.minColumnWidth, maxElementWidth: Constants.maxColumnWidth) {
                 ForEach(accountPages[0] ?? []) { pageItem in
-                    WalletItemView(store: store, item: pageItem, geometry: geometry)
+                    WalletItemView(store: store, item: pageItem)
                 }
             }
             .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: 100)
@@ -66,7 +64,7 @@ struct WalletView: View {
             ScrollView(.vertical) {
                 LazyVGrid(columns: accountColumns, alignment: .center, spacing: Constants.rowSpacing) {
                     ForEach(store.expenses, id: \.id) { item in
-                        WalletItemView(store: store, item: item, geometry: geometry)
+                        WalletItemView(store: store, item: item)
                     }
                 }
             }

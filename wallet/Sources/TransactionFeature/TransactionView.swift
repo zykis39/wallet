@@ -29,7 +29,7 @@ struct TransactionView: View {
         VStack {
             HStack {
                 Button {
-                    store.send(.presentedChanged(false))
+                    store.send(.cancelTapped)
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .resizable()
@@ -49,7 +49,7 @@ struct TransactionView: View {
                 Spacer()
                 
                 Button {
-                    store.send(.presentedChanged(false))
+                    store.send(.confirmTapped)
                 } label: {
                     Image(systemName: "checkmark.circle.fill")
                         .resizable()

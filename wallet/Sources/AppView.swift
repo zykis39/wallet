@@ -16,13 +16,9 @@ struct AppView: View {
     }
     
     public var body: some View {
-        ZStack {
-            GeometryReader { proxy in
-                WalletView(store: store, geometry: proxy)
-                    .fullScreenCover(isPresented: $store.transaction.presented.sending(\.transaction.presentedChanged)) {
-                        TransactionView(store: store.scope(state: \.transaction, action: \.transaction))
-                    }
+        WalletView(store: store)
+            .fullScreenCover(isPresented: $store.transaction.presented.sending(\.transaction.presentedChanged)) {
+                TransactionView(store: store.scope(state: \.transaction, action: \.transaction))
             }
-        }
     }
 }

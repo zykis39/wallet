@@ -22,15 +22,30 @@ public struct TransactionFeature: Sendable {
     }
     
     public enum Action: Sendable {
-        case presentedChanged(Bool)
-        case amountChanged(Int)
+        // internal
         case onItemDropped(WalletItem, WalletItem)
         case createTransaction(WalletTransaction)
+        
+        // view
+        case cancelTapped
+        case confirmTapped
+        case presentedChanged(Bool)
+        case amountChanged(Int)
     }
     
     public var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {
+            case .confirmTapped:
+                return .run { [state] send in
+                    await send(.presentedChanged(false))
+                    let transaction = WalletTransaction(currency: state.currency, amount: state.amount, source: state.source, destination: state.destination)
+                    await send(.createTransaction(transaction))
+                }
+            case .cancelTapped:
+                return .run { send in
+                    await send(.presentedChanged(false))
+                }
             case let .onItemDropped(source, destination):
                 state.source = source
                 state.destination = destination
@@ -40,7 +55,7 @@ public struct TransactionFeature: Sendable {
             case let .presentedChanged(presented):
                 state.presented = presented
                 return .none
-            case let .createTransaction(transaction):
+            case .createTransaction:
                 return .none
             case let .amountChanged(amount):
                 state.amount = amount

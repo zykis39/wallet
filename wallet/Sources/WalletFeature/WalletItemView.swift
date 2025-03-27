@@ -11,7 +11,6 @@ import SwiftUI
 public struct WalletItemView: View {
     public var store: StoreOf<WalletFeature>
     private let item: WalletItem
-    private let geometry: GeometryProxy
 
     private var color: Color {
         switch item.type {
@@ -21,7 +20,7 @@ public struct WalletItemView: View {
     }
     
     private var currencyAmount: String {
-        item.currency.representation + " \(Int(item.amount))"
+        item.currency.representation + " \(Int(item.balance))"
     }
     
     private var simpleDrag: some Gesture {
@@ -34,10 +33,9 @@ public struct WalletItemView: View {
             }
     }
     
-    public init(store: StoreOf<WalletFeature>, item: WalletItem, geometry: GeometryProxy) {
+    public init(store: StoreOf<WalletFeature>, item: WalletItem) {
         self.store = store
         self.item = item
-        self.geometry = geometry
     }
 
     public var body: some View {
