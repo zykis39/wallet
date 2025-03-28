@@ -27,35 +27,14 @@ struct TransactionView: View {
     
     var body: some View {
         VStack {
-            HStack {
-                Button {
-                    store.send(.cancelTapped)
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .resizable()
-                        .frame(width: 32, height: 32)
-                }
-                
-                Spacer()
-                Text(store.state.source.name)
-                Spacer()
-                
-                Image(systemName: "arrow.right")
-                    .resizable()
-                    .frame(width: 16, height: 16)
-                
-                Spacer()
-                Text(store.state.destination.name)
-                Spacer()
-                
-                Button {
-                    store.send(.confirmTapped)
-                } label: {
-                    Image(systemName: "checkmark.circle.fill")
-                        .resizable()
-                        .frame(width: 32, height: 32)
-                }
-            }
+            Header(leftSystemImageName: "xmark.circle.fill",
+                   rightSystemImageName: "checkmark.circle.fill",
+                   leftAction: { [store] in store.send(.cancelTapped) },
+                   rightAction: { [store] in store.send(.confirmTapped) },
+                   imageSize: 32,
+                   middleSystemImageName: "arrow.right",
+                   leftText: store.state.source.name,
+                   rightText: store.state.destination.name)
             Divider()
             CurrencyField(value: $store.amount.sending(\.amountChanged), formatter: formatter)
             .font(Font.system(size: 60, design: .default))

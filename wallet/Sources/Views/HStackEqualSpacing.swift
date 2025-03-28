@@ -51,16 +51,3 @@ struct HStackEqualSpacingLayout: Layout {
         }
     }
 }
-
-//struct CustomStackView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        TabView {
-//            HStackEqualSpacingLayout(columnsNumber: 4, minElementWidth: 40, maxElementWidth: 120) {
-//                WalletItemView(item: .cash)
-//                WalletItemView(item: .cafe)
-//            }
-//        }
-//        .tabViewStyle(.page(indexDisplayMode: .never))
-//        .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: 100)
-//    }
-//}

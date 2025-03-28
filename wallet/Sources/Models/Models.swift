@@ -65,3 +65,12 @@ extension WalletItem {
     static let services: Self = .init(type: .expenses, name: "Услуги", icon: "services", currency: .RUB, balance: 0)
     static let entertainments: Self = .init(type: .expenses, name: "Развлечения", icon: "entertainments", currency: .RUB, balance: 0)
 }
+
+extension Color {
+    static func walletItemColor(for type: WalletItem.WalletItemType) -> Color {
+        switch type {
+        case .account: .yellow
+        case .expenses: .green
+        }
+    }
+}

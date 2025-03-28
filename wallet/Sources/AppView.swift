@@ -20,5 +20,8 @@ struct AppView: View {
             .fullScreenCover(isPresented: $store.transaction.presented.sending(\.transaction.presentedChanged)) {
                 TransactionView(store: store.scope(state: \.transaction, action: \.transaction))
             }
+            .fullScreenCover(isPresented: $store.walletItemEdit.presented.sending(\.walletItemEdit.presentedChanged)) {
+                WalletItemEditView(store: store.scope(state: \.walletItemEdit, action: \.walletItemEdit))
+            }
     }
 }

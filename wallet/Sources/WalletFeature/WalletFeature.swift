@@ -21,6 +21,7 @@ public struct WalletFeature {
     public struct State: Equatable {
         // child
         var transaction: TransactionFeature.State
+        var walletItemEdit: WalletItemEditFeature.State
         
         // internal
         var accounts: [WalletItem]
@@ -34,6 +35,7 @@ public struct WalletFeature {
         var dropItem: WalletItem?
         
         static let initial: Self = .init(transaction: .initial,
+                                         walletItemEdit: .initial,
                                          accounts: [],
                                          expenses: [],
                                          transactions: [])
@@ -42,6 +44,7 @@ public struct WalletFeature {
     public enum Action: Sendable {
         // child
         case transaction(TransactionFeature.Action)
+        case walletItemEdit(WalletItemEditFeature.Action)
         
         // internal
         case start
@@ -56,12 +59,16 @@ public struct WalletFeature {
         case itemFrameChanged(WalletItem, CGRect)
         case onItemDragging(CGSize, CGPoint, WalletItem)
         case onDraggingStopped
+        case itemTapped(WalletItem)
     }
     
     @Dependency(\.defaultAppStorage) var appStorage
     public var body: some Reducer<State, Action> {
         Scope(state: \.transaction, action: \.transaction) {
             TransactionFeature()
+        }
+        Scope(state: \.walletItemEdit, action: \.walletItemEdit) {
+            WalletItemEditFeature()
         }
         Reduce { state, action in
             switch action {
@@ -163,6 +170,10 @@ public struct WalletFeature {
                 return .run { send in
                     await send(.transaction(.onItemDropped(dragItem, dropItem)))
                 }
+            case let .itemTapped(item):
+                state.walletItemEdit.item = item
+                state.walletItemEdit.presented = true
+                return .none
             case let .applyTransaction(transaction):
                 /// FIXME:
                 /// транзакции не должны применяться частично в случае ошибок
@@ -201,7 +212,7 @@ public struct WalletFeature {
                 }
                 return .none
                 
-                // MARK: - Child
+                // MARK: - Transaction
             case let .transaction(.createTransaction(transaction)):
                 state.transactions.append(transaction)
                 return .run { send in
@@ -209,6 +220,10 @@ public struct WalletFeature {
                     await send(.saveTransaction(transaction))
                 }
             case .transaction:
+                return .none
+                
+                // MARK: - WalletItemEdit
+            case .walletItemEdit:
                 return .none
             }
         }

@@ -12,13 +12,6 @@ public struct WalletItemView: View {
     public var store: StoreOf<WalletFeature>
     private let item: WalletItem
 
-    private var color: Color {
-        switch item.type {
-        case .account: return .yellow
-        case .expenses: return .green
-        }
-    }
-    
     private var currencyAmount: String {
         let lessThenZero = item.balance < 0
         return (lessThenZero ? "-" : "") + "\(abs(Int(item.balance / 100)))" + item.currency.representation
@@ -44,11 +37,11 @@ public struct WalletItemView: View {
             Text(item.name)
                 .lineLimit(1)
             Circle()
-                .fill(color)
+                .fill(Color.walletItemColor(for: item.type))
                 .frame(width: 50, height: 50)
                 .offset(store.state.dragItem == item ? store.state.draggingOffset : .zero)
             Text(currencyAmount)
-                .foregroundStyle(color)
+                .foregroundStyle(Color.walletItemColor(for: item.type))
                 .lineLimit(1)
         }
         .background {
@@ -59,6 +52,9 @@ public struct WalletItemView: View {
                 .padding(-4)
         }
         .gesture(simpleDrag)
+        .onTapGesture {
+            store.send(.itemTapped(item))
+        }
         .onGeometryChange(for: CGRect.self) { proxy in
             proxy.frame(in: .named("WalletSpace"))
         } action: { newValue in
