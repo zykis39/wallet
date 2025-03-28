@@ -8,7 +8,8 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-enum Currency: Codable, Equatable {
+public enum Currency: String, Codable, Hashable, Sendable, CaseIterable, Identifiable {
+    public var id: Int { representation.hashValue }
     case RUB, USD, EUR
     
     var representation: String {
@@ -42,9 +43,9 @@ public struct WalletItem: Codable, Hashable, Identifiable, Sendable {
     }    
     public var id: UUID = UUID()
     let type: WalletItemType
-    let name: String
-    let icon: String
-    let currency: Currency
+    var name: String
+    var icon: String
+    var currency: Currency
     var balance: Int
 }
 
