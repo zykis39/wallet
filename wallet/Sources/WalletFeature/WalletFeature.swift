@@ -48,9 +48,9 @@ public struct WalletFeature {
         case readWalletItems
         case readTransactions
         case saveWalletItems
-        case saveTransactions
         case generateDefaultWalletItems
         case applyTransaction(WalletTransaction)
+        case saveTransaction(WalletTransaction)
         
         // view
         case itemFrameChanged(WalletItem, CGRect)
@@ -117,9 +117,19 @@ public struct WalletFeature {
                 
                 return .none
             case .readTransactions:
-                return .none
-            case .saveTransactions:
-                return .none
+                do {
+                    let decoder = JSONDecoder()
+                    let transactionsData = appStorage.array(forKey: AppStorageKey.transactions.rawValue)?.compactMap { $0 as? Data } ?? []
+                    let transactions = try transactionsData.compactMap { try decoder.decode(WalletTransaction.self, from: $0) }
+                    return .run { [transactions] send in
+                        for transaction in transactions {
+                            await send(.applyTransaction(transaction))
+                        }
+                    }
+                } catch {
+                    print("Transaction decoding error: \(error.localizedDescription)")
+                    return .none
+                }
             case .generateDefaultWalletItems:
                 state.accounts = WalletItem.defaultAccounts
                 state.expenses = WalletItem.defaultExpenses
@@ -157,20 +167,37 @@ public struct WalletFeature {
                 /// FIXME:
                 /// транзакции не должны применяться частично в случае ошибок
                 /// обновления состояния массивов [WalletItem] не происходит без смены \.id
-                if let sourceIndex = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
+                /// при сравнении нужно завязаться на \.id, но это приведет к ошибкам на текущий момент
+                if let sourceIndex = state.accounts.firstIndex(where: { $0.name == transaction.source.name })
                     {
                     let newID = UUID()
                     state.accounts[sourceIndex].id = newID
                     state.accounts[sourceIndex].balance -= transaction.amount
                 }
-                if let destinationIndex = state.expenses.firstIndex(where: { $0.id == transaction.destination.id }) {
+                if let destinationIndex = state.expenses.firstIndex(where: { $0.name == transaction.destination.name }) {
                     let newID = UUID()
                     state.expenses[destinationIndex].id = newID
                     state.expenses[destinationIndex].balance += transaction.amount
-                } else if let destinationIndex = state.accounts.firstIndex(where: { $0.id == transaction.destination.id }) {
+                } else if let destinationIndex = state.accounts.firstIndex(where: { $0.name == transaction.destination.name }) {
                     let newID = UUID()
                     state.accounts[destinationIndex].id = newID
                     state.accounts[destinationIndex].balance += transaction.amount
+                }
+                return .none
+            case let .saveTransaction(transaction):
+                let decoder = JSONDecoder()
+                let encoder = JSONEncoder()
+                do {
+                    // decode all
+                    let transactionsData = appStorage.array(forKey: AppStorageKey.transactions.rawValue)?.compactMap { $0 as? Data } ?? []
+                    var transactions = try transactionsData.compactMap { try decoder.decode(WalletTransaction.self, from: $0) }
+                    // append
+                    transactions.append(transaction)
+                    // encode all
+                    let encodedTransactions = try transactions.compactMap { try encoder.encode($0) }
+                    appStorage.set(encodedTransactions, forKey: AppStorageKey.transactions.rawValue)
+                } catch {
+                    print("Transaction decoding/encoding error: \(error.localizedDescription)")
                 }
                 return .none
                 
@@ -179,6 +206,7 @@ public struct WalletFeature {
                 state.transactions.append(transaction)
                 return .run { send in
                     await send(.applyTransaction(transaction))
+                    await send(.saveTransaction(transaction))
                 }
             case .transaction:
                 return .none

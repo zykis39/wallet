@@ -20,7 +20,8 @@ enum Currency: Codable, Equatable {
     }
 }
 
-public struct WalletTransaction: Codable, Equatable, Sendable {
+public struct WalletTransaction: Codable, Equatable, Sendable, Identifiable {
+    public var id = UUID()
     let currency: Currency
     let amount: Int
     
