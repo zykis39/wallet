@@ -27,7 +27,7 @@ struct TransactionView: View {
     
     var body: some View {
         VStack {
-            Header(leftSystemImageName: "xmark.circle.fill",
+            HeaderCancelConfirm(leftSystemImageName: "xmark.circle.fill",
                    rightSystemImageName: "checkmark.circle.fill",
                    leftAction: { [store] in store.send(.cancelTapped) },
                    rightAction: { [store] in store.send(.confirmTapped) },

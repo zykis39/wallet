@@ -17,7 +17,7 @@ struct WalletItemEditView: View {
     
     var body: some View {
         VStack {
-            Header(leftSystemImageName: "xmark.circle.fill",
+            HeaderCancelConfirm(leftSystemImageName: "xmark.circle.fill",
                    rightSystemImageName: "checkmark.circle.fill",
                    leftAction: { store.send(.cancelTapped) },
                    rightAction: { store.send(.confirmedTapped) },

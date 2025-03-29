@@ -33,7 +33,7 @@ public struct WalletTransaction: Codable, Equatable, Sendable, Identifiable {
     static func canBePerformed(source: WalletItem, destination: WalletItem) -> Bool {
         source.type == .account &&
         (destination.type == .expenses || destination.type == .account) &&
-        source != destination
+        source.id != destination.id
     }
 }
 

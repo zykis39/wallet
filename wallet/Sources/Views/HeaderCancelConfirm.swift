@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct Header: View {
+struct HeaderCancelConfirm: View {
     let leftSystemImageName: String
     let rightSystemImageName: String
     let leftAction: () -> Void

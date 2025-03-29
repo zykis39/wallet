@@ -14,7 +14,7 @@ public struct WalletItemView: View {
 
     private var currencyAmount: String {
         let lessThenZero = item.balance < 0
-        return (lessThenZero ? "-" : "") + "\(abs(Int(item.balance / 100)))" + item.currency.representation
+        return (lessThenZero ? "-" : "") + "\(abs(Int(item.balance / 100))) " + item.currency.representation
     }
     
     private var simpleDrag: some Gesture {
@@ -47,8 +47,7 @@ public struct WalletItemView: View {
         .background {
             Rectangle()
                 .fill((store.state.dropItem == item) ? .green.opacity(0.2) : .clear)
-                .stroke((store.state.dragItem == item) ? .yellow : .clear,
-                        style: .init(lineWidth: 2, lineCap: .butt, lineJoin: .miter, miterLimit: 4, dash: [5, 10], dashPhase: 0))
+                .cornerRadius(4)
                 .padding(-4)
         }
         .gesture(simpleDrag)
@@ -60,6 +59,5 @@ public struct WalletItemView: View {
         } action: { newValue in
             store.send(.itemFrameChanged(item, newValue))
         }
-        .border(.red)
     }
 }

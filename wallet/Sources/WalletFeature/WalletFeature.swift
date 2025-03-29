@@ -157,6 +157,7 @@ public struct WalletFeature {
 
                 let droppingItemFrames = state.itemFrames.filter { $0.value.contains(point) }
                 guard let dropItem = droppingItemFrames.keys.first, WalletTransaction.canBePerformed(source: item, destination: dropItem) else {
+                    state.dropItem = nil
                     return .none
                 }
                 

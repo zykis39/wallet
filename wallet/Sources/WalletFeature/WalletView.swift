@@ -32,6 +32,13 @@ struct WalletView: View {
         static let rowSpacing: CGFloat = 12
     }
     
+    private var balance: Int {
+        store.state.accounts.reduce(0) { $0 + $1.balance }
+    }
+    private var expenses: Int {
+        store.state.expenses.reduce(0) { $0 + $1.balance }
+    }
+    
     private var accountColumns: [GridItem] = Array(repeatElement(GridItem(.flexible(minimum: Constants.minColumnWidth, maximum: Constants.maxColumnWidth)), count: Constants.elementsInRow))
     
     private var accountPages: [Int: [WalletItem]] = [:]
@@ -51,6 +58,16 @@ struct WalletView: View {
     
     public var body: some View {
         VStack(alignment: .leading) {
+            HeaderWallet(balance: balance,
+                         expenses: expenses,
+                         leftSystemImageName: "dollarsign.bank.building.fill",
+                         rightSystemImageName: "gearshape.fill",
+                         leftAction: {},
+                         rightAction: {},
+                         imageSize: 24)
+            .frame(maxHeight: 44)
+            
+            Divider()
             // FIXME: wrap into TabView, fix clipping
             HStackEqualSpacingLayout(columnsNumber: Constants.elementsInRow, minElementWidth: Constants.minColumnWidth, maxElementWidth: Constants.maxColumnWidth) {
                 ForEach(accountPages[0] ?? [], id: \.self) { pageItem in
@@ -62,7 +79,8 @@ struct WalletView: View {
             }
             .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: 100)
             .zIndex(expensesDragging ? 0 : 1)
-            .border(.red)
+            
+            Divider()
             
             ScrollView(.vertical) {
                 LazyVGrid(columns: accountColumns, alignment: .center, spacing: Constants.rowSpacing) {
@@ -77,7 +95,8 @@ struct WalletView: View {
             .scrollDisabled(true)
             .scrollClipDisabled()
             .zIndex(expensesDragging ? 1 : 0)
-            .border(.green)
+            
+            Spacer()
         }
         .coordinateSpace(name: "WalletSpace")
     }
