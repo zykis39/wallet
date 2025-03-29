@@ -37,20 +37,17 @@ public struct WalletTransaction: Codable, Equatable, Sendable, Identifiable {
     }
 }
 
-public struct WalletItem: Codable, Hashable, Identifiable, Sendable {
+public struct WalletItem: Codable, Hashable, Sendable {
     public enum WalletItemType: Codable, Equatable, Sendable {
         case account, expenses
     }    
-    public var id: UUID = UUID()
+
+    var id: UUID = UUID()
     let type: WalletItemType
     var name: String
     var icon: String
     var currency: Currency
     var balance: Int
-    
-    public static func == (lhs: WalletItem, rhs: WalletItem) -> Bool {
-        lhs.name == rhs.name
-    }
 }
 
 extension WalletItem {
