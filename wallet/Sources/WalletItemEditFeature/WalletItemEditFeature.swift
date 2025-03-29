@@ -38,7 +38,11 @@ public struct WalletItemEditFeature {
         Reduce { state, action in
             switch action {
             case .confirmedTapped:
-                return .run { send in
+                return .run { [editType = state.editType, item = state.item] send in
+                    switch editType {
+                    case .edit: await send(.updateWalletItem(item.id, item))
+                    case .new: await send(.createWalletItem(item))
+                    }
                     await send(.presentedChanged(false))
                 }
             case .cancelTapped:
@@ -57,11 +61,12 @@ public struct WalletItemEditFeature {
             case let .currencyChanged(currency):
                 state.item.currency = currency
                 return .none
-            case let .deleteWalletItem(id):
+                
+            case .deleteWalletItem:
                 return .none
-            case let .createWalletItem(item):
+            case .createWalletItem:
                 return .none
-            case let .updateWalletItem(id, item):
+            case .updateWalletItem:
                 return .none
             }
         }

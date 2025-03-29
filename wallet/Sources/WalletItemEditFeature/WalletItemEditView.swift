@@ -19,8 +19,8 @@ struct WalletItemEditView: View {
         VStack {
             Header(leftSystemImageName: "xmark.circle.fill",
                    rightSystemImageName: "checkmark.circle.fill",
-                   leftAction: { store.send(.presentedChanged(false)) },
-                   rightAction: { store.send(.presentedChanged(false)) },
+                   leftAction: { store.send(.cancelTapped) },
+                   rightAction: { store.send(.confirmedTapped) },
                    imageSize: 32)
             Spacer()
                 .frame(height: 24)

@@ -259,20 +259,39 @@ public struct WalletFeature {
                     state.expenses.removeAll { $0.id == item.id }
                 }
                 
-                // clear DB
                 return .run { [transactionsToRemove] send in
                     for t in transactionsToRemove {
                         // restore balance of affected accounts/expenses
                         await send(.reverseTransaction(t))
                     }
+                    // clear DB
                     await send(.saveTransactions)
                     await send(.saveWalletItems)
+                    // close sheet
                     await send(.walletItemEdit(.presentedChanged(false)))
                 }
             case let .walletItemEdit(.createWalletItem(item)):
-                return .none
+                switch item.type {
+                case .account:
+                    state.accounts.append(item)
+                case .expenses:
+                    state.expenses.append(item)
+                }
+                return .run { send in
+                    await send(.saveWalletItems)
+                }
             case let .walletItemEdit(.updateWalletItem(id, item)):
-                return .none
+                switch item.type {
+                case .account:
+                    guard let index = state.accounts.firstIndex(where: { $0.id == item.id }) else { return .none }
+                    state.accounts[index] = item
+                case .expenses:
+                    guard let index = state.expenses.firstIndex(where: { $0.id == item.id }) else { return .none }
+                    state.expenses[index] = item
+                }
+                return .run { send in
+                    await send(.saveWalletItems)
+                }
             case .walletItemEdit:
                 return .none
             }
