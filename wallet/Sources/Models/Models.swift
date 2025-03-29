@@ -10,12 +10,12 @@ import UniformTypeIdentifiers
 
 public enum Currency: String, Codable, Hashable, Sendable, CaseIterable, Identifiable {
     public var id: Int { representation.hashValue }
-    case RUB, USD, EUR
+    case RUB//, USD, EUR
     
     var representation: String {
         switch self {
-        case .EUR: "€"
-        case .USD: "$"
+//        case .EUR: "€"
+//        case .USD: "$"
         case .RUB: "₽"
         }
     }
@@ -23,13 +23,14 @@ public enum Currency: String, Codable, Hashable, Sendable, CaseIterable, Identif
 
 public struct WalletTransaction: Codable, Equatable, Sendable, Identifiable {
     public var id = UUID()
+    let timestamp: Date
     let currency: Currency
     let amount: Int
     
     let source: WalletItem
     let destination: WalletItem
     
-    static let empty: Self = .init(currency: .RUB, amount: 0, source: .none, destination: .none)
+    static let empty: Self = .init(timestamp: .now, currency: .RUB, amount: 0, source: .none, destination: .none)
     static func canBePerformed(source: WalletItem, destination: WalletItem) -> Bool {
         source.type == .account &&
         (destination.type == .expenses || destination.type == .account) &&

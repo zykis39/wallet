@@ -9,7 +9,15 @@ import SwiftUI
 
 struct WalletItemEditView: View {
     @Bindable var store: StoreOf<WalletItemEditFeature>
-    @State private var formContentHeight: CGFloat?
+    
+    var headerText: String {
+        switch store.editType {
+        case .new:
+            store.item.type == .account ? "Новый кошелек, карта или счет" : "На что вы тратите деньги?"
+        case .edit:
+            "Измените параметры \(store.item.type == .account ? "счета" : "расхода")"
+        }
+    }
     
     init(store: StoreOf<WalletItemEditFeature>) {
         self.store = store
@@ -24,7 +32,7 @@ struct WalletItemEditView: View {
                    imageSize: 32)
             Spacer()
                 .frame(height: 24)
-            Text("Измените параметр \(store.item.type == .account ? "счета" : "расхода")")
+            Text(headerText)
                 .font(.system(size: 24))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white)
@@ -66,13 +74,21 @@ struct WalletItemEditView: View {
                 Section("Транзакции") {
                     List {
                         ForEach(store.state.transactions) { transaction in
-                            let isIncome = transaction.destination.id == store.item.id
+                            let isIncome = (transaction.destination.id == store.item.id) && (store.item.type == .account)
                             let amount = transaction.amount
                             let currency = transaction.currency.representation
-                            let to = isIncome ? transaction.source.name : transaction.destination.name
+                            let isItemSource = transaction.source.id == store.item.id
+                            let to = isItemSource ? transaction.destination.name : transaction.source.name
                             
-                            Text((isIncome ? "+" : "-") + " \(amount) \(currency) (\(to))")
-                                .foregroundStyle(isIncome ? .green : .red)
+                            HStack {
+                                Text(transaction.timestamp,
+                                     format: .dateTime.day().month()
+                                    .locale(Locale(identifier: "ru_RU")))
+                                .foregroundStyle(.black)
+                                Spacer()
+                                Text((isIncome ? "+" : "-") + " \(amount) \(currency) (\(to))")
+                                    .foregroundStyle(isIncome ? .green : .red)
+                            }
                         }
                     }
                 }
@@ -81,6 +97,7 @@ struct WalletItemEditView: View {
             .submitLabel(.done)
             .scrollContentBackground(.hidden)
             .tint(.black)
+            .opacity(store.state.transactions.count > 0 ? 1 : 0)
             
             if store.editType == .edit {
                 Button {
@@ -94,5 +111,6 @@ struct WalletItemEditView: View {
         .padding()
         .tint(.white)
         .background(Color.walletItemColor(for: store.item.type))
+        .ignoresSafeArea(.keyboard)
     }
 }

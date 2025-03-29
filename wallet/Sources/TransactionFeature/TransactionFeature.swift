@@ -39,7 +39,7 @@ public struct TransactionFeature: Sendable {
             case .confirmTapped:
                 return .run { [state] send in
                     await send(.presentedChanged(false))
-                    let transaction = WalletTransaction(currency: state.currency, amount: state.amount, source: state.source, destination: state.destination)
+                    let transaction = WalletTransaction(timestamp: .now, currency: state.currency, amount: state.amount, source: state.source, destination: state.destination)
                     await send(.createTransaction(transaction))
                 }
             case .cancelTapped:
