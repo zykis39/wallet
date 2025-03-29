@@ -11,10 +11,15 @@ import SwiftUI
 public struct WalletItemEditFeature {
     @ObservableState
     public struct State: Equatable {
+        enum EditType {
+            case new, edit
+        }
+        var editType: EditType
         var presented: Bool
         var item: WalletItem
+        var transactions: [WalletTransaction]
         
-        static let initial: Self = .init(presented: false, item: .none)
+        static let initial: Self = .init(editType: .new, presented: false, item: .none, transactions: [])
     }
     
     public enum Action: Sendable {
@@ -22,9 +27,11 @@ public struct WalletItemEditFeature {
         case cancelTapped
         case presentedChanged(Bool)
         case nameChanged(String)
+        case balanceChanged(Int)
         case currencyChanged(Currency)
         case createWalletItem(WalletItem)
         case updateWalletItem(UUID, WalletItem)
+        case deleteWalletItem(UUID)
     }
     
     public var body: some Reducer<State, Action> {
@@ -44,8 +51,13 @@ public struct WalletItemEditFeature {
             case let .nameChanged(name):
                 state.item.name = name
                 return .none
+            case let .balanceChanged(balance):
+                state.item.balance = balance
+                return .none
             case let .currencyChanged(currency):
                 state.item.currency = currency
+                return .none
+            case let .deleteWalletItem(id):
                 return .none
             case let .createWalletItem(item):
                 return .none

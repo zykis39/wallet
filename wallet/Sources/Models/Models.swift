@@ -47,6 +47,10 @@ public struct WalletItem: Codable, Hashable, Identifiable, Sendable {
     var icon: String
     var currency: Currency
     var balance: Int
+    
+    public static func == (lhs: WalletItem, rhs: WalletItem) -> Bool {
+        lhs.name == rhs.name
+    }
 }
 
 extension WalletItem {

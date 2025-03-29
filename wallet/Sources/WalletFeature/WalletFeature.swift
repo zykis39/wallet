@@ -128,6 +128,7 @@ public struct WalletFeature {
                     let decoder = JSONDecoder()
                     let transactionsData = appStorage.array(forKey: AppStorageKey.transactions.rawValue)?.compactMap { $0 as? Data } ?? []
                     let transactions = try transactionsData.compactMap { try decoder.decode(WalletTransaction.self, from: $0) }
+                    state.transactions = transactions
                     return .run { [transactions] send in
                         for transaction in transactions {
                             await send(.applyTransaction(transaction))
@@ -171,7 +172,11 @@ public struct WalletFeature {
                     await send(.transaction(.onItemDropped(dragItem, dropItem)))
                 }
             case let .itemTapped(item):
+                state.walletItemEdit.editType = .edit
                 state.walletItemEdit.item = item
+                state.walletItemEdit.transactions = state.transactions.filter {
+                    $0.source == item || $0.destination == item
+                }
                 state.walletItemEdit.presented = true
                 return .none
             case let .applyTransaction(transaction):
@@ -179,17 +184,17 @@ public struct WalletFeature {
                 /// транзакции не должны применяться частично в случае ошибок
                 /// обновления состояния массивов [WalletItem] не происходит без смены \.id
                 /// при сравнении нужно завязаться на \.id, но это приведет к ошибкам на текущий момент
-                if let sourceIndex = state.accounts.firstIndex(where: { $0.name == transaction.source.name })
+                if let sourceIndex = state.accounts.firstIndex(where: { $0 == transaction.source })
                     {
                     let newID = UUID()
                     state.accounts[sourceIndex].id = newID
                     state.accounts[sourceIndex].balance -= transaction.amount
                 }
-                if let destinationIndex = state.expenses.firstIndex(where: { $0.name == transaction.destination.name }) {
+                if let destinationIndex = state.expenses.firstIndex(where: { $0 == transaction.destination }) {
                     let newID = UUID()
                     state.expenses[destinationIndex].id = newID
                     state.expenses[destinationIndex].balance += transaction.amount
-                } else if let destinationIndex = state.accounts.firstIndex(where: { $0.name == transaction.destination.name }) {
+                } else if let destinationIndex = state.accounts.firstIndex(where: { $0 == transaction.destination }) {
                     let newID = UUID()
                     state.accounts[destinationIndex].id = newID
                     state.accounts[destinationIndex].balance += transaction.amount

@@ -4,6 +4,7 @@
 //
 //  Created by Артём Зайцев on 28.03.2025.
 //
+import SwiftUI
 
 extension UIApplication {
     func endEditing() {
