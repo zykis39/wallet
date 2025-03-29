@@ -56,11 +56,17 @@ struct WalletItemEditView: View {
                         Text("\(currency.representation) (\(currency.rawValue))").tag(currency)
                     }
                 }
-                
+            }
+            .frame(maxHeight: store.item.type == .account ? 180 : 130)
+            .scrollDisabled(true)
+            .scrollContentBackground(.hidden)
+            .tint(.black)
+            
+            Form {
                 Section("Транзакции") {
                     List {
                         ForEach(store.state.transactions) { transaction in
-                            let isIncome = transaction.destination == store.item
+                            let isIncome = transaction.destination.id == store.item.id
                             let amount = transaction.amount
                             let currency = transaction.currency.representation
                             let to = isIncome ? transaction.source.name : transaction.destination.name

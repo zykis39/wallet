@@ -51,8 +51,10 @@ public struct WalletFeature {
         case readWalletItems
         case readTransactions
         case saveWalletItems
+        case saveTransactions
         case generateDefaultWalletItems
         case applyTransaction(WalletTransaction)
+        case reverseTransaction(WalletTransaction)
         case saveTransaction(WalletTransaction)
         
         // view
@@ -182,14 +184,25 @@ public struct WalletFeature {
             case let .applyTransaction(transaction):
                 /// FIXME:
                 /// транзакции не должны применяться частично в случае ошибок
-                if let sourceIndex = state.accounts.firstIndex(where: { $0 == transaction.source })
+                if let sourceIndex = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
                     {
                     state.accounts[sourceIndex].balance -= transaction.amount
                 }
-                if let destinationIndex = state.expenses.firstIndex(where: { $0 == transaction.destination }) {
+                if let destinationIndex = state.expenses.firstIndex(where: { $0.id == transaction.destination.id }) {
                     state.expenses[destinationIndex].balance += transaction.amount
-                } else if let destinationIndex = state.accounts.firstIndex(where: { $0 == transaction.destination }) {
+                } else if let destinationIndex = state.accounts.firstIndex(where: { $0.id == transaction.destination.id }) {
                     state.accounts[destinationIndex].balance += transaction.amount
+                }
+                return .none
+            case let .reverseTransaction(transaction):
+                if let sourceIndex = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
+                    {
+                    state.accounts[sourceIndex].balance += transaction.amount
+                }
+                if let destinationIndex = state.expenses.firstIndex(where: { $0.id == transaction.destination.id }) {
+                    state.expenses[destinationIndex].balance -= transaction.amount
+                } else if let destinationIndex = state.accounts.firstIndex(where: { $0.id == transaction.destination.id }) {
+                    state.accounts[destinationIndex].balance -= transaction.amount
                 }
                 return .none
             case let .saveTransaction(transaction):
@@ -208,6 +221,15 @@ public struct WalletFeature {
                     print("Transaction decoding/encoding error: \(error.localizedDescription)")
                 }
                 return .none
+            case .saveTransactions:
+                do {
+                    let encoder = JSONEncoder()
+                    let encodedTransactions = try state.transactions.compactMap { try encoder.encode($0) }
+                    appStorage.set(encodedTransactions, forKey: AppStorageKey.transactions.rawValue)
+                } catch {
+                    print("error encoding transactions: \(error.localizedDescription)")
+                }
+                return .none
                 
                 // MARK: - Transaction
             case let .transaction(.createTransaction(transaction)):
@@ -220,6 +242,37 @@ public struct WalletFeature {
                 return .none
                 
                 // MARK: - WalletItemEdit
+            case let .walletItemEdit(.deleteWalletItem(id)):
+                // remove related transactions
+                let transactionsToRemove = state.transactions.filter { $0.source.id == id || $0.destination.id == id }
+                state.transactions.removeAll(where: { transaction in
+                    transactionsToRemove.contains { $0.id == transaction.id }
+                })
+                
+                // remove item
+                guard let item: WalletItem = [state.accounts, state.expenses].flatMap({ $0 }).filter({ $0.id == id }).first else { return .none }
+                
+                switch item.type {
+                case .account:
+                    state.accounts.removeAll { $0.id == item.id }
+                case .expenses:
+                    state.expenses.removeAll { $0.id == item.id }
+                }
+                
+                // clear DB
+                return .run { [transactionsToRemove] send in
+                    for t in transactionsToRemove {
+                        // restore balance of affected accounts/expenses
+                        await send(.reverseTransaction(t))
+                    }
+                    await send(.saveTransactions)
+                    await send(.saveWalletItems)
+                    await send(.walletItemEdit(.presentedChanged(false)))
+                }
+            case let .walletItemEdit(.createWalletItem(item)):
+                return .none
+            case let .walletItemEdit(.updateWalletItem(id, item)):
+                return .none
             case .walletItemEdit:
                 return .none
             }
