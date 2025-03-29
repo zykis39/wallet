@@ -43,7 +43,7 @@ public struct WalletItem: Codable, Hashable, Sendable {
     }    
 
     var id: UUID = UUID()
-    let type: WalletItemType
+    var type: WalletItemType
     var name: String
     var icon: String
     var currency: Currency

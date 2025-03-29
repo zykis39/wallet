@@ -56,6 +56,9 @@ struct WalletView: View {
                 ForEach(accountPages[0] ?? [], id: \.self) { pageItem in
                     WalletItemView(store: store, item: pageItem)
                 }
+                AddButton(color: .yellow) {
+                    store.send(.createNewItemTapped(.account))
+                }
             }
             .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: 100)
             .zIndex(expensesDragging ? 0 : 1)
@@ -65,6 +68,9 @@ struct WalletView: View {
                 LazyVGrid(columns: accountColumns, alignment: .center, spacing: Constants.rowSpacing) {
                     ForEach(store.expenses, id: \.self) { item in
                         WalletItemView(store: store, item: item)
+                    }
+                    AddButton(color: .green) {
+                        store.send(.createNewItemTapped(.expenses))
                     }
                 }
             }

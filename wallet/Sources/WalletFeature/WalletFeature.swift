@@ -58,6 +58,7 @@ public struct WalletFeature {
         case saveTransaction(WalletTransaction)
         
         // view
+        case createNewItemTapped(WalletItem.WalletItemType)
         case itemFrameChanged(WalletItem, CGRect)
         case onItemDragging(CGSize, CGPoint, WalletItem)
         case onDraggingStopped
@@ -229,6 +230,12 @@ public struct WalletFeature {
                 } catch {
                     print("error encoding transactions: \(error.localizedDescription)")
                 }
+                return .none
+            case let .createNewItemTapped(itemType):
+                state.walletItemEdit.editType = .new
+                state.walletItemEdit.item = .none
+                state.walletItemEdit.item.type = itemType
+                state.walletItemEdit.presented = true
                 return .none
                 
                 // MARK: - Transaction
