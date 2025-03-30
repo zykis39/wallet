@@ -27,7 +27,7 @@ public struct WalletItemEditFeature {
         case cancelTapped
         case presentedChanged(Bool)
         case nameChanged(String)
-        case balanceChanged(Int)
+        case balanceChanged(Double)
         case currencyChanged(Currency)
         case createWalletItem(WalletItem)
         case updateWalletItem(UUID, WalletItem)

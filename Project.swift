@@ -21,7 +21,6 @@ let project = Project(
             dependencies: [
                 .external(name: "PinLayout"),
                 .external(name: "ComposableArchitecture"),
-                .external(name: "CurrencyField"),
             ]
         ),
         .target(

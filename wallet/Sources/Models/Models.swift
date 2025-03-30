@@ -25,7 +25,7 @@ public struct WalletTransaction: Codable, Equatable, Sendable, Identifiable {
     public var id = UUID()
     let timestamp: Date
     let currency: Currency
-    let amount: Int
+    let amount: Double
     
     let source: WalletItem
     let destination: WalletItem
@@ -48,7 +48,7 @@ public struct WalletItem: Codable, Hashable, Sendable {
     var name: String
     var icon: String
     var currency: Currency
-    var balance: Int
+    var balance: Double
 }
 
 extension WalletItem {

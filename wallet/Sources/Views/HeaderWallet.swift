@@ -7,8 +7,8 @@
 import SwiftUI
 
 struct HeaderWallet: View {
-    let balance: Int
-    let expenses: Int
+    let balance: Double
+    let expenses: Double
     
     let leftSystemImageName: String
     let rightSystemImageName: String
@@ -16,7 +16,7 @@ struct HeaderWallet: View {
     let rightAction: () -> Void
     let imageSize: CGFloat
     
-    init(balance: Int, expenses: Int, leftSystemImageName: String, rightSystemImageName: String, leftAction: @escaping () -> Void, rightAction: @escaping () -> Void, imageSize: CGFloat) {
+    init(balance: Double, expenses: Double, leftSystemImageName: String, rightSystemImageName: String, leftAction: @escaping () -> Void, rightAction: @escaping () -> Void, imageSize: CGFloat) {
         self.balance = balance
         self.expenses = expenses
         self.leftSystemImageName = leftSystemImageName
@@ -42,7 +42,7 @@ struct HeaderWallet: View {
             VStack {
                 Text("Баланс")
                     .opacity(0.54)
-                Text("\(balance) \(Currency.RUB.representation)")
+                Text(CurrencyFormatter.representation(for: balance) + " " + (Currency.RUB.representation))
             }
             
             Spacer()
@@ -50,7 +50,7 @@ struct HeaderWallet: View {
             VStack {
                 Text("Расходы")
                     .opacity(0.54)
-                Text("\(expenses) \(Currency.RUB.representation)")
+                Text(CurrencyFormatter.representation(for: expenses) + " " + (Currency.RUB.representation))
             }
             
             Spacer()

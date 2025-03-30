@@ -32,10 +32,10 @@ struct WalletView: View {
         static let rowSpacing: CGFloat = 12
     }
     
-    private var balance: Int {
+    private var balance: Double {
         store.state.accounts.reduce(0) { $0 + $1.balance }
     }
-    private var expenses: Int {
+    private var expenses: Double {
         store.state.expenses.reduce(0) { $0 + $1.balance }
     }
     

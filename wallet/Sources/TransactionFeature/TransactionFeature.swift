@@ -14,7 +14,7 @@ public struct TransactionFeature: Sendable {
         public var presented: Bool
         
         var currency: Currency
-        var amount: Int
+        var amount: Double
         var source: WalletItem
         var destination: WalletItem
         
@@ -30,7 +30,7 @@ public struct TransactionFeature: Sendable {
         case cancelTapped
         case confirmTapped
         case presentedChanged(Bool)
-        case amountChanged(Int)
+        case amountChanged(Double)
     }
     
     public var body: some Reducer<State, Action> {

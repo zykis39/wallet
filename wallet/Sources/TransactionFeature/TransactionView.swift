@@ -7,7 +7,7 @@
 
 import ComposableArchitecture
 import SwiftUI
-import CurrencyField
+//import CurrencyField
 
 struct TransactionView: View {
     @Bindable var store: StoreOf<TransactionFeature>
@@ -16,17 +16,10 @@ struct TransactionView: View {
     }
     
     @FocusState var focused: Bool
-    private var formatter: NumberFormatter {
-        let fmt = NumberFormatter()
-        fmt.numberStyle = .currency
-        fmt.minimumFractionDigits = 2
-        fmt.maximumFractionDigits = 2
-        fmt.locale = Locale(identifier: "ru_RU")
-        return fmt
-    }
+    @State var amount: String = ""
     
     var body: some View {
-        VStack {
+        VStack(alignment: .trailing) {
             HeaderCancelConfirm(leftSystemImageName: "xmark.circle.fill",
                    rightSystemImageName: "checkmark.circle.fill",
                    leftAction: { [store] in store.send(.cancelTapped) },
@@ -36,11 +29,18 @@ struct TransactionView: View {
                    leftText: store.state.source.name,
                    rightText: store.state.destination.name)
             Divider()
-            CurrencyField(value: $store.amount.sending(\.amountChanged), formatter: formatter)
+            
+            TextField("Сумма", text: $amount)
+            .textFieldStyle(.roundedBorder)
             .font(Font.system(size: 60, design: .default))
             .keyboardType(.decimalPad)
             .focused($focused)
-
+            .multilineTextAlignment(.trailing)
+            .onChange(of: amount) { oldValue, newValue in
+                let value = CurrencyFormatter.formattedTextField(oldValue, newValue)
+                self.amount = value
+                store.send(.amountChanged(Double(value) ?? 0))
+            }
             Spacer()
         }
         .padding()

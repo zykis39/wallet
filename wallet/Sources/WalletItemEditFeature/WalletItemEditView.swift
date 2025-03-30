@@ -9,6 +9,7 @@ import SwiftUI
 
 struct WalletItemEditView: View {
     @Bindable var store: StoreOf<WalletItemEditFeature>
+    @State var balance: String
     
     var headerText: String {
         switch store.editType {
@@ -21,6 +22,7 @@ struct WalletItemEditView: View {
     
     init(store: StoreOf<WalletItemEditFeature>) {
         self.store = store
+        self.balance = CurrencyFormatter.representation(for: store.state.item.balance)
     }
     
     var body: some View {
@@ -54,9 +56,14 @@ struct WalletItemEditView: View {
                 
                 if store.item.type == .account {
                     TextField("Баланс",
-                              value: $store.item.balance.sending(\.balanceChanged),
-                              format: .number,
+                              text: $balance,
                               prompt: Text("Остаток на счёте"))
+                    .keyboardType(.decimalPad)
+                    .onChange(of: balance) { oldValue, newValue in
+                        let value = CurrencyFormatter.formattedTextField(oldValue, newValue)
+                        self.balance = value
+                        self.store.send(.balanceChanged(Double(value) ?? 0))
+                    }
                 }
                 Picker("Валюта: ",
                        selection: $store.item.currency.sending(\.currencyChanged)) {
