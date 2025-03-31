@@ -48,6 +48,10 @@ public struct WalletItemView: View {
                 .lineLimit(1)
         }
         .background {
+            Circle()
+                .stroke(.gray, lineWidth: 1)
+                .fill(.clear)
+                .frame(width: Constants.size, height: Constants.size)
             ZStack {
                 Circle()
                     .fill(Color.walletItemColor(for: item.type))
@@ -58,7 +62,6 @@ public struct WalletItemView: View {
                     .foregroundStyle(.white)
             }
             .offset(store.state.dragItem == item ? store.state.draggingOffset : .zero)
-                
             Rectangle()
                 .fill((store.state.dropItem == item) ? .green.opacity(0.2) : .clear)
                 .cornerRadius(4)

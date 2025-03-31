@@ -75,6 +75,7 @@ struct WalletView: View {
             HStackEqualSpacingLayout(columnsNumber: Constants.elementsInRow, minElementWidth: Constants.minColumnWidth, maxElementWidth: Constants.maxColumnWidth) {
                 ForEach(accountPages[0] ?? [], id: \.self) { pageItem in
                     WalletItemView(store: store, item: pageItem)
+                        .zIndex(store.state.dragItem == pageItem ? 1 : 0)
                 }
                 AddButton(color: .yellow) {
                     store.send(.createNewItemTapped(.account))
