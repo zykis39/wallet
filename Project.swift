@@ -15,7 +15,10 @@ let project = Project(
                 .external(name: "PinLayout"),
                 .external(name: "ComposableArchitecture"),
                 .external(name: "FirebaseAnalytics"),
-            ]
+            ],
+            settings: .settings(base: [
+                "OTHER_LDFLAGS": ["-ObjC"]
+            ])
         ),
         .target(
             name: "walletTests",

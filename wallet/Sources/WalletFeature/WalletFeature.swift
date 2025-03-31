@@ -80,10 +80,10 @@ public struct WalletFeature {
         Reduce { state, action in
             switch action {
             case .start:
-                Analytics.logEvent("AppStarted", parameters: [:])
                 let wasLaunchedBefore = appStorage.bool(forKey: AppStorageKey.wasLaunchedBefore.rawValue)
                 
                 return .run { send in
+                    Analytics.logEvent("AppStarted", parameters: ["firstLaunch": !wasLaunchedBefore])
                     if !wasLaunchedBefore {
                         await send(.generateDefaultWalletItems)
                         appStorage.set(true, forKey: AppStorageKey.wasLaunchedBefore.rawValue)
@@ -162,19 +162,20 @@ public struct WalletFeature {
                 state.dropItem = nil
                 
                 guard let dragItem, let dropItem else { return .none }
-//                Analytics.logEvent("DraggingStopped", parameters: ["source": dragItem.name, "destination": dropItem.name])
                 return .run { send in
+                    Analytics.logEvent("DraggingStopped", parameters: ["source": dragItem.name, "destination": dropItem.name])
                     await send(.transaction(.onItemDropped(dragItem, dropItem)))
                 }
             case let .itemTapped(item):
-//                Analytics.logEvent("ItemTapped", parameters: ["item": item.name])
                 state.walletItemEdit.editType = .edit
                 state.walletItemEdit.item = item
                 state.walletItemEdit.transactions = state.transactions.filter {
                     $0.source.id == item.id || $0.destination.id == item.id
                 }
                 state.walletItemEdit.presented = true
-                return .none
+                return .run { _ in
+                    Analytics.logEvent("ItemTapped", parameters: ["item": item.name])
+                }
             case let .applyTransaction(transaction):
                 /// FIXME:
                 /// транзакции не должны применяться частично в случае ошибок
@@ -216,12 +217,12 @@ public struct WalletFeature {
                 
                 // MARK: - Transaction
             case let .transaction(.createTransaction(transaction)):
-//                Analytics.logEvent("TransactionCreated",
-//                                   parameters: ["source": transaction.source.name,
-//                                                "destination": transaction.destination.name,
-//                                                "amount": transaction.amount])
                 state.transactions.append(transaction)
                 return .run { send in
+                    Analytics.logEvent("TransactionCreated",
+                                       parameters: ["source": transaction.source.name,
+                                                    "destination": transaction.destination.name,
+                                                    "amount": transaction.amount])
                     await send(.applyTransaction(transaction))
                     await send(.saveTransaction(transaction))
                 }
@@ -258,7 +259,6 @@ public struct WalletFeature {
                     await send(.walletItemEdit(.presentedChanged(false)))
                 }
             case let .walletItemEdit(.createWalletItem(item)):
-//                Analytics.logEvent("ItemCreated", parameters: ["name": item.name])
                 switch item.type {
                 case .account:
                     state.accounts.append(item)
@@ -266,6 +266,7 @@ public struct WalletFeature {
                     state.expenses.append(item)
                 }
                 return .run { send in
+                    Analytics.logEvent("ItemCreated", parameters: ["name": item.name])
                     await send(.saveWalletItems)
                 }
             case let .walletItemEdit(.updateWalletItem(id, item)):
