@@ -35,6 +35,8 @@ final class CurrencyFormatter {
     }
     
     static func representation(for value: Double) -> String {
+        guard value != 0 else { return "" }
+        
         let formatter = NumberFormatter()
         formatter.minimumFractionDigits = 0
         formatter.maximumFractionDigits = 2
