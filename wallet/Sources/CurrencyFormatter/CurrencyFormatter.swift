@@ -43,4 +43,13 @@ final class CurrencyFormatter {
         let result = formatter.string(from: NSNumber(value: value))?.replacingOccurrences(of: ",", with: ".") ?? ""
         return result
     }
+    
+    static var formatter: Formatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+        formatter.decimalSeparator = "."
+        return formatter
+    }()
 }

@@ -11,6 +11,10 @@ import SwiftUI
 public struct WalletItemView: View {
     public var store: StoreOf<WalletFeature>
     private let item: WalletItem
+    private struct Constants {
+        static let size: CGFloat = 64
+        static let imageSize: CGFloat = 32
+    }
 
     private var currencyAmount: String {
         let lessThenZero = item.balance < 0
@@ -37,18 +41,29 @@ public struct WalletItemView: View {
             Text(item.name)
                 .lineLimit(1)
             Circle()
-                .fill(Color.walletItemColor(for: item.type))
-                .frame(width: 50, height: 50)
-                .offset(store.state.dragItem == item ? store.state.draggingOffset : .zero)
+                .fill(.clear)
+                .frame(width: Constants.size, height: Constants.size)
             Text(currencyAmount)
                 .foregroundStyle(Color.walletItemColor(for: item.type))
                 .lineLimit(1)
         }
         .background {
+            ZStack {
+                Circle()
+                    .fill(Color.walletItemColor(for: item.type))
+                    .frame(width: Constants.size, height: Constants.size)
+                Image(systemName: item.icon)
+                    .resizable()
+                    .frame(width: Constants.imageSize, height: Constants.imageSize)
+                    .foregroundStyle(.white)
+            }
+            .offset(store.state.dragItem == item ? store.state.draggingOffset : .zero)
+                
             Rectangle()
                 .fill((store.state.dropItem == item) ? .green.opacity(0.2) : .clear)
                 .cornerRadius(4)
                 .padding(-4)
+            
         }
         .gesture(simpleDrag)
         .onTapGesture {

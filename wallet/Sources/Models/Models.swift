@@ -67,17 +67,17 @@ extension WalletItem {
     
     // default accounts
     static let defaultAccounts: [Self] = [card, cash]
-    static let card: Self = .init(timestamp: .init(timeIntervalSince1970: 1), type: .account, name: "Карта", icon: "card", currency: .RUB, balance: 0)
-    static let cash: Self = .init(timestamp: .init(timeIntervalSince1970: 2), type: .account, name: "Наличные", icon: "cash", currency: .RUB, balance: 0)
+    static let card: Self = .init(timestamp: .init(timeIntervalSince1970: 1), type: .account, name: "Карта", icon: "creditcard", currency: .RUB, balance: 0)
+    static let cash: Self = .init(timestamp: .init(timeIntervalSince1970: 2), type: .account, name: "Наличные", icon: "wallet.bifold", currency: .RUB, balance: 0)
     
     // default expences
     static let defaultExpenses: [Self] = [groceries, cafe, transport, shopping, services, entertainments]
-    static let groceries: Self = .init(timestamp: .init(timeIntervalSince1970: 1), type: .expenses, name: "Продукты", icon: "groceries", currency: .RUB, balance: 0)
-    static let cafe: Self = .init(timestamp: .init(timeIntervalSince1970: 2), type: .expenses, name: "Кафе", icon: "cafe", currency: .RUB, balance: 0)
-    static let transport: Self = .init(timestamp: .init(timeIntervalSince1970: 3), type: .expenses, name: "Транспорт", icon: "transport", currency: .RUB, balance: 0)
-    static let shopping: Self = .init(timestamp: .init(timeIntervalSince1970: 4), type: .expenses, name: "Покупки", icon: "shopping", currency: .RUB, balance: 0)
-    static let services: Self = .init(timestamp: .init(timeIntervalSince1970: 5), type: .expenses, name: "Услуги", icon: "services", currency: .RUB, balance: 0)
-    static let entertainments: Self = .init(timestamp: .init(timeIntervalSince1970: 6), type: .expenses, name: "Развлечения", icon: "entertainments", currency: .RUB, balance: 0)
+    static let groceries: Self = .init(timestamp: .init(timeIntervalSince1970: 1), type: .expenses, name: "Продукты", icon: "carrot", currency: .RUB, balance: 0)
+    static let cafe: Self = .init(timestamp: .init(timeIntervalSince1970: 2), type: .expenses, name: "Кафе", icon: "fork.knife", currency: .RUB, balance: 0)
+    static let transport: Self = .init(timestamp: .init(timeIntervalSince1970: 3), type: .expenses, name: "Транспорт", icon: "bus.fill", currency: .RUB, balance: 0)
+    static let shopping: Self = .init(timestamp: .init(timeIntervalSince1970: 4), type: .expenses, name: "Покупки", icon: "handbag", currency: .RUB, balance: 0)
+    static let services: Self = .init(timestamp: .init(timeIntervalSince1970: 5), type: .expenses, name: "Услуги", icon: "network", currency: .RUB, balance: 0)
+    static let entertainments: Self = .init(timestamp: .init(timeIntervalSince1970: 6), type: .expenses, name: "Развлечения", icon: "party.popper", currency: .RUB, balance: 0)
 }
 
 
