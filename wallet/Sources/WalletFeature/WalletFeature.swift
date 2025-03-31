@@ -7,6 +7,8 @@
 
 import ComposableArchitecture
 import Foundation
+import SwiftData
+import SwiftUI
 
 enum AppStorageKey: String {
     case accounts
@@ -65,6 +67,7 @@ public struct WalletFeature {
         case itemTapped(WalletItem)
     }
     
+    @Dependency(\.modelContext) var modelContext
     @Dependency(\.defaultAppStorage) var appStorage
     public var body: some Reducer<State, Action> {
         Scope(state: \.transaction, action: \.transaction) {
@@ -88,49 +91,34 @@ public struct WalletFeature {
                     }
                 }
             case .readWalletItems:
+                /// FIXME: Predicates cause runtime error, when dealing with Enums
+                /// So, filtering happens outside SwiftData, in-memory
+                let itemDescriptor = FetchDescriptor<WalletItemModel>(predicate: #Predicate<WalletItemModel> { _ in true }, sortBy: [ .init(\.model.timestamp, order: .forward) ])
                 do {
-                    if let encodedAccounts = (appStorage.array(forKey: AppStorageKey.accounts.rawValue)) {
-                        state.accounts = try encodedAccounts.compactMap {
-                            guard let itemData = $0 as? Data else { return nil }
-                            
-                            let decoder = JSONDecoder()
-                            return try decoder.decode(WalletItem.self, from: itemData)
-                        }
-                    }
-                    if let encodedExpenses = (appStorage.array(forKey: AppStorageKey.expenses.rawValue)) {
-                        state.expenses = try encodedExpenses.compactMap {
-                            guard let itemData = $0 as? Data else { return nil }
-                            
-                            let decoder = JSONDecoder()
-                            return try decoder.decode(WalletItem.self, from: itemData)
-                        }
-                    }
+                    let accounts = try modelContext.fetch<WalletItemModel>(itemDescriptor).map { $0.model }.filter { $0.type == .account }
+                    let expenses = try modelContext.fetch<WalletItemModel>(itemDescriptor).map { $0.model }.filter { $0.type == .expenses }
+                    state.accounts = accounts
+                    state.expenses = expenses
                 } catch {
                     print("WalletItem decoding error: \(error.localizedDescription)")
                 }
+                
                 return .none
             case .saveWalletItems:
-                do {
-                    let encodedAccounts = try state.accounts.map {
-                        let encoder = JSONEncoder()
-                        return try encoder.encode($0)
-                    }
-                    let encodedExpenses = try state.expenses.map {
-                        let encoder = JSONEncoder()
-                        return try encoder.encode($0)
-                    }
-                    appStorage.set(encodedAccounts, forKey: AppStorageKey.accounts.rawValue)
-                    appStorage.set(encodedExpenses, forKey: AppStorageKey.expenses.rawValue)
-                } catch {
-                    print("WalletItem encoding error: \(error.localizedDescription)")
+                let models = [state.accounts, state.expenses].flatMap { $0 }.map { WalletItemModel(model: $0) }
+                for m in models {
+                    modelContext.insert(m)
                 }
                 
                 return .none
             case .readTransactions:
+                /// FIXME: Predicates cause runtime error, when dealing with Enums
+                /// So, filtering happens outside SwiftData, in-memory
+                let transactionsDescriptor = FetchDescriptor<WalletTransactionModel>(predicate: #Predicate<WalletTransactionModel> { _ in true }, sortBy: [])
+                
                 do {
-                    let decoder = JSONDecoder()
-                    let transactionsData = appStorage.array(forKey: AppStorageKey.transactions.rawValue)?.compactMap { $0 as? Data } ?? []
-                    let transactions = try transactionsData.compactMap { try decoder.decode(WalletTransaction.self, from: $0) }
+                    let transactions = try modelContext.fetch<WalletTransactionModel>(transactionsDescriptor).map { $0.model }
+                    
                     state.transactions = transactions
                     return .run { [transactions] send in
                         for transaction in transactions {
@@ -208,28 +196,11 @@ public struct WalletFeature {
                 }
                 return .none
             case let .saveTransaction(transaction):
-                let decoder = JSONDecoder()
-                let encoder = JSONEncoder()
-                do {
-                    // decode all
-                    let transactionsData = appStorage.array(forKey: AppStorageKey.transactions.rawValue)?.compactMap { $0 as? Data } ?? []
-                    var transactions = try transactionsData.compactMap { try decoder.decode(WalletTransaction.self, from: $0) }
-                    // append
-                    transactions.append(transaction)
-                    // encode all
-                    let encodedTransactions = try transactions.compactMap { try encoder.encode($0) }
-                    appStorage.set(encodedTransactions, forKey: AppStorageKey.transactions.rawValue)
-                } catch {
-                    print("Transaction decoding/encoding error: \(error.localizedDescription)")
-                }
+                modelContext.insert(WalletTransactionModel(model: transaction))
                 return .none
             case .saveTransactions:
-                do {
-                    let encoder = JSONEncoder()
-                    let encodedTransactions = try state.transactions.compactMap { try encoder.encode($0) }
-                    appStorage.set(encodedTransactions, forKey: AppStorageKey.transactions.rawValue)
-                } catch {
-                    print("error encoding transactions: \(error.localizedDescription)")
+                for t in state.transactions {
+                    modelContext.insert(WalletTransactionModel(model: t))
                 }
                 return .none
             case let .createNewItemTapped(itemType):

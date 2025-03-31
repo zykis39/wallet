@@ -6,16 +6,40 @@
 //
 
 import SwiftUI
-import UniformTypeIdentifiers
+import SwiftData
+
+// MARK: - Models
+
+public struct WalletItem: Codable, Hashable, Sendable {
+    public enum WalletItemType: Int, Codable, Equatable, Sendable {
+        case account, expenses
+    }
+
+    var id: UUID = UUID()
+    var timestamp: Date
+    var type: WalletItemType
+    var name: String
+    var icon: String
+    var currency: Currency
+    var balance: Double
+    
+    init(id: UUID = UUID(), timestamp: Date = .now, type: WalletItemType, name: String, icon: String, currency: Currency, balance: Double) {
+        self.id = id
+        self.timestamp = timestamp
+        self.type = type
+        self.name = name
+        self.icon = icon
+        self.currency = currency
+        self.balance = balance
+    }
+}
 
 public enum Currency: String, Codable, Hashable, Sendable, CaseIterable, Identifiable {
     public var id: Int { representation.hashValue }
-    case RUB//, USD, EUR
+    case RUB
     
     var representation: String {
         switch self {
-//        case .EUR: "€"
-//        case .USD: "$"
         case .RUB: "₽"
         }
     }
@@ -38,42 +62,45 @@ public struct WalletTransaction: Codable, Equatable, Sendable, Identifiable {
     }
 }
 
-public struct WalletItem: Codable, Hashable, Sendable {
-    public enum WalletItemType: Codable, Equatable, Sendable {
-        case account, expenses
-    }    
-
-    var id: UUID = UUID()
-    var type: WalletItemType
-    var name: String
-    var icon: String
-    var currency: Currency
-    var balance: Double
-}
-
 extension WalletItem {
     static let none: Self = .init(type: .account, name: "", icon: "", currency: .RUB, balance: 0)
     
     // default accounts
     static let defaultAccounts: [Self] = [card, cash]
-    static let card: Self = .init(type: .account, name: "Карта", icon: "card", currency: .RUB, balance: 0)
-    static let cash: Self = .init(type: .account, name: "Наличные", icon: "cash", currency: .RUB, balance: 0)
+    static let card: Self = .init(timestamp: .init(timeIntervalSince1970: 1), type: .account, name: "Карта", icon: "card", currency: .RUB, balance: 0)
+    static let cash: Self = .init(timestamp: .init(timeIntervalSince1970: 2), type: .account, name: "Наличные", icon: "cash", currency: .RUB, balance: 0)
     
     // default expences
     static let defaultExpenses: [Self] = [groceries, cafe, transport, shopping, services, entertainments]
-    static let groceries: Self = .init(type: .expenses, name: "Продукты", icon: "groceries", currency: .RUB, balance: 0)
-    static let cafe: Self = .init(type: .expenses, name: "Кафе", icon: "cafe", currency: .RUB, balance: 0)
-    static let transport: Self = .init(type: .expenses, name: "Транспорт", icon: "transport", currency: .RUB, balance: 0)
-    static let shopping: Self = .init(type: .expenses, name: "Покупки", icon: "shopping", currency: .RUB, balance: 0)
-    static let services: Self = .init(type: .expenses, name: "Услуги", icon: "services", currency: .RUB, balance: 0)
-    static let entertainments: Self = .init(type: .expenses, name: "Развлечения", icon: "entertainments", currency: .RUB, balance: 0)
+    static let groceries: Self = .init(timestamp: .init(timeIntervalSince1970: 1), type: .expenses, name: "Продукты", icon: "groceries", currency: .RUB, balance: 0)
+    static let cafe: Self = .init(timestamp: .init(timeIntervalSince1970: 2), type: .expenses, name: "Кафе", icon: "cafe", currency: .RUB, balance: 0)
+    static let transport: Self = .init(timestamp: .init(timeIntervalSince1970: 3), type: .expenses, name: "Транспорт", icon: "transport", currency: .RUB, balance: 0)
+    static let shopping: Self = .init(timestamp: .init(timeIntervalSince1970: 4), type: .expenses, name: "Покупки", icon: "shopping", currency: .RUB, balance: 0)
+    static let services: Self = .init(timestamp: .init(timeIntervalSince1970: 5), type: .expenses, name: "Услуги", icon: "services", currency: .RUB, balance: 0)
+    static let entertainments: Self = .init(timestamp: .init(timeIntervalSince1970: 6), type: .expenses, name: "Развлечения", icon: "entertainments", currency: .RUB, balance: 0)
 }
 
-extension Color {
-    static func walletItemColor(for type: WalletItem.WalletItemType) -> Color {
-        switch type {
-        case .account: .yellow
-        case .expenses: .green
-        }
+
+// MARK: - SwiftData Models
+
+@Model
+class WalletItemModel {
+    @Attribute(.unique) var id: UUID
+    var model: WalletItem
+    
+    init(model: WalletItem) {
+        self.id = model.id
+        self.model = model
+    }
+}
+
+@Model
+class WalletTransactionModel {
+    @Attribute(.unique) var id: UUID
+    var model: WalletTransaction
+    
+    init(model: WalletTransaction) {
+        self.id = model.id
+        self.model = model
     }
 }
