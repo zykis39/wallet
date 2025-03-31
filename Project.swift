@@ -7,15 +7,8 @@ let project = Project(
             name: "wallet",
             destinations: .iOS,
             product: .app,
-            bundleId: "io.tuist.wallet",
-            infoPlist: .extendingDefault(
-                with: [
-                    "UILaunchScreen": [
-                        "UIColorName": "",
-                        "UIImageName": "",
-                    ],
-                ]
-            ),
+            bundleId: "com.zykis.wallet",
+            infoPlist: .file(path: "wallet/Resources/wallet-Info.plist"),
             sources: ["wallet/Sources/**"],
             resources: ["wallet/Resources/**"],
             dependencies: [
@@ -28,7 +21,7 @@ let project = Project(
             name: "walletTests",
             destinations: .iOS,
             product: .unitTests,
-            bundleId: "io.tuist.walletTests",
+            bundleId: "com.zykis.walletTests",
             infoPlist: .default,
             sources: ["wallet/Tests/**"],
             resources: [],
