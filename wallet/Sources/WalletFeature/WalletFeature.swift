@@ -9,6 +9,7 @@ import ComposableArchitecture
 import Foundation
 import SwiftData
 import SwiftUI
+import FirebaseAnalytics
 
 enum AppStorageKey: String {
     case accounts
@@ -79,6 +80,7 @@ public struct WalletFeature {
         Reduce { state, action in
             switch action {
             case .start:
+                Analytics.logEvent("AppStarted", parameters: [:])
                 let wasLaunchedBefore = appStorage.bool(forKey: AppStorageKey.wasLaunchedBefore.rawValue)
                 
                 return .run { send in
@@ -160,10 +162,12 @@ public struct WalletFeature {
                 state.dropItem = nil
                 
                 guard let dragItem, let dropItem else { return .none }
+                Analytics.logEvent("DraggingStopped", parameters: ["source": dragItem.name, "destination": dropItem.name])
                 return .run { send in
                     await send(.transaction(.onItemDropped(dragItem, dropItem)))
                 }
             case let .itemTapped(item):
+                Analytics.logEvent("ItemTapped", parameters: ["item": item.name])
                 state.walletItemEdit.editType = .edit
                 state.walletItemEdit.item = item
                 state.walletItemEdit.transactions = state.transactions.filter {
@@ -212,6 +216,10 @@ public struct WalletFeature {
                 
                 // MARK: - Transaction
             case let .transaction(.createTransaction(transaction)):
+                Analytics.logEvent("TransactionCreated",
+                                   parameters: ["source": transaction.source.name,
+                                                "destination": transaction.destination.name,
+                                                "amount": transaction.amount])
                 state.transactions.append(transaction)
                 return .run { send in
                     await send(.applyTransaction(transaction))
@@ -250,6 +258,7 @@ public struct WalletFeature {
                     await send(.walletItemEdit(.presentedChanged(false)))
                 }
             case let .walletItemEdit(.createWalletItem(item)):
+                Analytics.logEvent("ItemCreated", parameters: ["name": item.name])
                 switch item.type {
                 case .account:
                     state.accounts.append(item)
