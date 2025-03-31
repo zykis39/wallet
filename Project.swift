@@ -18,7 +18,8 @@ let project = Project(
             ],
             settings: .settings(base: [
                 "OTHER_LDFLAGS": ["-ObjC"]
-            ])
+            ]),
+            launchArguments: [.launchArgument(name: "-FIRDebugEnabled", isEnabled: true)]
         ),
         .target(
             name: "walletTests",
