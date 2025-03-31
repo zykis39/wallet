@@ -30,16 +30,22 @@ struct TransactionView: View {
                    rightText: store.state.destination.name)
             Divider()
             
-            TextField("Сумма", text: $amount)
-            .textFieldStyle(.roundedBorder)
-            .font(Font.system(size: 60, design: .default))
-            .keyboardType(.decimalPad)
-            .focused($focused)
-            .multilineTextAlignment(.trailing)
-            .onChange(of: amount) { oldValue, newValue in
-                let value = CurrencyFormatter.formattedTextField(oldValue, newValue)
-                self.amount = value
-                store.send(.amountChanged(Double(value) ?? 0))
+            HStack {
+                Spacer()
+                TextField("", text: $amount)
+                    .textFieldStyle(.roundedBorder)
+                    .font(Font.system(size: 60, design: .default))
+                    .keyboardType(.decimalPad)
+                    .focused($focused)
+                    .multilineTextAlignment(.trailing)
+                    .onChange(of: amount) { oldValue, newValue in
+                        let value = CurrencyFormatter.formattedTextField(oldValue, newValue)
+                        self.amount = value
+                        store.send(.amountChanged(Double(value) ?? 0))
+                    }
+                Text(store.state.currency.representation)
+                    .font(Font.system(size: 60, design: .default))
+                    .foregroundStyle(.secondary)
             }
             Spacer()
         }

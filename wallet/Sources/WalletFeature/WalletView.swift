@@ -36,7 +36,10 @@ struct WalletView: View {
         store.state.accounts.reduce(0) { $0 + $1.balance }
     }
     private var expenses: Double {
-        store.state.expenses.reduce(0) { $0 + $1.balance }
+        store.state.transactions
+            .filter { $0.destination.type == .expenses }
+            .filter { $0.timestamp.isEqual(to: .now, toGranularity: .month) }
+            .reduce(0) { $0 + $1.amount }
     }
     
     private var accountColumns: [GridItem] = Array(repeatElement(GridItem(.flexible(minimum: Constants.minColumnWidth, maximum: Constants.maxColumnWidth)), count: Constants.elementsInRow))
