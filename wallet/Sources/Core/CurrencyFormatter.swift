@@ -36,15 +36,10 @@ final class CurrencyFormatter {
     
     static func representation(for value: Double) -> String {
         guard value != 0 else { return "" }
-        
-        let formatter = NumberFormatter()
-        formatter.minimumFractionDigits = 0
-        formatter.maximumFractionDigits = 2
-        let result = formatter.string(from: NSNumber(value: value))?.replacingOccurrences(of: ",", with: ".") ?? ""
-        return result
+        return formatter.string(from: NSNumber(value: value)) ?? ""
     }
     
-    static var formatter: Formatter = {
+    static var formatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 0
