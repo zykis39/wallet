@@ -253,11 +253,14 @@ public struct WalletFeature {
                 return .none
             case let .aboutAppPresentedChanged(presented):
                 state.aboutAppPresented = presented
-                return .none
+                return .run { _ in
+                    analytics.logEvent(.aboutScreenTransition)
+                }
             case let .expensesStatisticsPresentedChanged(presented):
                 state.expensesStatisticsPresented = presented
-                return .none
-                
+                return .run { _ in
+                    analytics.logEvent(.expensesStatisticsScreenTransition)
+                }
                 // MARK: - Transaction
             case let .transaction(.createTransaction(transaction)):
                 state.transactions.append(transaction)

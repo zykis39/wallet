@@ -12,6 +12,8 @@ public enum Event {
     case itemTapped(itemName: String)
     case itemCreated(itemName: String, currency: String)
     case transactionCreated(source: String, destination: String, amount: Double)
+    case aboutScreenTransition
+    case expensesStatisticsScreenTransition
 }
 
 public protocol AnalyticsClient {
@@ -35,6 +37,10 @@ final class FirebaseAnalyticsClient: AnalyticsClient {
             Analytics.logEvent("TransactionCreated", parameters: ["source": source,
                                                                   "destination": destination,
                                                                   "amount": amount])
+        case .aboutScreenTransition:
+            Analytics.logEvent("AboutScreenTransition", parameters: nil)
+        case .expensesStatisticsScreenTransition:
+            Analytics.logEvent("ExpensesStatisticsScreenTransition", parameters: nil)
         }
     }
 }
