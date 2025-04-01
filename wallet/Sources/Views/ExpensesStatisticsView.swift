@@ -9,29 +9,17 @@ import ComposableArchitecture
 import SwiftUI
 
 struct ExpensesStatisticsView: View {
-    enum Period: CaseIterable {
-        case day, week, month
-        var representation: String {
-            switch self {
-            case .day: "День"
-            case .week: "Неделя"
-            case .month: "Месяц"
-            }
-        }
-    }
     @State var period: Period = .month
-    let transactions: [WalletTransaction]
     var store: StoreOf<WalletFeature>
+    
     var circleItems: [CircleItemInfo] = []
     
     init(store: StoreOf<WalletFeature>) {
         self.store = store
-        let transactions = store.state.transactions
-        self.transactions = transactions
-        self.circleItems = calculateCircleItems(transactions, period: period)
+        self.circleItems = Self.calculateCircleItems(store.state.transactions, expenses: store.state.expenses, period: period)
     }
     
-    private func calculateCircleItems(_ transactions: [WalletTransaction], period: Period) -> [CircleItemInfo] {
+    private static func calculateCircleItems(_ transactions: [WalletTransaction], expenses: [WalletItem], period: Period) -> [CircleItemInfo] {
         let granularity: Calendar.Component = {
             switch period {
             case .day: .day
@@ -39,16 +27,16 @@ struct ExpensesStatisticsView: View {
             case .month: .month
             }
         }()
-        let expenses: [UUID: Double] = transactions
+        let expensesIDs: [UUID: Double] = transactions
             .filter { $0.destination.type == .expenses }
             .filter { $0.timestamp.isEqual(to: .now, toGranularity: granularity) }
             .reduce(into: [:]) { (result: inout [UUID: Double], transaction: WalletTransaction) in
                 result[transaction.destination.id, default: 0] += transaction.amount
             }
-        let overallExpenses: Double = expenses.values.reduce(0) { $0 + $1 }
+        let overallExpenses: Double = expensesIDs.values.reduce(0) { $0 + $1 }
         
-        let items = expenses.sorted { $0.value > $1.value }.enumerated().compactMap { (index, item) -> CircleItemInfo? in
-            guard let walletItem = store.state.expenses.first(where: { $0.id == item.key }) else { return nil }
+        let items = expensesIDs.sorted { $0.value > $1.value }.enumerated().compactMap { (index, item) -> CircleItemInfo? in
+            guard let walletItem = expenses.first(where: { $0.id == item.key }) else { return nil }
             return CircleItemInfo(name: walletItem.name,
                                   icon: walletItem.icon,
                                   expenses: item.value,
@@ -63,7 +51,7 @@ struct ExpensesStatisticsView: View {
     var body: some View {
         VStack {
             ProgressCircle(items: circleItems)
-                .padding(.horizontal, 56)
+                .padding(.horizontal, 64)
                 .padding(.vertical, ProgressCircle.Constants.lineWidth + 12)
                 .aspectRatio(1.0, contentMode: .fit)
             Picker("Период", selection: $period) {
@@ -96,7 +84,9 @@ struct ExpensesStatisticsView: View {
                 }
             }
             Spacer()
-        }.padding()
+        }
+        .padding()
+        .navigationTitle("Расходы")
     }
 }
 
@@ -114,66 +104,10 @@ struct CircleItemInfo: Hashable, Identifiable {
         .orange,
         .brown,
         .pink,
-        .mint
+        .mint,
+        .teal,
+        .yellow,
     ]
 }
 
-struct ProgressCircle: View {
-    struct Constants {
-        static let lineWidth: CGFloat = 48
-        static let imageSize: CGFloat = 40
-    }
-    
-    let items: [CircleItemInfo]
-    var startAngles: [CircleItemInfo: Double] = [:]
-    var middleAngles: [Double] = []
-    var imagesPoints: [CGPoint] = []
-    init(items: [CircleItemInfo]) {
-        self.items = items.sorted { $0.percent > $1.percent }
-        self.startAngles = calculateStartAngles(self.items)
-    }
-    
-    private mutating func calculateStartAngles(_ items: [CircleItemInfo]) -> [CircleItemInfo: Double] {
-        var startAngle: Double = 0
-        var angles: [CircleItemInfo: Double] = [:]
-        for item in items {
-            angles[item] = startAngle
-            self.middleAngles.append(startAngle + item.percent * 360 / 2)
-            startAngle += item.percent * 360
-        }
-        
-        return angles
-    }
 
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                Circle()
-                    .stroke(.red.opacity(0.2), lineWidth: Constants.lineWidth)
-                ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                    ZStack {
-                        Circle()
-                            .trim(from: 0, to: item.percent)
-                            .stroke(item.color, style: StrokeStyle(lineWidth: Constants.lineWidth,
-                                                                   lineCap: .butt))
-                            .rotationEffect(.degrees(startAngles[item, default: 0] - 90))
-                        let r = proxy.size.width / 2 - Constants.lineWidth / 2 + Constants.imageSize / 2
-                        let p = CGPoint.pointOnCircle(radius: r,
-                                                      angle: middleAngles[index] - 90)
-                        Circle()
-                            .stroke(.white, lineWidth: 1)
-                            .fill(.clear)
-                            .background {
-                                Image(systemName: item.icon)
-                                    .resizable()
-                                    .foregroundStyle(.white)
-                                    .padding(8)
-                            }
-                            .offset(x: p.x, y: p.y)
-                            .frame(width: Constants.imageSize, height: Constants.imageSize)
-                    }
-                }
-            }
-        }
-    }
-}

@@ -62,6 +62,17 @@ public struct WalletTransaction: Codable, Equatable, Sendable, Identifiable {
     }
 }
 
+public enum Period: CaseIterable {
+    case day, week, month
+    var representation: String {
+        switch self {
+        case .day: "День"
+        case .week: "Неделя"
+        case .month: "Месяц"
+        }
+    }
+}
+
 extension WalletItem {
     static let none: Self = .init(type: .account, name: "", icon: "", currency: .RUB, balance: 0)
     
