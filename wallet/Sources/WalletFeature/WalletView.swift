@@ -1,22 +1,6 @@
 import SwiftUI
 import ComposableArchitecture
 
-private struct DropItemKey: EnvironmentKey {
-    typealias Value = WalletItem?
-    
-    static let defaultValue: Value = nil
-}
-
-extension EnvironmentValues {
-    var dropItem: WalletItem? {
-        get { self[DropItemKey.self] }
-        set {
-            guard let item = newValue else { return }
-            self[DropItemKey.self] = item
-        }
-    }
-}
-
 struct WalletView: View {
     var store: StoreOf<WalletFeature>
     

@@ -9,7 +9,6 @@ import ComposableArchitecture
 import Foundation
 import SwiftData
 import SwiftUI
-import FirebaseAnalytics
 
 enum AppStorageKey: String {
     case accounts
@@ -66,8 +65,13 @@ public struct WalletFeature {
         case onItemDragging(CGSize, CGPoint, WalletItem)
         case onDraggingStopped
         case itemTapped(WalletItem)
+        
+        // navigation
+        case aboutButtonTapped
+        case addMoneyButtonTapped
     }
     
+    @Dependency(\.analytics) var analytics
     @Dependency(\.modelContext) var modelContext
     @Dependency(\.defaultAppStorage) var appStorage
     public var body: some Reducer<State, Action> {
@@ -83,7 +87,7 @@ public struct WalletFeature {
                 let wasLaunchedBefore = appStorage.bool(forKey: AppStorageKey.wasLaunchedBefore.rawValue)
                 
                 return .run { send in
-                    Analytics.logEvent("AppStarted", parameters: ["firstLaunch": !wasLaunchedBefore])
+                    analytics.logEvent(.appStarted(firstLaunch: !wasLaunchedBefore))
                     if !wasLaunchedBefore {
                         await send(.generateDefaultWalletItems)
                         appStorage.set(true, forKey: AppStorageKey.wasLaunchedBefore.rawValue)
@@ -163,7 +167,7 @@ public struct WalletFeature {
                 
                 guard let dragItem, let dropItem else { return .none }
                 return .run { send in
-                    Analytics.logEvent("DraggingStopped", parameters: ["source": dragItem.name, "destination": dropItem.name])
+                    analytics.logEvent(.draggingStopped(source: dragItem.name, destination: dropItem.name))
                     await send(.transaction(.onItemDropped(dragItem, dropItem)))
                 }
             case let .itemTapped(item):
@@ -174,7 +178,7 @@ public struct WalletFeature {
                 }
                 state.walletItemEdit.presented = true
                 return .run { _ in
-                    Analytics.logEvent("ItemTapped", parameters: ["item": item.name])
+                    analytics.logEvent(.itemTapped(itemName: item.name))
                 }
             case let .applyTransaction(transaction):
                 /// FIXME:
@@ -214,15 +218,18 @@ public struct WalletFeature {
                 state.walletItemEdit.item.type = itemType
                 state.walletItemEdit.presented = true
                 return .none
+            case .aboutButtonTapped:
+                return .none
+            case .addMoneyButtonTapped:
+                return .none
                 
                 // MARK: - Transaction
             case let .transaction(.createTransaction(transaction)):
                 state.transactions.append(transaction)
                 return .run { send in
-                    Analytics.logEvent("TransactionCreated",
-                                       parameters: ["source": transaction.source.name,
-                                                    "destination": transaction.destination.name,
-                                                    "amount": transaction.amount])
+                    analytics.logEvent(.transactionCreated(source: transaction.source.name,
+                                                           destination: transaction.destination.name,
+                                                           amount: transaction.amount))
                     await send(.applyTransaction(transaction))
                     await send(.saveTransaction(transaction))
                 }
@@ -266,7 +273,7 @@ public struct WalletFeature {
                     state.expenses.append(item)
                 }
                 return .run { send in
-                    Analytics.logEvent("ItemCreated", parameters: ["name": item.name])
+                    analytics.logEvent(.itemCreated(itemName: item.name, currency: item.currency.representation))
                     await send(.saveWalletItems)
                 }
             case let .walletItemEdit(.updateWalletItem(id, item)):
