@@ -20,12 +20,14 @@ struct AboutApplicationView: View {
     let plans = [
         "Localization",
         "Currency Converter",
+        "Expenses statistics",
         "Adaptive interface",
     ]
     let contacts = [
         "Author: Artem Zaitsev",
         "Telegram: @zykis",
         "WhatsApp: +7(915)369-50-22",
+        "Sources: https://github.com/zykis39/wallet",
     ]
     
     var body: some View {

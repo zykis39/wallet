@@ -38,7 +38,7 @@ public struct WalletFeature {
         
         // navigation
         var aboutAppPresented: Bool = false
-        var addMoneyPresented: Bool = false
+        var expensesStatisticsPresented: Bool = false
         
         static let initial: Self = .init(transaction: .initial,
                                          walletItemEdit: .initial,
@@ -75,7 +75,7 @@ public struct WalletFeature {
         
         // navigation
         case aboutAppPresentedChanged(Bool)
-        case addMoneyPresentedChanged(Bool)
+        case expensesStatisticsPresentedChanged(Bool)
     }
     
     @Dependency(\.analytics) var analytics
@@ -254,8 +254,8 @@ public struct WalletFeature {
             case let .aboutAppPresentedChanged(presented):
                 state.aboutAppPresented = presented
                 return .none
-            case let .addMoneyPresentedChanged(presented):
-                state.addMoneyPresented = presented
+            case let .expensesStatisticsPresentedChanged(presented):
+                state.expensesStatisticsPresented = presented
                 return .none
                 
                 // MARK: - Transaction

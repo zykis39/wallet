@@ -48,9 +48,9 @@ struct WalletView: View {
             HeaderWallet(balance: balance,
                          expenses: expenses,
                          leftSystemImageName: "info.square.fill",
-                         rightSystemImageName: "dollarsign.bank.building.fill",
+                         rightSystemImageName: "chart.bar.xaxis",
                          leftAction: { store.send(.aboutAppPresentedChanged(true)) },
-                         rightAction: {},
+                         rightAction: { store.send(.expensesStatisticsPresentedChanged(true)) },
                          imageSize: 24)
             .frame(maxHeight: 44)
             
