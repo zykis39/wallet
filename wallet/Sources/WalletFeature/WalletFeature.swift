@@ -306,7 +306,7 @@ public struct WalletFeature {
                     analytics.logEvent(.itemCreated(itemName: item.name, currency: item.currency.representation))
                     await send(.saveWalletItems)
                 }
-            case let .walletItemEdit(.updateWalletItem(id, item)):
+            case let .walletItemEdit(.updateWalletItem(item)):
                 switch item.type {
                 case .account:
                     guard let index = state.accounts.firstIndex(where: { $0.id == item.id }) else { return .none }

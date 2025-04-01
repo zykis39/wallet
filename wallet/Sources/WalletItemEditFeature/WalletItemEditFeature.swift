@@ -30,7 +30,7 @@ public struct WalletItemEditFeature {
         case balanceChanged(Double)
         case currencyChanged(Currency)
         case createWalletItem(WalletItem)
-        case updateWalletItem(UUID, WalletItem)
+        case updateWalletItem(WalletItem)
         case deleteWalletItem(UUID)
     }
     
@@ -40,7 +40,7 @@ public struct WalletItemEditFeature {
             case .confirmedTapped:
                 return .run { [editType = state.editType, item = state.item] send in
                     switch editType {
-                    case .edit: await send(.updateWalletItem(item.id, item))
+                    case .edit: await send(.updateWalletItem(item))
                     case .new: await send(.createWalletItem(item))
                     }
                     await send(.presentedChanged(false))
