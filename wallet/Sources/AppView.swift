@@ -28,7 +28,7 @@ struct AppView: View {
                     AboutApplicationView()
                 }
                 .navigationDestination(isPresented: $store.expensesStatisticsPresented.sending(\.expensesStatisticsPresentedChanged)) {
-                    ExpensesStatisticsView()
+                    ExpensesStatisticsView(store: store)
                 }
         }
     }

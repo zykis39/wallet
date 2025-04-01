@@ -26,3 +26,19 @@ extension Color {
         }
     }
 }
+
+extension Collection {
+    subscript(safe index: Index) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
+}
+
+extension CGPoint {
+    static func pointOnCircle(radius: CGFloat, angle: CGFloat) -> CGPoint {
+        let radians = angle * Double.pi / 180
+        let x = radius * cos(radians)
+        let y = radius * sin(radians)
+        
+        return CGPoint(x: x, y: y)
+    }
+}
