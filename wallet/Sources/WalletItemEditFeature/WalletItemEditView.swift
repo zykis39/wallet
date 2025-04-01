@@ -88,12 +88,11 @@ struct WalletItemEditView: View {
                             let to = isItemSource ? transaction.destination.name : transaction.source.name
                             
                             HStack {
-                                Text(transaction.timestamp,
-                                     format: .dateTime.day().month()
-                                    .locale(Locale(identifier: "ru_RU")))
+                                Text(transaction.timestamp.formatted(date: .numeric, time: .omitted))
                                 .foregroundStyle(.black)
+                                .layoutPriority(1)
                                 Spacer()
-                                Text((isIncome ? "+" : "-") + " \(amount) \(currency) (\(to))")
+                                Text((isIncome ? "+ " : "- ") + "\(CurrencyFormatter.formatter.string(from: NSNumber(value: amount)) ?? "")" + " \(currency) (\(to))")
                                     .foregroundStyle(isIncome ? .green : .red)
                             }
                         }
