@@ -47,9 +47,9 @@ struct WalletView: View {
         VStack(alignment: .leading) {
             HeaderWallet(balance: balance,
                          expenses: expenses,
-                         leftSystemImageName: "dollarsign.bank.building.fill",
-                         rightSystemImageName: "gearshape.fill",
-                         leftAction: {},
+                         leftSystemImageName: "info.square.fill",
+                         rightSystemImageName: "dollarsign.bank.building.fill",
+                         leftAction: { store.send(.aboutAppPresentedChanged(true)) },
                          rightAction: {},
                          imageSize: 24)
             .frame(maxHeight: 44)

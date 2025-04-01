@@ -36,6 +36,10 @@ public struct WalletFeature {
         var dragItem: WalletItem?
         var dropItem: WalletItem?
         
+        // navigation
+        var aboutAppPresented: Bool = false
+        var addMoneyPresented: Bool = false
+        
         static let initial: Self = .init(transaction: .initial,
                                          walletItemEdit: .initial,
                                          accounts: [],
@@ -58,7 +62,6 @@ public struct WalletFeature {
         case applyTransaction(WalletTransaction)
         case reverseTransaction(WalletTransaction)
         case saveTransaction(WalletTransaction)
-        
         case accountsUpdated([WalletItem])
         case expensesUpdated([WalletItem])
         case transactionsUpdated([WalletTransaction])
@@ -71,8 +74,8 @@ public struct WalletFeature {
         case itemTapped(WalletItem)
         
         // navigation
-        case aboutButtonTapped
-        case addMoneyButtonTapped
+        case aboutAppPresentedChanged(Bool)
+        case addMoneyPresentedChanged(Bool)
     }
     
     @Dependency(\.analytics) var analytics
@@ -248,9 +251,11 @@ public struct WalletFeature {
                 state.walletItemEdit.item.type = itemType
                 state.walletItemEdit.presented = true
                 return .none
-            case .aboutButtonTapped:
+            case let .aboutAppPresentedChanged(presented):
+                state.aboutAppPresented = presented
                 return .none
-            case .addMoneyButtonTapped:
+            case let .addMoneyPresentedChanged(presented):
+                state.addMoneyPresented = presented
                 return .none
                 
                 // MARK: - Transaction

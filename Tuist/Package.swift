@@ -9,7 +9,6 @@
         // Default is .staticFramework
         // productTypes: ["Alamofire": .framework,] 
         productTypes: [
-            "PinLayout": .framework,
             "ComposableArchitecture": .framework,
         ]
     )
@@ -18,7 +17,6 @@
 let package = Package(
     name: "wallet",
     dependencies: [
-        .package(url: "https://github.com/layoutBox/PinLayout", exact: "1.10.5"),
         .package(url: "https://github.com/pointfreeco/swift-composable-architecture", exact: "1.18.0"),
         .package(url: "https://github.com/firebase/firebase-ios-sdk", exact: "11.10.0"),
         // Add your own dependencies here:

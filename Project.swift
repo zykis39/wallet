@@ -12,7 +12,6 @@ let project = Project(
             sources: ["wallet/Sources/**"],
             resources: ["wallet/Resources/**"],
             dependencies: [
-                .external(name: "PinLayout"),
                 .external(name: "ComposableArchitecture"),
                 .external(name: "FirebaseAnalytics"),
             ],
