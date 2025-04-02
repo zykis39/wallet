@@ -9,43 +9,12 @@ import ComposableArchitecture
 import SwiftUI
 
 struct ExpensesStatisticsView: View {
+    let store: StoreOf<WalletFeature>
+    @State var circleItems: [CircleItemInfo] = []
     @State var period: Period = .month
-    var store: StoreOf<WalletFeature>
-    
-    var circleItems: [CircleItemInfo] = []
     
     init(store: StoreOf<WalletFeature>) {
         self.store = store
-        self.circleItems = Self.calculateCircleItems(store.state.transactions, expenses: store.state.expenses, period: period)
-    }
-    
-    private static func calculateCircleItems(_ transactions: [WalletTransaction], expenses: [WalletItem], period: Period) -> [CircleItemInfo] {
-        let granularity: Calendar.Component = {
-            switch period {
-            case .day: .day
-            case .week: .weekOfMonth
-            case .month: .month
-            }
-        }()
-        let expensesIDs: [UUID: Double] = transactions
-            .filter { $0.destination.type == .expenses }
-            .filter { $0.timestamp.isEqual(to: .now, toGranularity: granularity) }
-            .reduce(into: [:]) { (result: inout [UUID: Double], transaction: WalletTransaction) in
-                result[transaction.destination.id, default: 0] += transaction.amount
-            }
-        let overallExpenses: Double = expensesIDs.values.reduce(0) { $0 + $1 }
-        
-        let items = expensesIDs.sorted { $0.value > $1.value }.enumerated().compactMap { (index, item) -> CircleItemInfo? in
-            guard let walletItem = expenses.first(where: { $0.id == item.key }) else { return nil }
-            return CircleItemInfo(name: walletItem.name,
-                                  icon: walletItem.icon,
-                                  expenses: item.value,
-                                  percent: item.value / overallExpenses,
-                                  currency: walletItem.currency,
-                                  color: CircleItemInfo.preferredColors[safe: index] ?? .yellow)
-        }
-        
-        return items
     }
     
     var body: some View {
@@ -87,27 +56,37 @@ struct ExpensesStatisticsView: View {
         }
         .padding()
         .navigationTitle("Расходы")
+        .onChange(of: period, initial: true) { _, newValue in
+            self.circleItems = calculateCircleItems(store.state.transactions, expenses: store.state.expenses, period: newValue)
+        }
+    }
+    
+    private func calculateCircleItems(_ transactions: [WalletTransaction], expenses: [WalletItem], period: Period) -> [CircleItemInfo] {
+        let granularity: Calendar.Component = {
+            switch period {
+            case .day: .day
+            case .week: .weekOfMonth
+            case .month: .month
+            }
+        }()
+        let expensesIDs: [UUID: Double] = transactions
+            .filter { $0.destination.type == .expenses }
+            .filter { $0.timestamp.isEqual(to: .now, toGranularity: granularity) }
+            .reduce(into: [:]) { (result: inout [UUID: Double], transaction: WalletTransaction) in
+                result[transaction.destination.id, default: 0] += transaction.amount
+            }
+        let overallExpenses: Double = expensesIDs.values.reduce(0) { $0 + $1 }
+        
+        let items = expensesIDs.sorted { $0.value > $1.value }.enumerated().compactMap { (index, item) -> CircleItemInfo? in
+            guard let walletItem = expenses.first(where: { $0.id == item.key }) else { return nil }
+            return CircleItemInfo(name: walletItem.name,
+                                  icon: walletItem.icon,
+                                  expenses: item.value,
+                                  percent: item.value / overallExpenses,
+                                  currency: walletItem.currency,
+                                  color: CircleItemInfo.preferredColors[safe: index] ?? .yellow)
+        }
+        
+        return items
     }
 }
-
-struct CircleItemInfo: Hashable, Identifiable {
-    var id = UUID()
-    let name: String
-    let icon: String
-    let expenses: Double
-    let percent: Double
-    let currency: Currency
-    let color: Color
-    
-    static var preferredColors: [Color] = [
-        .cyan,
-        .orange,
-        .brown,
-        .pink,
-        .mint,
-        .teal,
-        .yellow,
-    ]
-}
-
-

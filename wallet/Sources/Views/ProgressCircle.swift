@@ -67,9 +67,30 @@ struct ProgressCircle: View {
                             .offset(x: offset.x, y: offset.y)
                             .frame(width: Constants.imageSize,
                                    height: Constants.imageSize)
+                            .opacity(item.percent > 0.07 ? 1 : 0)
                     }
                 }
             }
         }
     }
+}
+
+struct CircleItemInfo: Hashable, Identifiable {
+    var id = UUID()
+    let name: String
+    let icon: String
+    let expenses: Double
+    let percent: Double
+    let currency: Currency
+    let color: Color
+    
+    static var preferredColors: [Color] = [
+        .cyan,
+        .orange,
+        .brown,
+        .pink,
+        .mint,
+        .teal,
+        .yellow,
+    ]
 }
