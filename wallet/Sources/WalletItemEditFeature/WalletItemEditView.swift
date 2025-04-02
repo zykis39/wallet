@@ -42,13 +42,16 @@ struct WalletItemEditView: View {
                 Circle()
                     .strokeBorder(Color.white, lineWidth: 0.5)
                     .foregroundStyle(Color.walletItemColor(for: store.item.type))
-                Image(systemName: "creditcard.fill")
+                Image(systemName: store.item.icon)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .foregroundStyle(.white)
                     .padding(12)
             }
             .frame(width: 64, height: 64)
+            .onTapGesture {
+                store.send(.iconSelectionPresentedChanged(true))
+            }
             Form {
                 TextField(text: $store.item.name.sending(\.nameChanged)) {
                     Text("Введите название")
@@ -118,5 +121,6 @@ struct WalletItemEditView: View {
         .tint(.white)
         .background(Color.walletItemColor(for: store.item.type))
         .ignoresSafeArea(.keyboard)
+        .toolbarVisibility(.hidden, for: .navigationBar)
     }
 }

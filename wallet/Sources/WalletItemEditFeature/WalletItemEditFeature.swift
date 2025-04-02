@@ -18,6 +18,7 @@ public struct WalletItemEditFeature {
         var presented: Bool
         var item: WalletItem
         var transactions: [WalletTransaction]
+        var iconSelectionPresented: Bool = false
         
         static let initial: Self = .init(editType: .new, presented: false, item: .none, transactions: [])
     }
@@ -32,6 +33,8 @@ public struct WalletItemEditFeature {
         case createWalletItem(WalletItem)
         case updateWalletItem(WalletItem)
         case deleteWalletItem(UUID)
+        case iconSelectionPresentedChanged(Bool)
+        case iconSelected(String)
     }
     
     public var body: some Reducer<State, Action> {
@@ -61,7 +64,14 @@ public struct WalletItemEditFeature {
             case let .currencyChanged(currency):
                 state.item.currency = currency
                 return .none
-                
+            case let .iconSelectionPresentedChanged(presented):
+                state.iconSelectionPresented = presented
+                return .none
+            case let .iconSelected(icon):
+                state.item.icon = icon
+                return .run { send in
+                    await send(.iconSelectionPresentedChanged(false))
+                }
             case .deleteWalletItem:
                 return .none
             case .createWalletItem:
