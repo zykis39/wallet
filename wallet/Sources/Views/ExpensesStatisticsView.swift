@@ -12,6 +12,9 @@ struct ExpensesStatisticsView: View {
     let store: StoreOf<WalletFeature>
     @State var circleItems: [CircleItemInfo] = []
     @State var period: Period = .month
+    var hasTransactions: Bool {
+        circleItems.count > 0 ? true : false
+    }
     
     init(store: StoreOf<WalletFeature>) {
         self.store = store
@@ -29,30 +32,38 @@ struct ExpensesStatisticsView: View {
                 }
             }
             .pickerStyle(.segmented)
-            List {
-                Grid {
-                    GridRow {
-                        Text("Категория")
-                        Text("%")
-                        Text("Всего")
-                    }
-                    Divider()
-                    ForEach(circleItems) { item in
+            if hasTransactions {
+                List {
+                    Grid {
                         GridRow {
-                            Text(item.name)
-                            Text((CurrencyFormatter.formatter.string(from: .init(value: item.percent * 100)) ?? "") + "%")
-                            Text((CurrencyFormatter.formatter.string(from: .init(value: item.expenses)) ?? "") + " " + item.currency.representation)
+                            Text("Категория")
+                            Text("%")
+                            Text("Всего")
                         }
-                        .background(item.color)
-                        .foregroundStyle(.white)
-                        
-                        if item != circleItems.last {
-                            Divider()
+                        Divider()
+                        ForEach(circleItems) { item in
+                            GridRow {
+                                Text(item.name)
+                                Text((CurrencyFormatter.formatter.string(from: .init(value: item.percent * 100)) ?? "") + "%")
+                                Text((CurrencyFormatter.formatter.string(from: .init(value: item.expenses)) ?? "") + " " + item.currency.representation)
+                            }
+                            .background(item.color)
+                            .foregroundStyle(.white)
+                            
+                            if item != circleItems.last {
+                                Divider()
+                            }
                         }
                     }
                 }
+                Spacer()
+            } else {
+                Spacer()
+                Text("Здесь будет статистика ваших расходов")
+                    .font(.system(size: 32))
+                    .multilineTextAlignment(.center)
+                Spacer()
             }
-            Spacer()
         }
         .padding()
         .navigationTitle("Расходы")
