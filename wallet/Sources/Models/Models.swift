@@ -172,3 +172,46 @@ final class WalletTransactionModel: Sendable {
               destination: self.destination)
     }
 }
+
+extension WalletItem {
+    static let accountsSystemIconNames: [String] = [
+        "creditcard",
+        "wallet.bifold",
+        "banknote",
+        "rublesign.bank.building.fill",
+        "eurosign.bank.building.fill",
+        "dollarsign.bank.building.fill",
+        "dollarsign",
+    ]
+    static let expensesSystemIconNames: [String] = [
+        // home
+        "house",
+        "house.fill",
+        
+        // food
+        "carrot",
+        "fork.knife",
+        
+        // transport
+        "car",
+        "bus.fill",
+        "airplane",
+        
+        // healthcare
+        "figure.run",
+        "cross",
+        
+        // services
+        "network",
+        "cellularbars",
+        
+        // shopping
+        "handbag",
+        
+        // entertainment
+        "party.popper",
+        "popcorn",
+        "movieclapper",
+        "birthday.cake",
+    ]
+}

@@ -57,7 +57,8 @@ public struct WalletFeature {
         case readWalletItems
         case readTransactions
         case saveWalletItems
-        case saveTransactions
+        case deleteTransaction([WalletTransaction])
+        case deleteWalletItem(UUID)
         case generateDefaultWalletItems
         case applyTransaction(WalletTransaction)
         case reverseTransaction(WalletTransaction)
@@ -115,7 +116,7 @@ public struct WalletFeature {
             case .readWalletItems:
                 /// FIXME: Predicates cause runtime error, when dealing with Enums
                 /// So, filtering happens outside SwiftData, in-memory
-                let itemDescriptor = FetchDescriptor<WalletItemModel>(predicate: #Predicate<WalletItemModel> { _ in true }, sortBy: [ .init(\.timestamp, order: .forward) ])
+                let itemDescriptor = FetchDescriptor<WalletItemModel>(predicate: #Predicate<WalletItemModel> { _ in true }, sortBy: [ .init(\.timestamp, order: .reverse) ])
                 
                 return .run { send in
                     do {
@@ -234,22 +235,40 @@ public struct WalletFeature {
                         print("error, applying transaction to DB: \(error)")
                     }
                 }
-            case .saveTransactions:
-                return .run { [transactions = state.transactions] _ in
-                    
+            case let .deleteTransaction(transactions):
+                return .run { _ in
                     do {
-                        for t in transactions {
-                            try database.context().insert(WalletTransactionModel(model: t))
-                        }
+                        let transactionIds = transactions.map { $0.id }
+                        let predicate = #Predicate<WalletTransactionModel> { transactionIds.contains($0.id) }
+                        try database.context().delete(model: WalletTransactionModel.self, where: predicate)
                         try database.context().save()
                     } catch {
-                        print("error, applying transaction to DB: \(error)")
+                        print("error, removing transactions from DB: \(error)")
+                    }
+                }
+            case let .deleteWalletItem(id):
+                return .run { _ in
+                    do {
+                        let predicate = #Predicate<WalletItemModel> { $0.id == id }
+                        try database.context().delete(model: WalletItemModel.self, where: predicate)
+                        try database.context().save()
+                    } catch {
+                        print("error, removing wallet item from DB: \(error)")
                     }
                 }
             case let .createNewItemTapped(itemType):
+                let randomIcon: String = {
+                    switch itemType {
+                    case .account: 
+                        WalletItem.accountsSystemIconNames.randomElement() ?? ""
+                    case .expenses:
+                        WalletItem.expensesSystemIconNames.randomElement() ?? ""
+                    }
+                }()
+                state.walletItemEdit = .initial
                 state.walletItemEdit.editType = .new
-                state.walletItemEdit.item = .none
                 state.walletItemEdit.item.type = itemType
+                state.walletItemEdit.item.icon = randomIcon
                 state.walletItemEdit.presented = true
                 return .none
             case let .aboutAppPresentedChanged(presented):
@@ -299,8 +318,9 @@ public struct WalletFeature {
                         await send(.reverseTransaction(t))
                     }
                     // clear DB
-                    await send(.saveTransactions)
-                    await send(.saveWalletItems)
+                    await send(.deleteTransaction(transactionsToRemove))
+                    await send(.deleteWalletItem(id))
+                    await send(.saveWalletItems) // need to update balance after reverse
                     // close sheet
                     await send(.walletItemEdit(.presentedChanged(false)))
                 }

@@ -26,7 +26,7 @@ struct WalletView: View {
             .reduce(0) { $0 + $1.amount }
     }
     
-    private var accountColumns: [GridItem] = Array(repeatElement(GridItem(.flexible(minimum: Constants.minColumnWidth, maximum: Constants.maxColumnWidth)), count: Constants.elementsInRow))
+    private var accountColumns: [GridItem] = Array(repeatElement(GridItem(.flexible(minimum: Constants.minColumnWidth, maximum: .greatestFiniteMagnitude)), count: Constants.elementsInRow))
     
     private var accountPages: [Int: [WalletItem]] = [:]
     private mutating func calculateAccountPages() {

@@ -21,10 +21,10 @@ struct AppView: View {
                 .fullScreenCover(isPresented: $store.transaction.presented.sending(\.transaction.presentedChanged)) {
                     TransactionView(store: store.scope(state: \.transaction, action: \.transaction))
                 }
-                .navigationDestination(isPresented: $store.walletItemEdit.presented.sending(\.walletItemEdit.presentedChanged)) {
+                .fullScreenCover(isPresented: $store.walletItemEdit.presented.sending(\.walletItemEdit.presentedChanged)) {
                     let scoped = store.scope(state: \.walletItemEdit, action: \.walletItemEdit)
                     WalletItemEditView(store: scoped)
-                    .navigationDestination(isPresented: $store.walletItemEdit.iconSelectionPresented.sending(\.walletItemEdit.iconSelectionPresentedChanged)) {
+                    .sheet(isPresented: $store.walletItemEdit.iconSelectionPresented.sending(\.walletItemEdit.iconSelectionPresentedChanged)) {
                         IconSelectionView(store: scoped)
                     }
                 }

@@ -8,47 +8,6 @@ import ComposableArchitecture
 import SwiftUI
 
 struct IconSelectionView: View {
-    let accountsSystemIconNames: [String] = [
-        "creditcard", 
-        "wallet.bifold",
-        "banknote",
-        "rublesign.bank.building.fill",
-        "eurosign.bank.building.fill",
-        "dollarsign.bank.building.fill",
-        "dollarsign",
-    ]
-    let expensesSystemIconNames: [String] = [
-        // home
-        "house",
-        "house.fill",
-        
-        // food
-        "carrot",
-        "fork.knife",
-        
-        // transport
-        "car",
-        "bus.fill",
-        "airplane",
-        
-        // healthcare
-        "figure.run",
-        "cross",
-        
-        // services
-        "network",
-        "cellularbars",
-        
-        // shopping
-        "handbag",
-        
-        // entertainment
-        "party.popper",
-        "popcorn",
-        "movieclapper",
-        "birthday.cake",
-    ]
-    
     var store: StoreOf<WalletItemEditFeature>
     init(store: StoreOf<WalletItemEditFeature>) {
         self.store = store
@@ -57,9 +16,9 @@ struct IconSelectionView: View {
     var icons: [String] {
         switch store.item.type {
         case .account:
-            accountsSystemIconNames
+            WalletItem.accountsSystemIconNames
         case .expenses:
-            expensesSystemIconNames
+            WalletItem.expensesSystemIconNames
         }
     }
     
