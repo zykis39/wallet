@@ -79,7 +79,7 @@ public struct WalletFeature {
     }
     
     @Dependency(\.analytics) var analytics
-    @Dependency(\.modelContext) var modelContext
+    @Dependency(\.database) var database
     @Dependency(\.defaultAppStorage) var appStorage
     public var body: some Reducer<State, Action> {
         Scope(state: \.transaction, action: \.transaction) {
@@ -119,8 +119,8 @@ public struct WalletFeature {
                 
                 return .run { send in
                     do {
-                        let accounts = try modelContext.fetch<WalletItemModel>(itemDescriptor).map { $0.model }.filter { $0.type == .account }
-                        let expenses = try modelContext.fetch<WalletItemModel>(itemDescriptor).map { $0.model }.filter { $0.type == .expenses }
+                        let accounts = try await database.context().fetch<WalletItemModel>(itemDescriptor).map { $0.model }.filter { $0.type == .account }
+                        let expenses = try await database.context().fetch<WalletItemModel>(itemDescriptor).map { $0.model }.filter { $0.type == .expenses }
                         await send(.accountsUpdated(accounts))
                         await send(.expensesUpdated(expenses))
                     } catch {
@@ -131,10 +131,10 @@ public struct WalletFeature {
                 let models = [state.accounts, state.expenses].flatMap { $0 }.map { WalletItemModel(model: $0) }
                 return .run { _ in
                     for m in models {
-                        modelContext.insert(m)
+                        try await database.context().insert(m)
                     }
                     do {
-                        try modelContext.save()
+                        try await database.context().save()
                     } catch {
                         print("error, applying transaction to DB: \(error)")
                     }
@@ -146,7 +146,7 @@ public struct WalletFeature {
                 
                 return .run { send in
                     do {
-                        let transactions = try modelContext.fetch<WalletTransactionModel>(transactionsDescriptor).map { $0.model }
+                        let transactions = try await database.context().fetch<WalletTransactionModel>(transactionsDescriptor).map { $0.model }
                         await send(.transactionsUpdated(transactions))
                     } catch {
                         print("Transaction decoding error: \(error.localizedDescription)")
@@ -227,20 +227,21 @@ public struct WalletFeature {
                 return .none
             case let .saveTransaction(transaction):
                 return .run { _ in
-                    modelContext.insert(WalletTransactionModel(model: transaction))
                     do {
-                        try modelContext.save()
+                        try await database.context().insert(WalletTransactionModel(model: transaction))
+                        try await database.context().save()
                     } catch {
                         print("error, applying transaction to DB: \(error)")
                     }
                 }
             case .saveTransactions:
                 return .run { [transactions = state.transactions] _ in
-                    for t in transactions {
-                        modelContext.insert(WalletTransactionModel(model: t))
-                    }
+                    
                     do {
-                        try modelContext.save()
+                        for t in transactions {
+                            try await database.context().insert(WalletTransactionModel(model: t))
+                        }
+                        try await database.context().save()
                     } catch {
                         print("error, applying transaction to DB: \(error)")
                     }

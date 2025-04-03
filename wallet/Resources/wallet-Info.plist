@@ -12,11 +12,10 @@
 	<string>6.0</string>
 	<key>CFBundleLocalizations</key>
 	<array>
-		<string>en</string>
 		<string>Russian</string>
 	</array>
 	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
+	<string>DollarKeeper</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -31,6 +30,11 @@
 		<false/>
 		<key>UISceneConfigurations</key>
 		<dict/>
+	</dict>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIImageName</key>
+		<string>Launch Screen</string>
 	</dict>
 	<key>UILaunchStoryboardName</key>
 	<string>Launch Screen.storyboard</string>

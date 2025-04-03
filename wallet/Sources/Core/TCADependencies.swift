@@ -11,18 +11,27 @@ import FirebaseAnalytics
 
 // MARK: - SwiftData
 extension DependencyValues {
-    public var modelContext: ModelContext {
-        get { self[ModelContextKey.self].value }
-        set { self[ModelContextKey.self].value = newValue }
-    }
-    
-    static let shared: ModelContainer = try! ModelContainer(for: WalletItemModel.self, WalletTransactionModel.self)
-    private enum ModelContextKey: DependencyKey {
-        static var liveValue: UncheckedSendable<ModelContext> {
-            return UncheckedSendable(ModelContext(shared))
-        }
+    var database: Database {
+        get { self[Database.self] }
+        set { self[Database.self] = newValue }
     }
 }
+
+struct Database {
+    static let container = try! ModelContainer(for: WalletItemModel.self, WalletTransactionModel.self)
+    static let appContext: ModelContext = {
+        let context = ModelContext(Database.container)
+        return context
+    }()
+    
+    @MainActor
+    var context: () throws -> ModelContext
+}
+
+extension Database: DependencyKey {
+    static let liveValue = Self(context: { appContext })
+}
+
 
 // MARK: - Analytics
 extension DependencyValues {
