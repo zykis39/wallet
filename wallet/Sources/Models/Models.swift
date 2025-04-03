@@ -126,7 +126,8 @@ final class WalletItemModel: Sendable {
     }
     
     var valueType: WalletItem {
-        return .init(type: self.type,
+        return .init(id: self.id,
+                     type: self.type,
                      name: self.name,
                      icon: self.icon,
                      currency: self.currency,
@@ -163,7 +164,8 @@ final class WalletTransactionModel: Sendable {
     }
     
     var valueType: WalletTransaction {
-        .init(timestamp: self.timestamp,
+        .init(id: self.id,
+              timestamp: self.timestamp,
               currency: self.currency,
               amount: self.amount,
               source: self.source,

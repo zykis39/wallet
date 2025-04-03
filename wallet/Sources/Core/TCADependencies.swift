@@ -22,7 +22,12 @@ final class SwiftDataContainerProvider {
     
     @MainActor
     var container: ModelContainer {
-        try! ModelContainer(for: WalletItemModel.self, WalletTransactionModel.self)
+        do {
+            let configuration = ModelConfiguration(url: URL.documentsDirectory.appending(path: "database.sqlite"))
+            return try ModelContainer(for: WalletItemModel.self, WalletTransactionModel.self, configurations: configuration)
+        } catch {
+            fatalError(error.localizedDescription)
+        }
     }
 }
 
