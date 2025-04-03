@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import ComposableArchitecture
 
 // MARK: - Models
 
@@ -95,23 +96,77 @@ extension WalletItem {
 // MARK: - SwiftData Models
 
 @Model
-class WalletItemModel {
+final class WalletItemModel: Sendable {
     @Attribute(.unique) var id: UUID
-    var model: WalletItem
+    var timestamp: Date
+    var type: WalletItem.WalletItemType
+    var name: String
+    var icon: String
+    var currency: Currency
+    var balance: Double
     
-    init(model: WalletItem) {
-        self.id = model.id
-        self.model = model
+    init(id: UUID, timestamp: Date, type: WalletItem.WalletItemType, name: String, icon: String, currency: Currency, balance: Double) {
+        self.id = id
+        self.timestamp = timestamp
+        self.type = type
+        self.name = name
+        self.icon = icon
+        self.currency = currency
+        self.balance = balance
+    }
+    
+    convenience init(model: WalletItem) {
+        self.init(id: model.id,
+                  timestamp: model.timestamp,
+                  type: model.type,
+                  name: model.name,
+                  icon: model.icon,
+                  currency: model.currency,
+                  balance: model.balance)
+    }
+    
+    var valueType: WalletItem {
+        return .init(type: self.type,
+                     name: self.name,
+                     icon: self.icon,
+                     currency: self.currency,
+                     balance: self.balance)
     }
 }
 
 @Model
-class WalletTransactionModel {
+final class WalletTransactionModel: Sendable {
     @Attribute(.unique) var id: UUID
-    var model: WalletTransaction
+    var timestamp: Date
+    var currency: Currency
+    var amount: Double
     
-    init(model: WalletTransaction) {
-        self.id = model.id
-        self.model = model
+    var source: WalletItem
+    var destination: WalletItem
+    
+    init(id: UUID, timestamp: Date, currency: Currency, amount: Double, source: WalletItem, destination: WalletItem) {
+        self.id = id
+        self.timestamp = timestamp
+        self.currency = currency
+        self.amount = amount
+        self.source = source
+        self.destination = destination
+    }
+    
+    convenience init(model: WalletTransaction) {
+        self.init(id: model.id,
+                  timestamp: model.timestamp,
+                  currency: model.currency,
+                  amount: model.amount,
+                  source: model.source,
+                  destination: model.destination)
+    }
+    
+    var valueType: WalletTransaction {
+        .init(timestamp: self.timestamp,
+              currency: self.currency,
+              amount: self.amount,
+              source: self.source,
+              destination: self.destination)
     }
 }

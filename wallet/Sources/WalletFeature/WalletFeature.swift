@@ -115,12 +115,12 @@ public struct WalletFeature {
             case .readWalletItems:
                 /// FIXME: Predicates cause runtime error, when dealing with Enums
                 /// So, filtering happens outside SwiftData, in-memory
-                let itemDescriptor = FetchDescriptor<WalletItemModel>(predicate: #Predicate<WalletItemModel> { _ in true }, sortBy: [ .init(\.model.timestamp, order: .forward) ])
+                let itemDescriptor = FetchDescriptor<WalletItemModel>(predicate: #Predicate<WalletItemModel> { _ in true }, sortBy: [ .init(\.timestamp, order: .forward) ])
                 
                 return .run { send in
                     do {
-                        let accounts = try await database.context().fetch<WalletItemModel>(itemDescriptor).map { $0.model }.filter { $0.type == .account }
-                        let expenses = try await database.context().fetch<WalletItemModel>(itemDescriptor).map { $0.model }.filter { $0.type == .expenses }
+                        let accounts = try database.context().fetch<WalletItemModel>(itemDescriptor).filter { $0.type == .account }.map { $0.valueType }
+                        let expenses = try database.context().fetch<WalletItemModel>(itemDescriptor).filter { $0.type == .expenses }.map { $0.valueType }
                         await send(.accountsUpdated(accounts))
                         await send(.expensesUpdated(expenses))
                     } catch {
@@ -131,10 +131,10 @@ public struct WalletFeature {
                 let models = [state.accounts, state.expenses].flatMap { $0 }.map { WalletItemModel(model: $0) }
                 return .run { _ in
                     for m in models {
-                        try await database.context().insert(m)
+                        try database.context().insert(m)
                     }
                     do {
-                        try await database.context().save()
+                        try database.context().save()
                     } catch {
                         print("error, applying transaction to DB: \(error)")
                     }
@@ -146,7 +146,7 @@ public struct WalletFeature {
                 
                 return .run { send in
                     do {
-                        let transactions = try await database.context().fetch<WalletTransactionModel>(transactionsDescriptor).map { $0.model }
+                        let transactions = try database.context().fetch<WalletTransactionModel>(transactionsDescriptor).map { $0.valueType }
                         await send(.transactionsUpdated(transactions))
                     } catch {
                         print("Transaction decoding error: \(error.localizedDescription)")
@@ -228,8 +228,8 @@ public struct WalletFeature {
             case let .saveTransaction(transaction):
                 return .run { _ in
                     do {
-                        try await database.context().insert(WalletTransactionModel(model: transaction))
-                        try await database.context().save()
+                        try database.context().insert(WalletTransactionModel(model: transaction))
+                        try database.context().save()
                     } catch {
                         print("error, applying transaction to DB: \(error)")
                     }
@@ -239,9 +239,9 @@ public struct WalletFeature {
                     
                     do {
                         for t in transactions {
-                            try await database.context().insert(WalletTransactionModel(model: t))
+                            try database.context().insert(WalletTransactionModel(model: t))
                         }
-                        try await database.context().save()
+                        try database.context().save()
                     } catch {
                         print("error, applying transaction to DB: \(error)")
                     }

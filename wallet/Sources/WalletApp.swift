@@ -20,6 +20,7 @@ struct WalletApp: App {
                 WalletFeature()
                     ._printChanges()
             })
+            .modelContainer(SwiftDataContainerProvider.shared.container)
             .preferredColorScheme(.light)
         }
     }

@@ -17,20 +17,23 @@ extension DependencyValues {
     }
 }
 
-struct Database {
-    @MainActor
-    static var container: ModelContainer {
-        try! ModelContainer(for: WalletItemModel.self, WalletTransactionModel.self)
-    }
-    @MainActor
-    static let appContext: ModelContext = {
-        let context = ModelContext(Self.container)
-        return context
-    }()
+final class SwiftDataContainerProvider {
+    static let shared: SwiftDataContainerProvider = .init()
     
     @MainActor
+    var container: ModelContainer {
+        try! ModelContainer(for: WalletItemModel.self, WalletTransactionModel.self)
+    }
+}
+
+struct Database {
     var context: () throws -> ModelContext
 }
+@MainActor
+let appContext: ModelContext = {
+    let context = ModelContext(SwiftDataContainerProvider.shared.container)
+    return context
+}()
 
 extension Database: DependencyKey {
     @MainActor
