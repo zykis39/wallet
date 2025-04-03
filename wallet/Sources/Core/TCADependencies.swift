@@ -18,9 +18,13 @@ extension DependencyValues {
 }
 
 struct Database {
-    static let container = try! ModelContainer(for: WalletItemModel.self, WalletTransactionModel.self)
+    @MainActor
+    static var container: ModelContainer {
+        try! ModelContainer(for: WalletItemModel.self, WalletTransactionModel.self)
+    }
+    @MainActor
     static let appContext: ModelContext = {
-        let context = ModelContext(Database.container)
+        let context = ModelContext(Self.container)
         return context
     }()
     
@@ -29,6 +33,7 @@ struct Database {
 }
 
 extension Database: DependencyKey {
+    @MainActor
     static let liveValue = Self(context: { appContext })
 }
 
