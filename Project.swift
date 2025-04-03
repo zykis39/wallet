@@ -11,12 +11,25 @@ let project = Project(
             infoPlist: .file(path: "wallet/Resources/wallet-Info.plist"),
             sources: ["wallet/Sources/**"],
             resources: ["wallet/Resources/**"],
+            scripts: [
+                .post(script: "/Users/artemzaitsev/projects/wallet/Tuist/.build/checkouts/firebase-ios-sdk/Crashlytics/run",
+                      name: "crashlytics",
+                      inputPaths: [
+                        "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
+                        "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}",
+                        "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist",
+                        "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
+                        "$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)",
+                      ])
+            ],
             dependencies: [
                 .external(name: "ComposableArchitecture"),
                 .external(name: "FirebaseAnalytics"),
+                .external(name: "FirebaseCrashlytics") ,
             ],
             settings: .settings(base: [
-                "OTHER_LDFLAGS": ["-ObjC"]
+                "OTHER_LDFLAGS": ["-ObjC"],
+                "DEBUG_INFORMATION_FORMAT": "dwarf-with-dsym",
             ]),
             launchArguments: [.launchArgument(name: "-FIRDebugEnabled", isEnabled: true)]
         ),
