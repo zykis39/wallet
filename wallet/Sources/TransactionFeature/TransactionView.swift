@@ -17,17 +17,21 @@ struct TransactionView: View {
     
     @FocusState var focused: Bool
     @State var amount: String = ""
+    let generator = UINotificationFeedbackGenerator()
     
     var body: some View {
         VStack(alignment: .trailing) {
             HeaderCancelConfirm(leftSystemImageName: "xmark.circle.fill",
-                   rightSystemImageName: "checkmark.circle.fill",
-                   leftAction: { [store] in store.send(.cancelTapped) },
-                   rightAction: { [store] in store.send(.confirmTapped) },
-                   imageSize: 32,
-                   middleSystemImageName: "arrow.right",
-                   leftText: store.state.source.name,
-                   rightText: store.state.destination.name)
+                                rightSystemImageName: "checkmark.circle.fill",
+                                leftAction: { [store] in store.send(.cancelTapped) },
+                                rightAction: {
+                [store, generator] in store.send(.confirmTapped)
+                generator.notificationOccurred(.success)
+            },
+                                imageSize: 32,
+                                middleSystemImageName: "arrow.right",
+                                leftText: store.state.source.name,
+                                rightText: store.state.destination.name)
             Divider()
             
             HStack {

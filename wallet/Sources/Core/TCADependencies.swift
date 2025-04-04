@@ -20,7 +20,6 @@ extension DependencyValues {
 final class SwiftDataContainerProvider {
     static let shared: SwiftDataContainerProvider = .init()
     
-    @MainActor
     var container: ModelContainer {
         do {
             let configuration = ModelConfiguration(url: URL.documentsDirectory.appending(path: "database.sqlite"))
@@ -32,16 +31,16 @@ final class SwiftDataContainerProvider {
 }
 
 struct Database {
+    @MainActor
     var context: () throws -> ModelContext
 }
-@MainActor
+
 let appContext: ModelContext = {
     let context = ModelContext(SwiftDataContainerProvider.shared.container)
     return context
 }()
 
 extension Database: DependencyKey {
-    @MainActor
     static let liveValue = Self(context: { appContext })
 }
 

@@ -120,8 +120,8 @@ public struct WalletFeature {
                 
                 return .run { send in
                     do {
-                        let accounts = try database.context().fetch<WalletItemModel>(itemDescriptor).filter { $0.type == .account }.map { $0.valueType }
-                        let expenses = try database.context().fetch<WalletItemModel>(itemDescriptor).filter { $0.type == .expenses }.map { $0.valueType }
+                        let accounts = try await database.context().fetch<WalletItemModel>(itemDescriptor).filter { $0.type == .account }.map { $0.valueType }
+                        let expenses = try await database.context().fetch<WalletItemModel>(itemDescriptor).filter { $0.type == .expenses }.map { $0.valueType }
                         await send(.accountsUpdated(accounts))
                         await send(.expensesUpdated(expenses))
                     } catch {
@@ -132,10 +132,10 @@ public struct WalletFeature {
                 let models = [state.accounts, state.expenses].flatMap { $0 }.map { WalletItemModel(model: $0) }
                 return .run { _ in
                     for m in models {
-                        try database.context().insert(m)
+                        try await database.context().insert(m)
                     }
                     do {
-                        try database.context().save()
+                        try await database.context().save()
                     } catch {
                         print("error, applying transaction to DB: \(error)")
                     }
@@ -147,7 +147,7 @@ public struct WalletFeature {
                 
                 return .run { send in
                     do {
-                        let transactions = try database.context().fetch<WalletTransactionModel>(transactionsDescriptor).map { $0.valueType }
+                        let transactions = try await database.context().fetch<WalletTransactionModel>(transactionsDescriptor).map { $0.valueType }
                         await send(.transactionsUpdated(transactions))
                     } catch {
                         print("Transaction decoding error: \(error.localizedDescription)")
@@ -229,8 +229,8 @@ public struct WalletFeature {
             case let .saveTransaction(transaction):
                 return .run { _ in
                     do {
-                        try database.context().insert(WalletTransactionModel(model: transaction))
-                        try database.context().save()
+                        try await database.context().insert(WalletTransactionModel(model: transaction))
+                        try await database.context().save()
                     } catch {
                         print("error, applying transaction to DB: \(error)")
                     }
@@ -240,8 +240,8 @@ public struct WalletFeature {
                     do {
                         let transactionIds = transactions.map { $0.id }
                         let predicate = #Predicate<WalletTransactionModel> { transactionIds.contains($0.id) }
-                        try database.context().delete(model: WalletTransactionModel.self, where: predicate)
-                        try database.context().save()
+                        try await database.context().delete(model: WalletTransactionModel.self, where: predicate)
+                        try await database.context().save()
                     } catch {
                         print("error, removing transactions from DB: \(error)")
                     }
@@ -250,8 +250,8 @@ public struct WalletFeature {
                 return .run { _ in
                     do {
                         let predicate = #Predicate<WalletItemModel> { $0.id == id }
-                        try database.context().delete(model: WalletItemModel.self, where: predicate)
-                        try database.context().save()
+                        try await database.context().delete(model: WalletItemModel.self, where: predicate)
+                        try await database.context().save()
                     } catch {
                         print("error, removing wallet item from DB: \(error)")
                     }
