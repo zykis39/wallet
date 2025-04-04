@@ -93,6 +93,9 @@ public struct WalletFeature {
             switch action {
             case .start:
                 let wasLaunchedBefore = appStorage.bool(forKey: AppStorageKey.wasLaunchedBefore.rawValue)
+                if !wasLaunchedBefore {
+                    appStorage.set(true, forKey: AppStorageKey.wasLaunchedBefore.rawValue)
+                }
                 
                 return .run { send in
                     analytics.logEvent(.appStarted(firstLaunch: !wasLaunchedBefore))
@@ -117,50 +120,47 @@ public struct WalletFeature {
                 /// FIXME: Predicates cause runtime error, when dealing with Enums
                 /// So, filtering happens outside SwiftData, in-memory
                 let itemDescriptor = FetchDescriptor<WalletItemModel>(predicate: #Predicate<WalletItemModel> { _ in true }, sortBy: [ .init(\.timestamp, order: .reverse) ])
-                
-                return .run { send in
-                    do {
-                        let accounts = try await database.context().fetch<WalletItemModel>(itemDescriptor).filter { $0.type == .account }.map { $0.valueType }
-                        let expenses = try await database.context().fetch<WalletItemModel>(itemDescriptor).filter { $0.type == .expenses }.map { $0.valueType }
+                do {
+                    let accounts = try database.context().fetch<WalletItemModel>(itemDescriptor).filter { $0.type == .account }.map { $0.valueType }
+                    let expenses = try database.context().fetch<WalletItemModel>(itemDescriptor).filter { $0.type == .expenses }.map { $0.valueType }
+                    return .run { [accounts, expenses] send in
                         await send(.accountsUpdated(accounts))
                         await send(.expensesUpdated(expenses))
-                    } catch {
-                        print("WalletItem decoding error: \(error.localizedDescription)")
                     }
+                } catch {
+                    print("WalletItem decoding error: \(error.localizedDescription)")
                 }
+                return .none
             case .saveWalletItems:
                 let models = [state.accounts, state.expenses].flatMap { $0 }.map { WalletItemModel(model: $0) }
-                return .run { _ in
+                do {
                     for m in models {
-                        try await database.context().insert(m)
+                        try database.context().insert(m)
                     }
-                    do {
-                        try await database.context().save()
-                    } catch {
-                        print("error, applying transaction to DB: \(error)")
-                    }
+                    try database.context().save()
+                } catch {
+                    print("error, applying transaction to DB: \(error)")
                 }
+                return .none
             case .readTransactions:
                 /// FIXME: Predicates cause runtime error, when dealing with Enums
                 /// So, filtering happens outside SwiftData, in-memory
                 let transactionsDescriptor = FetchDescriptor<WalletTransactionModel>(predicate: #Predicate<WalletTransactionModel> { _ in true }, sortBy: [])
-                
-                return .run { send in
-                    do {
-                        let transactions = try await database.context().fetch<WalletTransactionModel>(transactionsDescriptor).map { $0.valueType }
+                do {
+                    let transactions = try database.context().fetch<WalletTransactionModel>(transactionsDescriptor).map { $0.valueType }
+                    return .run { send in
                         await send(.transactionsUpdated(transactions))
-                    } catch {
-                        print("Transaction decoding error: \(error.localizedDescription)")
                     }
+                } catch {
+                    print("Transaction decoding error: \(error.localizedDescription)")
                 }
-                
+                return .none
             case .generateDefaultWalletItems:
                 state.accounts = WalletItem.defaultAccounts
                 state.expenses = WalletItem.defaultExpenses
                 return .run { send in
                     await send(.saveWalletItems)
                 }
-                
             case let .itemFrameChanged(item, frame):
                 state.itemFrames[item] = frame
                 return .none
@@ -227,35 +227,32 @@ public struct WalletFeature {
                 }
                 return .none
             case let .saveTransaction(transaction):
-                return .run { _ in
-                    do {
-                        try await database.context().insert(WalletTransactionModel(model: transaction))
-                        try await database.context().save()
-                    } catch {
-                        print("error, applying transaction to DB: \(error)")
-                    }
+                do {
+                    try database.context().insert(WalletTransactionModel(model: transaction))
+                    try database.context().save()
+                } catch {
+                    print("error, applying transaction to DB: \(error)")
                 }
+                return .none
             case let .deleteTransaction(transactions):
-                return .run { _ in
-                    do {
-                        let transactionIds = transactions.map { $0.id }
-                        let predicate = #Predicate<WalletTransactionModel> { transactionIds.contains($0.id) }
-                        try await database.context().delete(model: WalletTransactionModel.self, where: predicate)
-                        try await database.context().save()
-                    } catch {
-                        print("error, removing transactions from DB: \(error)")
-                    }
+                do {
+                    let transactionIds = transactions.map { $0.id }
+                    let predicate = #Predicate<WalletTransactionModel> { transactionIds.contains($0.id) }
+                    try database.context().delete(model: WalletTransactionModel.self, where: predicate)
+                    try database.context().save()
+                } catch {
+                    print("error, removing transactions from DB: \(error)")
                 }
+                return .none
             case let .deleteWalletItem(id):
-                return .run { _ in
-                    do {
-                        let predicate = #Predicate<WalletItemModel> { $0.id == id }
-                        try await database.context().delete(model: WalletItemModel.self, where: predicate)
-                        try await database.context().save()
-                    } catch {
-                        print("error, removing wallet item from DB: \(error)")
-                    }
+                do {
+                    let predicate = #Predicate<WalletItemModel> { $0.id == id }
+                    try database.context().delete(model: WalletItemModel.self, where: predicate)
+                    try database.context().save()
+                } catch {
+                    print("error, removing wallet item from DB: \(error)")
                 }
+                return .none
             case let .createNewItemTapped(itemType):
                 let randomIcon: String = {
                     switch itemType {

@@ -31,7 +31,6 @@ final class SwiftDataContainerProvider {
 }
 
 struct Database {
-    @MainActor
     var context: () throws -> ModelContext
 }
 
