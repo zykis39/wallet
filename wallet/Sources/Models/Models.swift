@@ -173,6 +173,23 @@ final class WalletTransactionModel: Sendable {
     }
 }
 
+extension WalletTransaction {
+    func representation(for item: WalletItem) -> String {
+        let isIncome = (self.destination.id == item.id) && (item.type == .account)
+        let amount = self.amount
+        let currency = self.currency.representation
+        let isItemSource = self.source.id == item.id
+        let to = isItemSource ? self.destination.name.localized() : self.source.name.localized()
+        let result = String.init(format: "%@ %@ %@ %@", arguments: [
+            isIncome ? "+" : "-",
+            CurrencyFormatter.formatter.string(from: NSNumber(value: amount)) ?? "",
+            currency,
+            to
+        ])
+        return result
+    }
+}
+
 extension WalletItem {
     static let accountsSystemIconNames: [String] = [
         "creditcard",

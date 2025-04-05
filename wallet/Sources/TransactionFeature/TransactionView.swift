@@ -30,8 +30,8 @@ struct TransactionView: View {
             },
                                 imageSize: 32,
                                 middleSystemImageName: "arrow.right",
-                                leftText: store.state.source.name,
-                                rightText: store.state.destination.name)
+                                leftText: LocalizedStringKey(store.state.source.name),
+                                rightText: LocalizedStringKey(store.state.destination.name))
             Divider()
             
             HStack {

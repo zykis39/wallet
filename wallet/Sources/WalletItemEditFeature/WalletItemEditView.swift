@@ -10,6 +10,14 @@ import SwiftUI
 struct WalletItemEditView: View {
     @Bindable var store: StoreOf<WalletItemEditFeature>
     @State var balance: String
+
+    var name: Binding<String> {
+        Binding<String>(
+            get: { store.item.name.localized() },
+            set: { store.send(.nameChanged($0)) }
+        )
+    }
+    
     
     var headerText: LocalizedStringKey {
         switch store.editType {
@@ -63,7 +71,7 @@ struct WalletItemEditView: View {
                 store.send(.iconSelectionPresentedChanged(true))
             }
             Form {
-                TextField(text: $store.item.name.sending(\.nameChanged)) {
+                TextField(text: name) {
                     Text("EnterName")
                 }
                 
@@ -95,17 +103,12 @@ struct WalletItemEditView: View {
                     List {
                         ForEach(store.state.transactions) { transaction in
                             let isIncome = (transaction.destination.id == store.item.id) && (store.item.type == .account)
-                            let amount = transaction.amount
-                            let currency = transaction.currency.representation
-                            let isItemSource = transaction.source.id == store.item.id
-                            let to = isItemSource ? transaction.destination.name : transaction.source.name
-                            
                             HStack {
                                 Text(transaction.timestamp.formatted(date: .numeric, time: .omitted))
                                 .foregroundStyle(.black)
                                 .layoutPriority(1)
                                 Spacer()
-                                Text((isIncome ? "+ " : "- ") + "\(CurrencyFormatter.formatter.string(from: NSNumber(value: amount)) ?? "")" + " \(currency) (\(to))")
+                                Text(transaction.representation(for: store.item))
                                     .foregroundStyle(isIncome ? .green : .red)
                             }
                         }

@@ -42,3 +42,13 @@ extension CGPoint {
         return CGPoint(x: x, y: y)
     }
 }
+
+extension String {
+    public func localized(with arguments: [CVarArg]) -> String {
+        return String(format: NSLocalizedString(self, comment: ""), locale: nil, arguments: arguments)
+    }
+    
+    public func localized() -> String {
+        return String(format: NSLocalizedString(self, comment: ""), locale: nil)
+    }
+}

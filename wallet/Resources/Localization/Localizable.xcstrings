@@ -41,6 +41,12 @@
     "AccountBalance" : {
       "extractionState" : "manual",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Account balance"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
@@ -77,6 +83,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Карта"
+          }
+        }
+      }
+    },
+    "Cash" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Наличные"
           }
         }
       }

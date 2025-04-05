@@ -38,7 +38,7 @@ public struct WalletItemView: View {
 
     public var body: some View {
         VStack(alignment: .center, spacing: 2) {
-            Text(item.name)
+            Text(LocalizedStringKey(item.name))
                 .lineLimit(1)
             Circle()
                 .fill(.clear)

@@ -54,7 +54,7 @@ struct ExpensesStatisticsView: View {
                         Divider()
                         ForEach(circleItems) { item in
                             GridRow {
-                                Text(item.name)
+                                Text(LocalizedStringKey(item.name))
                                 Text((CurrencyFormatter.formatter.string(from: .init(value: item.percent * 100)) ?? "") + "%")
                                 Text((CurrencyFormatter.formatter.string(from: .init(value: item.expenses)) ?? "") + " " + item.currency.representation)
                             }

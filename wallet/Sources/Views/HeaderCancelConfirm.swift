@@ -13,10 +13,10 @@ struct HeaderCancelConfirm: View {
     let rightAction: () -> Void
     let imageSize: CGFloat
     let middleSystemImageName: String?
-    let leftText: String?
-    let rightText: String?
+    let leftText: LocalizedStringKey?
+    let rightText: LocalizedStringKey?
     
-    init(leftSystemImageName: String, rightSystemImageName: String, leftAction: @escaping () -> Void, rightAction: @escaping () -> Void, imageSize: CGFloat, middleSystemImageName: String? = nil, leftText: String? = nil, rightText: String? = nil) {
+    init(leftSystemImageName: String, rightSystemImageName: String, leftAction: @escaping () -> Void, rightAction: @escaping () -> Void, imageSize: CGFloat, middleSystemImageName: String? = nil, leftText: LocalizedStringKey? = nil, rightText: LocalizedStringKey? = nil) {
         self.leftSystemImageName = leftSystemImageName
         self.rightSystemImageName = rightSystemImageName
         self.leftAction = leftAction
