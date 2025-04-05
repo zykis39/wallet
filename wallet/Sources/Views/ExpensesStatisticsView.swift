@@ -15,6 +15,9 @@ struct ExpensesStatisticsView: View {
     var hasTransactions: Bool {
         circleItems.count > 0 ? true : false
     }
+    var total: Double {
+        circleItems.reduce(0) { $0 + $1.expenses }
+    }
     
     init(store: StoreOf<WalletFeature>) {
         self.store = store
@@ -22,10 +25,18 @@ struct ExpensesStatisticsView: View {
     
     var body: some View {
         VStack {
-            ProgressCircle(items: circleItems)
-                .padding(.horizontal, 64)
-                .padding(.vertical, ProgressCircle.Constants.lineWidth + 12)
-                .aspectRatio(1.0, contentMode: .fit)
+            ZStack {
+                ProgressCircle(items: circleItems)
+                    .padding(.horizontal, 64)
+                    .padding(.vertical, ProgressCircle.Constants.lineWidth + 12)
+                    .aspectRatio(1.0, contentMode: .fit)
+                VStack {
+                    Text("Total:")
+                        .foregroundStyle(.secondary)
+                    Text((CurrencyFormatter.formatter.string(from: .init(value: total)) ?? "") + " " + Currency.RUB.representation)
+                        .font(.system(size: 24))
+                }
+            }
             Picker("Period", selection: $period) {
                 ForEach(Period.allCases, id: \.self) { period in
                     Text(period.representation)

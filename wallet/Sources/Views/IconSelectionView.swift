@@ -31,9 +31,10 @@ struct IconSelectionView: View {
                             .fill(Color.walletItemColor(for: store.item.type))
                         Image(systemName: icon)
                             .resizable()
-                            .aspectRatio(1.0, contentMode: .fit)
                             .foregroundStyle(.white)
                             .padding(16)
+                            .clipShape(.circle)
+                            .aspectRatio(contentMode: .fit)
                     }.onTapGesture {
                         store.send(.iconSelected(icon))
                     }

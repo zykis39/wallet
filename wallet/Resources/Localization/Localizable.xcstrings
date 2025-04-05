@@ -184,6 +184,9 @@
         }
       }
     },
+    "Key" : {
+      "extractionState" : "manual"
+    },
     "Period" : {
       "localizations" : {
         "ru" : {
@@ -311,6 +314,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Всего"
+          }
+        }
+      }
+    },
+    "Total:" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всего:"
           }
         }
       }

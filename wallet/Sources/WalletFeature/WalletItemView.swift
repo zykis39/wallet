@@ -13,7 +13,7 @@ public struct WalletItemView: View {
     private let item: WalletItem
     private struct Constants {
         static let size: CGFloat = 64
-        static let imageSize: CGFloat = 32
+        static let imageSize: CGFloat = 42
     }
 
     private var currencyAmount: String {
@@ -58,6 +58,7 @@ public struct WalletItemView: View {
                     .frame(width: Constants.size, height: Constants.size)
                 Image(systemName: item.icon)
                     .resizable()
+                    .aspectRatio(contentMode: .fit)
                     .frame(width: Constants.imageSize, height: Constants.imageSize)
                     .foregroundStyle(.white)
             }
