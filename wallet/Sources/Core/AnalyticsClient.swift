@@ -5,8 +5,10 @@
 //  Created by Артём Зайцев on 01.04.2025.
 //
 import FirebaseAnalytics
+import FirebaseCrashlytics
 
 public enum Event {
+    case error(String)
     case appStarted(firstLaunch: Bool)
     case draggingStopped(source: String, destination: String)
     case itemTapped(itemName: String)
@@ -23,6 +25,8 @@ public protocol AnalyticsClient {
 final class FirebaseAnalyticsClient: AnalyticsClient {
     func logEvent(_ event: Event) {
         switch event {
+        case let .error(message):
+            Crashlytics.crashlytics().log(message)
         case let .appStarted(firstLaunch):
             Analytics.logEvent("AppStarted", parameters: ["firstLaunch": firstLaunch])
         case let .draggingStopped(source, destination):

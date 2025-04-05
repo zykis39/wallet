@@ -128,7 +128,7 @@ public struct WalletFeature {
                         await send(.expensesUpdated(expenses))
                     }
                 } catch {
-                    print("WalletItem decoding error: \(error.localizedDescription)")
+                    analytics.logEvent(.error("WalletItem decoding error: \(error.localizedDescription)"))
                 }
                 return .none
             case .saveWalletItems:
@@ -139,7 +139,7 @@ public struct WalletFeature {
                     }
                     try database.context().save()
                 } catch {
-                    print("error, applying transaction to DB: \(error)")
+                    analytics.logEvent(.error("error, applying transaction to DB: \(error)"))
                 }
                 return .none
             case .readTransactions:
@@ -152,7 +152,7 @@ public struct WalletFeature {
                         await send(.transactionsUpdated(transactions))
                     }
                 } catch {
-                    print("Transaction decoding error: \(error.localizedDescription)")
+                    analytics.logEvent(.error("Transaction decoding error: \(error.localizedDescription)"))
                 }
                 return .none
             case .generateDefaultWalletItems:
@@ -231,7 +231,7 @@ public struct WalletFeature {
                     try database.context().insert(WalletTransactionModel(model: transaction))
                     try database.context().save()
                 } catch {
-                    print("error, applying transaction to DB: \(error)")
+                    analytics.logEvent(.error("error, applying transaction to DB: \(error)"))
                 }
                 return .none
             case let .deleteTransaction(transactions):
@@ -241,7 +241,7 @@ public struct WalletFeature {
                     try database.context().delete(model: WalletTransactionModel.self, where: predicate)
                     try database.context().save()
                 } catch {
-                    print("error, removing transactions from DB: \(error)")
+                    analytics.logEvent(.error("error, removing transactions from DB: \(error)"))
                 }
                 return .none
             case let .deleteWalletItem(id):
@@ -250,7 +250,7 @@ public struct WalletFeature {
                     try database.context().delete(model: WalletItemModel.self, where: predicate)
                     try database.context().save()
                 } catch {
-                    print("error, removing wallet item from DB: \(error)")
+                    analytics.logEvent(.error("error, removing wallet item from DB: \(error)"))
                 }
                 return .none
             case let .createNewItemTapped(itemType):
