@@ -41,6 +41,5 @@ struct IconSelectionView: View {
             }
         }
         .padding(12)
-        .navigationTitle("Выбор иконки")
     }
 }

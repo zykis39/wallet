@@ -40,7 +40,7 @@ struct HeaderWallet: View {
             Spacer()
             
             VStack {
-                Text("Баланс")
+                Text("Balance")
                     .opacity(0.54)
                 Text((CurrencyFormatter.formatter.string(for: balance) ?? "0") + " " + (Currency.RUB.representation))
             }
@@ -48,7 +48,7 @@ struct HeaderWallet: View {
             Spacer()
             
             VStack {
-                Text("Расходы")
+                Text("Expenses")
                     .opacity(0.54)
                 Text((CurrencyFormatter.formatter.string(for: expenses) ?? "0") + " " + (Currency.RUB.representation))
             }

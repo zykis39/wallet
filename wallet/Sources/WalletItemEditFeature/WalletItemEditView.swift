@@ -11,12 +11,22 @@ struct WalletItemEditView: View {
     @Bindable var store: StoreOf<WalletItemEditFeature>
     @State var balance: String
     
-    var headerText: String {
+    var headerText: LocalizedStringKey {
         switch store.editType {
         case .new:
-            store.item.type == .account ? "Новый кошелек, карта или счет" : "На что вы тратите деньги?"
+            switch store.item.type {
+            case .account:
+                return "WalletItem.Create.Account.Title"
+            case .expenses:
+                return "WalletItem.Create.Expense.Title"
+            }
         case .edit:
-            "Измените параметры \(store.item.type == .account ? "счета" : "расхода")"
+            switch store.item.type {
+            case .account:
+                return "WalletItem.Edit.Account.Title"
+            case .expenses:
+                return "WalletItem.Edit.Expense.Title"
+            }
         }
     }
     
@@ -54,13 +64,13 @@ struct WalletItemEditView: View {
             }
             Form {
                 TextField(text: $store.item.name.sending(\.nameChanged)) {
-                    Text("Введите название")
+                    Text("EnterName")
                 }
                 
                 if store.item.type == .account {
-                    TextField("Баланс",
+                    TextField("Balance",
                               text: $balance,
-                              prompt: Text("Остаток на счёте"))
+                              prompt: Text("AccountBalance"))
                     .keyboardType(.decimalPad)
                     .onChange(of: balance) { oldValue, newValue in
                         let value = CurrencyFormatter.formattedTextField(oldValue, newValue)
@@ -68,7 +78,7 @@ struct WalletItemEditView: View {
                         self.store.send(.balanceChanged(Double(value) ?? 0))
                     }
                 }
-                Picker("Валюта: ",
+                Picker("Currency",
                        selection: $store.item.currency.sending(\.currencyChanged)) {
                     ForEach(Currency.allCases, id: \.id) { currency in
                         Text("\(currency.representation) (\(currency.rawValue))").tag(currency)
@@ -81,7 +91,7 @@ struct WalletItemEditView: View {
             .tint(.black)
             
             Form {
-                Section("Транзакции") {
+                Section("Transactions") {
                     List {
                         ForEach(store.state.transactions) { transaction in
                             let isIncome = (transaction.destination.id == store.item.id) && (store.item.type == .account)
@@ -112,7 +122,7 @@ struct WalletItemEditView: View {
                 Button {
                     store.send(.deleteWalletItem(store.item.id))
                 } label: {
-                    Text("Удалить")
+                    Text("Delete")
                 }
             }
             Spacer()

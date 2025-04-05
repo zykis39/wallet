@@ -26,7 +26,7 @@ struct ExpensesStatisticsView: View {
                 .padding(.horizontal, 64)
                 .padding(.vertical, ProgressCircle.Constants.lineWidth + 12)
                 .aspectRatio(1.0, contentMode: .fit)
-            Picker("Период", selection: $period) {
+            Picker("Period", selection: $period) {
                 ForEach(Period.allCases, id: \.self) { period in
                     Text(period.representation)
                 }
@@ -36,9 +36,9 @@ struct ExpensesStatisticsView: View {
                 List {
                     Grid {
                         GridRow {
-                            Text("Категория")
+                            Text("Category")
                             Text("%")
-                            Text("Всего")
+                            Text("Total")
                         }
                         Divider()
                         ForEach(circleItems) { item in
@@ -59,14 +59,14 @@ struct ExpensesStatisticsView: View {
                 Spacer()
             } else {
                 Spacer()
-                Text("Здесь будет статистика ваших расходов")
+                Text("Statistics.Zeroscreen.description")
                     .font(.system(size: 32))
                     .multilineTextAlignment(.center)
                 Spacer()
             }
         }
         .padding()
-        .navigationTitle("Расходы")
+        .navigationTitle("Expenses")
         .onChange(of: period, initial: true) { _, newValue in
             self.circleItems = calculateCircleItems(store.state.transactions, expenses: store.state.expenses, period: newValue)
         }
