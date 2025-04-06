@@ -16,13 +16,14 @@ public struct TransactionFeature: Sendable {
         var amount: Double
         var source: WalletItem
         var destination: WalletItem
+        var sourceDestinationRate: Double
         
-        static let initial: Self = .init(presented: false, amount: 0, source: .none, destination: .none)
+        static let initial: Self = .init(presented: false, amount: 0, source: .none, destination: .none, sourceDestinationRate: 1)
     }
     
     public enum Action: Sendable {
         // internal
-        case onItemDropped(WalletItem, WalletItem)
+        case onItemDropped(WalletItem, WalletItem, Double) // rate
         case createTransaction(WalletTransaction)
         
         // view
@@ -47,7 +48,8 @@ public struct TransactionFeature: Sendable {
                 return .run { send in
                     await send(.presentedChanged(false))
                 }
-            case let .onItemDropped(source, destination):
+            case let .onItemDropped(source, destination, rate):
+                state.sourceDestinationRate = rate
                 state.source = source
                 state.destination = destination
                 return .run { send in

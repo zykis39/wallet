@@ -11,19 +11,21 @@ import SwiftUI
 public struct WalletItemEditFeature {
     @ObservableState
     public struct State: Equatable {
-        enum EditType {
-            case new, edit
-        }
         var editType: EditType
         var presented: Bool
         var item: WalletItem
+        var currencies: [Currency]
+        var rates: [ConversionRate]
         var transactions: [WalletTransaction]
         var iconSelectionPresented: Bool = false
         
-        static let initial: Self = .init(editType: .new, presented: false, item: .none, transactions: [])
+        static let initial: Self = .init(editType: .new, presented: false, item: .none, currencies: [], rates: [], transactions: [])
     }
     
     public enum Action: Sendable {
+        case presentItem(WalletItem, [WalletTransaction], [Currency], [ConversionRate])
+        case presentNewItem(WalletItem.WalletItemType, Currency, [Currency])
+        
         case confirmedTapped
         case cancelTapped
         case presentedChanged(Bool)
@@ -40,6 +42,38 @@ public struct WalletItemEditFeature {
     public var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {
+            case let .presentItem(item, transactions, currencies, conversionRates):
+                state.editType = .edit
+                state.item = item
+                state.transactions = transactions
+                state.currencies = currencies
+                state.rates = conversionRates
+                
+                return .run { send in
+                    await send(.presentedChanged(true))
+                }
+            case let .presentNewItem(type, currency, currencies):
+                let randomIcon: String = {
+                    switch type {
+                    case .account:
+                        WalletItem.accountsSystemIconNames.randomElement() ?? ""
+                    case .expenses:
+                        WalletItem.expensesSystemIconNames.randomElement() ?? ""
+                    }
+                }()
+                
+                state.editType = .new
+                state.item = .none
+                state.item.type = type
+                state.item.icon = randomIcon
+                state.item.currency = currency
+                state.transactions = []
+                state.currencies = currencies
+                state.rates = []
+                
+                return .run { send in
+                    await send(.presentedChanged(true))
+                }
             case .confirmedTapped:
                 return .run { [editType = state.editType, item = state.item] send in
                     switch editType {

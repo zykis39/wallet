@@ -247,18 +247,16 @@ public struct WalletFeature {
                 state.dropItem = nil
                 
                 guard let dragItem, let dropItem else { return .none }
-                return .run { send in
+                return .run { [rates = state.rates] send in
                     analytics.logEvent(.draggingStopped(source: dragItem.name, destination: dropItem.name))
-                    await send(.transaction(.onItemDropped(dragItem, dropItem)))
+                    let rate = ConversionRate.rate(for: dragItem.currency, destination: dropItem.currency, rates: rates) ?? 1.0
+                    await send(.transaction(.onItemDropped(dragItem, dropItem, rate)))
                 }
             case let .itemTapped(item):
-                state.walletItemEdit.editType = .edit
-                state.walletItemEdit.item = item
-                state.walletItemEdit.transactions = state.transactions.filter {
-                    $0.source.id == item.id || $0.destination.id == item.id
-                }
-                state.walletItemEdit.presented = true
-                return .run { _ in
+                let transactions = state.transactions.filter { $0.source.id == item.id || $0.destination.id == item.id }
+                
+                return .run { [currencies = state.currencies, rates = state.rates] send in
+                    await send(.walletItemEdit(.presentItem(item, transactions, currencies, rates)))
                     analytics.logEvent(.itemTapped(itemName: item.name))
                 }
             case let .applyTransaction(transaction):
@@ -316,20 +314,9 @@ public struct WalletFeature {
                 }
                 return .none
             case let .createNewItemTapped(itemType):
-                let randomIcon: String = {
-                    switch itemType {
-                    case .account: 
-                        WalletItem.accountsSystemIconNames.randomElement() ?? ""
-                    case .expenses:
-                        WalletItem.expensesSystemIconNames.randomElement() ?? ""
-                    }
-                }()
-                state.walletItemEdit = .initial
-                state.walletItemEdit.editType = .new
-                state.walletItemEdit.item.type = itemType
-                state.walletItemEdit.item.icon = randomIcon
-                state.walletItemEdit.presented = true
-                return .none
+                return .run { [currency = state.selectedCurrency, currencies = state.currencies] send in
+                    await send(.walletItemEdit(.presentNewItem(itemType, currency, currencies)))
+                }
             case let .aboutAppPresentedChanged(presented):
                 state.aboutAppPresented = presented
                 return .run { _ in
@@ -407,6 +394,8 @@ public struct WalletFeature {
                     await send(.saveWalletItems)
                 }
             case .walletItemEdit:
+                return .none
+            default:
                 return .none
             }
         }
