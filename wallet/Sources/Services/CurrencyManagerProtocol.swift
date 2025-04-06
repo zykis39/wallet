@@ -6,15 +6,13 @@
 //
 import Foundation
 
-public protocol CurrencyManager {
-    var currencies: [Currency] { get set }
+public protocol CurrencyManagerProtocol {
     func defaultCurrency(for locale: Locale, from currencies: [Currency]) -> Currency
 }
 
-final class CurrencyManagerImpl: CurrencyManager {
-    static let shared: CurrencyManagerImpl = CurrencyManagerImpl()
+final class CurrencyManager: CurrencyManagerProtocol {
+    static let shared: CurrencyManager = CurrencyManager()
     
-    var currencies: [Currency] = []
     func defaultCurrency(for locale: Locale, from currencies: [Currency]) -> Currency {
         switch locale.language.languageCode {
         case .english:

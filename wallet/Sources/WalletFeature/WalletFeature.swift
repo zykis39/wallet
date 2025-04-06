@@ -70,7 +70,7 @@ public struct WalletFeature {
         case deleteWalletItem(UUID)
         case generateDefaultWalletItems(Currency)
         case applyTransaction(WalletTransaction)
-        case reverseTransaction(WalletTransaction)
+        case revertTransaction(WalletTransaction)
         case saveTransaction(WalletTransaction)
         case accountsUpdated([WalletItem])
         case expensesUpdated([WalletItem])
@@ -109,9 +109,7 @@ public struct WalletFeature {
                 return .run { send in
                     do {
                         let currencies = try await currencyService.currencies(codes: Currency.currencyCodes)
-                        // FIXME: use environment or propogate state to children
-                        CurrencyManagerImpl.shared.currencies = currencies
-                        let defaultCurrency = CurrencyManagerImpl.shared.defaultCurrency(for: .current, from: currencies)
+                        let defaultCurrency = CurrencyManager.shared.defaultCurrency(for: .current, from: currencies)
                         await send(.currenciesFetched(currencies))
                         await send(.selectedCurrencyChanged(defaultCurrency))
                         
@@ -135,7 +133,7 @@ public struct WalletFeature {
                 return .run { [currencies = state.currencies] send in
                     if !wasLaunchedBefore {
                         analytics.logEvent(.appStarted(firstLaunch: !wasLaunchedBefore))
-                        let currency = CurrencyManagerImpl.shared.defaultCurrency(for: .current, from: currencies)
+                        let currency = CurrencyManager.shared.defaultCurrency(for: .current, from: currencies)
                         await send(.generateDefaultWalletItems(currency))
                     } else {
                         await send(.readWalletItems)
@@ -249,7 +247,7 @@ public struct WalletFeature {
                 guard let dragItem, let dropItem else { return .none }
                 return .run { [rates = state.rates] send in
                     analytics.logEvent(.draggingStopped(source: dragItem.name, destination: dropItem.name))
-                    let rate = ConversionRate.rate(for: dragItem.currency, destination: dropItem.currency, rates: rates) ?? 1.0
+                    let rate = ConversionRate.rate(for: dragItem.currency, destination: dropItem.currency, rates: rates)
                     await send(.transaction(.onItemDropped(dragItem, dropItem, rate)))
                 }
             case let .itemTapped(item):
@@ -262,20 +260,44 @@ public struct WalletFeature {
             case let .applyTransaction(transaction):
                 /// FIXME:
                 /// транзакции не должны применяться частично в случае ошибок
+                let currencyCode = transaction.currency.code
                 if let sourceIndex = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
                     {
-                    state.accounts[sourceIndex].balance -= transaction.amount
+                    
+                    let source = state.accounts[sourceIndex]
+                    if source.currency.code == currencyCode {
+                        state.accounts[sourceIndex].balance -= transaction.amount
+                    } else {
+                        let rate = ConversionRate.rate(for: transaction.currency, destination: source.currency, rates: state.rates)
+                        state.accounts[sourceIndex].balance -= transaction.amount * rate
+                    }
                 }
                 if let destinationIndex = state.expenses.firstIndex(where: { $0.id == transaction.destination.id }) {
-                    state.expenses[destinationIndex].balance += transaction.amount
+                    let destination = state.expenses[destinationIndex]
+                    if destination.currency.code == currencyCode {
+                        state.expenses[destinationIndex].balance += transaction.amount
+                    } else {
+                        let rate = ConversionRate.rate(for: transaction.currency, destination: destination.currency, rates: state.rates)
+                        state.expenses[destinationIndex].balance += transaction.amount * rate
+                    }
                 } else if let destinationIndex = state.accounts.firstIndex(where: { $0.id == transaction.destination.id }) {
-                    state.accounts[destinationIndex].balance += transaction.amount
+                    let destination = state.accounts[destinationIndex]
+                    if destination.currency.code == currencyCode {
+                        state.accounts[destinationIndex].balance += transaction.amount
+                    } else {
+                        let rate = ConversionRate.rate(for: transaction.currency, destination: destination.currency, rates: state.rates)
+                        state.accounts[destinationIndex].balance += transaction.amount * rate
+                    }
                 }
                 return .run { send in
                     // saving new balance after applying transaction
                     await send(.saveWalletItems)
                 }
-            case let .reverseTransaction(transaction):
+            case let .revertTransaction(transaction):
+                /// FIXME: apply rates
+                /// How to revert exact amount of money, that was aaplyed?
+                /// rate might be different, when transaction cancelled
+                /// should transaction also contains rate?
                 if let sourceIndex = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
                     {
                     state.accounts[sourceIndex].balance += transaction.amount
@@ -361,7 +383,7 @@ public struct WalletFeature {
                 return .run { [transactionsToRemove] send in
                     for t in transactionsToRemove {
                         // restore balance of affected accounts/expenses
-                        await send(.reverseTransaction(t))
+                        await send(.revertTransaction(t))
                     }
                     // clear DB
                     await send(.deleteTransaction(transactionsToRemove))
@@ -394,8 +416,6 @@ public struct WalletFeature {
                     await send(.saveWalletItems)
                 }
             case .walletItemEdit:
-                return .none
-            default:
                 return .none
             }
         }

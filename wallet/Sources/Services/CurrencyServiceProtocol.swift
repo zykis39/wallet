@@ -7,12 +7,21 @@
 import Alamofire
 import Foundation
 
-public protocol CurrencyService {
+public protocol CurrencyServiceNetworkProtocol {
     func currencies(codes: [String]) async throws -> [Currency]
     func conversionRates(base baseCurrency: Currency, to: [Currency]) async throws -> [ConversionRate]
 }
 
-final class CurrencyServiceImpl: CurrencyService {
+public protocol CurrencyServiceStorageProtocol {
+    func save(_ currencies: [Currency])
+    func save(_ conversionRates: [ConversionRate])
+    func readCurrencies() throws -> [Currency]
+    func readConversionRates() throws -> [ConversionRate]
+}
+
+public protocol CurrencyServiceProtocol: CurrencyServiceNetworkProtocol, CurrencyServiceStorageProtocol {}
+
+final class CurrencyService: CurrencyServiceProtocol {
     enum Paths {
         static let currencies = "currencies"
         static let coversionRates = "latest"
@@ -70,6 +79,20 @@ final class CurrencyServiceImpl: CurrencyService {
         case let .failure(afError):
             throw afError
         }
+    }
+}
+
+extension CurrencyService: CurrencyServiceStorageProtocol {
+    func save(_ currencies: [Currency]) {}
+    
+    func save(_ conversionRates: [ConversionRate]) {}
+    
+    func readCurrencies() throws -> [Currency] {
+        []
+    }
+    
+    func readConversionRates() throws -> [ConversionRate] {
+        []
     }
 }
 

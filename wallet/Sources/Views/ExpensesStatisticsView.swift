@@ -79,12 +79,12 @@ struct ExpensesStatisticsView: View {
         .padding()
         .navigationTitle("Expenses")
         .onChange(of: period, initial: true) { _, newValue in
-            self.circleItems = calculateCircleItems(store.state.transactions, expenses: store.state.expenses, period: newValue)
+            self.circleItems = calculateCircleItems(store.state.transactions, expenses: store.state.expenses, period: newValue, rates: store.state.rates, currency: store.state.selectedCurrency)
         }
     }
     
     // TODO: converting all transaction currencies into selected currency
-    private func calculateCircleItems(_ transactions: [WalletTransaction], expenses: [WalletItem], period: Period) -> [CircleItemInfo] {
+    private func calculateCircleItems(_ transactions: [WalletTransaction], expenses: [WalletItem], period: Period, rates: [ConversionRate], currency: Currency) -> [CircleItemInfo] {
         let granularity: Calendar.Component = {
             switch period {
             case .day: .day
@@ -96,7 +96,12 @@ struct ExpensesStatisticsView: View {
             .filter { $0.destination.type == .expenses }
             .filter { $0.timestamp.isEqual(to: .now, toGranularity: granularity) }
             .reduce(into: [:]) { (result: inout [UUID: Double], transaction: WalletTransaction) in
-                result[transaction.destination.id, default: 0] += transaction.amount
+                if transaction.currency.code == currency.code {
+                    result[transaction.destination.id, default: 0] += transaction.amount
+                } else {
+                    let rate = ConversionRate.rate(for: transaction.currency, destination: currency, rates: rates)
+                    result[transaction.destination.id, default: 0] += transaction.amount * rate
+                }
             }
         let overallExpenses: Double = expensesIDs.values.reduce(0) { $0 + $1 }
         
@@ -106,7 +111,7 @@ struct ExpensesStatisticsView: View {
                                   icon: walletItem.icon,
                                   expenses: item.value,
                                   percent: item.value / overallExpenses,
-                                  currency: walletItem.currency,
+                                  currency: currency,
                                   color: CircleItemInfo.preferredColors[safe: index] ?? .yellow)
         }
         

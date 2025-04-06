@@ -15,13 +15,16 @@ struct AboutApplicationView: View {
     ]
     let features = [
         "Custom Drag-n-Drop",
-        "Persistant Storage"
-    ]
-    let plans = [
+        "Persistant Storage",
         "Localization",
         "Currency Converter",
         "Expenses statistics",
         "Adaptive interface",
+    ]
+    let plans = [
+        "Transactions deletion",
+        "Drag-n-Drop animations",
+        "double-currency TextField",
     ]
     let contacts = [
         "Author: Artem Zaitsev",

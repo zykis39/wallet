@@ -140,9 +140,9 @@ extension ConversionRate {
     /// EUR/RUB = EUR/USD * USD/RUB
     /// EUR/RUB = EUR/USD 1/0.9112801449 USD/RUB 84.2370884976 = 92.43819145
     /// target1/target2 = (1 / usd/target1) * usd/target2
-    static func rate(for source: Currency, destination: Currency, rates: [ConversionRate]) -> Double? {
+    static func rate(for source: Currency, destination: Currency, rates: [ConversionRate]) -> Double {
         guard let dollarToSourceRate = rates.filter({ $0.source.code == "USD" && $0.destination.code == source.code }).first,
-              let dollarToDestinationRate = rates.filter({ $0.source.code == "USD" && $0.destination.code == destination.code }).first else { return nil }
+              let dollarToDestinationRate = rates.filter({ $0.source.code == "USD" && $0.destination.code == destination.code }).first else { return 1.0 }
         return 1 / dollarToSourceRate.rate * dollarToDestinationRate.rate
     }
 }

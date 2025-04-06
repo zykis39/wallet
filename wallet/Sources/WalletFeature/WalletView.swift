@@ -17,13 +17,27 @@ struct WalletView: View {
     }
     
     private var balance: Double {
-        store.state.accounts.reduce(0) { $0 + $1.balance }
+        store.state.accounts.reduce(0) {
+            if store.state.selectedCurrency == $1.currency {
+                return $0 + $1.balance
+            } else {
+                let rate = ConversionRate.rate(for: $1.currency, destination: store.state.selectedCurrency, rates: store.state.rates)
+                return $0 + $1.balance * rate
+            }
+        }
     }
     private var expenses: Double {
         store.state.transactions
             .filter { $0.destination.type == .expenses }
             .filter { $0.timestamp.isEqual(to: .now, toGranularity: .month) }
-            .reduce(0) { $0 + $1.amount }
+            .reduce(0) {
+                if $1.currency == store.state.selectedCurrency {
+                    return $0 + $1.amount
+                } else {
+                    let rate = ConversionRate.rate(for: $1.currency, destination: store.state.selectedCurrency, rates: store.state.rates)
+                    return $0 + $1.amount * rate
+                }
+            }
     }
     
     private var accountColumns: [GridItem] = Array(repeatElement(GridItem(.flexible(minimum: Constants.minColumnWidth, maximum: .greatestFiniteMagnitude)), count: Constants.elementsInRow))

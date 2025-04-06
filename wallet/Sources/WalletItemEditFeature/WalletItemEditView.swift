@@ -86,11 +86,12 @@ struct WalletItemEditView: View {
                         self.store.send(.balanceChanged(Double(value) ?? 0))
                     }
                 }
-                Picker("Currency",
-                       selection: $store.item.currency.sending(\.currencyChanged)) {
-                    // FIXME: use environment or propogate state to children
-                    ForEach(store.state.currencies, id: \.self) { currency in
-                        Text("\(currency.code) (\(currency.fixedSymbol))").tag(currency.fixedSymbol)
+                if store.state.editType == .new {
+                    Picker("Currency",
+                           selection: $store.item.currency.sending(\.currencyChanged)) {
+                        ForEach(store.state.currencies, id: \.self) { currency in
+                            Text("\(currency.code) (\(currency.fixedSymbol))").tag(currency.fixedSymbol)
+                        }
                     }
                 }
             }
