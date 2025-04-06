@@ -13,12 +13,11 @@ public struct TransactionFeature: Sendable {
     public struct State: Equatable {
         public var presented: Bool
         
-        var currency: Currency
         var amount: Double
         var source: WalletItem
         var destination: WalletItem
         
-        static let initial: Self = .init(presented: false, currency: .RUB, amount: 0, source: .none, destination: .none)
+        static let initial: Self = .init(presented: false, amount: 0, source: .none, destination: .none)
     }
     
     public enum Action: Sendable {
@@ -41,7 +40,7 @@ public struct TransactionFeature: Sendable {
                     await send(.presentedChanged(false))
                     guard state.amount > 0 else { return }
                     
-                    let transaction = WalletTransaction(timestamp: .now, currency: state.currency, amount: state.amount, source: state.source, destination: state.destination)
+                    let transaction = WalletTransaction(timestamp: .now, currency: state.source.currency, amount: state.amount, source: state.source, destination: state.destination)
                     await send(.createTransaction(transaction))
                 }
             case .cancelTapped:

@@ -33,7 +33,7 @@ struct ExpensesStatisticsView: View {
                 VStack {
                     Text("Total:")
                         .foregroundStyle(.secondary)
-                    Text((CurrencyFormatter.formatter.string(from: .init(value: total)) ?? "") + " " + Currency.RUB.representation)
+                    Text((CurrencyFormatter.formatter.string(from: .init(value: total)) ?? "") + " " + store.state.selectedCurrency.fixedSymbol)
                         .font(.system(size: 24))
                 }
             }
@@ -56,7 +56,7 @@ struct ExpensesStatisticsView: View {
                             GridRow {
                                 Text(LocalizedStringKey(item.name))
                                 Text((CurrencyFormatter.formatter.string(from: .init(value: item.percent * 100)) ?? "") + "%")
-                                Text((CurrencyFormatter.formatter.string(from: .init(value: item.expenses)) ?? "") + " " + item.currency.representation)
+                                Text((CurrencyFormatter.formatter.string(from: .init(value: item.expenses)) ?? "") + " " + item.currency.fixedSymbol)
                             }
                             .background(item.color)
                             .foregroundStyle(.white)
@@ -83,6 +83,7 @@ struct ExpensesStatisticsView: View {
         }
     }
     
+    // TODO: converting all transaction currencies into selected currency
     private func calculateCircleItems(_ transactions: [WalletTransaction], expenses: [WalletItem], period: Period) -> [CircleItemInfo] {
         let granularity: Calendar.Component = {
             switch period {

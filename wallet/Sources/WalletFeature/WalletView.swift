@@ -2,7 +2,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct WalletView: View {
-    var store: StoreOf<WalletFeature>
+    @Bindable var store: StoreOf<WalletFeature>
     
     public init(store: StoreOf<WalletFeature>) {
         self.store = store
@@ -47,6 +47,7 @@ struct WalletView: View {
         VStack(alignment: .leading) {
             HeaderWallet(balance: balance,
                          expenses: expenses,
+                         currency: store.state.selectedCurrency,
                          leftSystemImageName: "info.square.fill",
                          rightSystemImageName: "chart.bar.xaxis",
                          leftAction: { store.send(.aboutAppPresentedChanged(true)) },

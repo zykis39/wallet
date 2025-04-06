@@ -88,8 +88,9 @@ struct WalletItemEditView: View {
                 }
                 Picker("Currency",
                        selection: $store.item.currency.sending(\.currencyChanged)) {
-                    ForEach(Currency.allCases, id: \.id) { currency in
-                        Text("\(currency.representation) (\(currency.rawValue))").tag(currency)
+                    // FIXME: use environment or propogate state to children
+                    ForEach(CurrencyManagerImpl.shared.currencies, id: \.self) { currency in
+                        Text("\(currency.code) (\(currency.fixedSymbol))").tag(currency.fixedSymbol)
                     }
                 }
             }

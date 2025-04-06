@@ -57,3 +57,17 @@ extension DependencyValues {
         }
     }
 }
+
+// MARK: - CurrencyService
+extension DependencyValues {
+    public var currencyService: CurrencyService {
+        get { self[CurrencyServiceKey.self].value }
+        set { self[CurrencyServiceKey.self].value = newValue }
+    }
+    
+    private enum CurrencyServiceKey: DependencyKey {
+        static var liveValue: UncheckedSendable<CurrencyService> {
+            return UncheckedSendable(CurrencyServiceImpl())
+        }
+    }
+}

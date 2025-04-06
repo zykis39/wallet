@@ -9,6 +9,7 @@ import SwiftUI
 struct HeaderWallet: View {
     let balance: Double
     let expenses: Double
+    let currency: Currency
     
     let leftSystemImageName: String
     let rightSystemImageName: String
@@ -16,9 +17,10 @@ struct HeaderWallet: View {
     let rightAction: () -> Void
     let imageSize: CGFloat
     
-    init(balance: Double, expenses: Double, leftSystemImageName: String, rightSystemImageName: String, leftAction: @escaping () -> Void, rightAction: @escaping () -> Void, imageSize: CGFloat) {
+    init(balance: Double, expenses: Double, currency: Currency, leftSystemImageName: String, rightSystemImageName: String, leftAction: @escaping () -> Void, rightAction: @escaping () -> Void, imageSize: CGFloat) {
         self.balance = balance
         self.expenses = expenses
+        self.currency = currency
         self.leftSystemImageName = leftSystemImageName
         self.rightSystemImageName = rightSystemImageName
         self.leftAction = leftAction
@@ -42,7 +44,7 @@ struct HeaderWallet: View {
             VStack {
                 Text("Balance")
                     .opacity(0.54)
-                Text((CurrencyFormatter.formatter.string(for: balance) ?? "0") + " " + (Currency.RUB.representation))
+                Text((CurrencyFormatter.formatter.string(for: balance) ?? "0") + " " + (currency.fixedSymbol))
             }
             
             Spacer()
@@ -50,7 +52,7 @@ struct HeaderWallet: View {
             VStack {
                 Text("Expenses")
                     .opacity(0.54)
-                Text((CurrencyFormatter.formatter.string(for: expenses) ?? "0") + " " + (Currency.RUB.representation))
+                Text((CurrencyFormatter.formatter.string(for: expenses) ?? "0") + " " + (currency.fixedSymbol))
             }
             
             Spacer()

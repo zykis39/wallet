@@ -10,6 +10,8 @@
         // productTypes: ["Alamofire": .framework,] 
         productTypes: [
             "ComposableArchitecture": .framework,
+            "Alamofire": .framework,
+            "Atlantis": .framework,
         ]
     )
 #endif
@@ -19,8 +21,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-composable-architecture", exact: "1.18.0"),
         .package(url: "https://github.com/firebase/firebase-ios-sdk", exact: "11.10.0"),
-        // Add your own dependencies here:
-        // .package(url: "https://github.com/Alamofire/Alamofire", from: "5.0.0"),
-        // You can read more about dependencies here: https://docs.tuist.io/documentation/tuist/dependencies
+        .package(url: "https://github.com/Alamofire/Alamofire.git", exact: "5.10.0"),
+        .package(url: "https://github.com/ProxymanApp/atlantis", exact: "1.27.0"),
     ]
 )

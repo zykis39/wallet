@@ -26,6 +26,10 @@ public struct WalletFeature {
         var walletItemEdit: WalletItemEditFeature.State
         
         // internal
+        var selectedCurrency: Currency = .USD
+        var currencies: [Currency] = [.USD]
+        var rates: [ConversionRate] = []
+        
         var accounts: [WalletItem]
         var expenses: [WalletItem]
         var transactions: [WalletTransaction]
@@ -54,12 +58,17 @@ public struct WalletFeature {
         
         // internal
         case start
+        case getCurrenciesAndRates
+        case prepareItemsAndTransactions
+        case currenciesFetched([Currency])
+        case selectedCurrencyChanged(Currency)
+        case conversionRatesFetched([ConversionRate])
         case readWalletItems
         case readTransactions
         case saveWalletItems
         case deleteTransaction([WalletTransaction])
         case deleteWalletItem(UUID)
-        case generateDefaultWalletItems
+        case generateDefaultWalletItems(Currency)
         case applyTransaction(WalletTransaction)
         case reverseTransaction(WalletTransaction)
         case saveTransaction(WalletTransaction)
@@ -79,6 +88,7 @@ public struct WalletFeature {
         case expensesStatisticsPresentedChanged(Bool)
     }
     
+    @Dependency(\.currencyService) var currencyService
     @Dependency(\.analytics) var analytics
     @Dependency(\.database) var database
     @Dependency(\.defaultAppStorage) var appStorage
@@ -92,21 +102,55 @@ public struct WalletFeature {
         Reduce { state, action in
             switch action {
             case .start:
+                return .run { send in
+                    await send(.getCurrenciesAndRates)
+                }
+            case .getCurrenciesAndRates:
+                return .run { send in
+                    do {
+                        let currencies = try await currencyService.currencies(codes: Currency.currencyCodes)
+                        // FIXME: use environment or propogate state to children
+                        CurrencyManagerImpl.shared.currencies = currencies
+                        let defaultCurrency = CurrencyManagerImpl.shared.defaultCurrency(for: .current, from: currencies)
+                        await send(.currenciesFetched(currencies))
+                        await send(.selectedCurrencyChanged(defaultCurrency))
+                        
+                        let rates = try await currencyService.conversionRates(base: .USD, to: currencies)
+                        await send(.conversionRatesFetched(rates))
+                        
+                        // TODO: save currencies in UserDefaults
+                        // TODO: save rates in UserDefaults
+                    } catch {
+                        // TODO: read currencies from UserDefaults
+                        // TODO: read rates from UserDefaults
+                    }
+                    await send(.prepareItemsAndTransactions)
+                }
+            case .prepareItemsAndTransactions:
                 let wasLaunchedBefore = appStorage.bool(forKey: AppStorageKey.wasLaunchedBefore.rawValue)
                 if !wasLaunchedBefore {
                     appStorage.set(true, forKey: AppStorageKey.wasLaunchedBefore.rawValue)
                 }
                 
-                return .run { send in
-                    analytics.logEvent(.appStarted(firstLaunch: !wasLaunchedBefore))
+                return .run { [currencies = state.currencies] send in
                     if !wasLaunchedBefore {
-                        await send(.generateDefaultWalletItems)
-                        appStorage.set(true, forKey: AppStorageKey.wasLaunchedBefore.rawValue)
+                        analytics.logEvent(.appStarted(firstLaunch: !wasLaunchedBefore))
+                        let currency = CurrencyManagerImpl.shared.defaultCurrency(for: .current, from: currencies)
+                        await send(.generateDefaultWalletItems(currency))
                     } else {
                         await send(.readWalletItems)
                         await send(.readTransactions)
                     }
                 }
+            case let .currenciesFetched(currencies):
+                state.currencies = currencies
+                return .none
+            case let .conversionRatesFetched(rates):
+                state.rates = rates
+                return .none
+            case let .selectedCurrencyChanged(currency):
+                state.selectedCurrency = currency
+                return .none
             case let .accountsUpdated(accounts):
                 state.accounts = accounts
                 return .none
@@ -155,9 +199,27 @@ public struct WalletFeature {
                     analytics.logEvent(.error("Transaction decoding error: \(error.localizedDescription)"))
                 }
                 return .none
-            case .generateDefaultWalletItems:
-                state.accounts = WalletItem.defaultAccounts
-                state.expenses = WalletItem.defaultExpenses
+            case let .generateDefaultWalletItems(currency):
+                state.accounts = WalletItem.defaultAccounts.map {
+                    WalletItem(id: $0.id,
+                               timestamp: $0.timestamp,
+                               type: $0.type,
+                               name: $0.name,
+                               icon: $0.icon,
+                               currency: currency,
+                               balance: $0.balance)
+                }
+                
+                state.expenses = WalletItem.defaultExpenses.map {
+                    WalletItem(id: $0.id,
+                               timestamp: $0.timestamp,
+                               type: $0.type,
+                               name: $0.name,
+                               icon: $0.icon,
+                               currency: currency,
+                               balance: $0.balance)
+                }
+                
                 return .run { send in
                     await send(.saveWalletItems)
                 }
@@ -329,7 +391,7 @@ public struct WalletFeature {
                     state.expenses.append(item)
                 }
                 return .run { send in
-                    analytics.logEvent(.itemCreated(itemName: item.name, currency: item.currency.representation))
+                    analytics.logEvent(.itemCreated(itemName: item.name, currency: item.currency.code))
                     await send(.saveWalletItems)
                 }
             case let .walletItemEdit(.updateWalletItem(item)):

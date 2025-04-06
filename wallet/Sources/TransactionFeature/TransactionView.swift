@@ -47,7 +47,7 @@ struct TransactionView: View {
                         self.amount = value
                         store.send(.amountChanged(Double(value) ?? 0))
                     }
-                Text(store.state.currency.representation)
+                Text(store.state.source.currency.fixedSymbol)
                     .font(Font.system(size: 60, design: .default))
                     .foregroundStyle(.secondary)
             }

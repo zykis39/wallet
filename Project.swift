@@ -25,7 +25,9 @@ let project = Project(
             dependencies: [
                 .external(name: "ComposableArchitecture"),
                 .external(name: "FirebaseAnalytics"),
-                .external(name: "FirebaseCrashlytics") ,
+                .external(name: "FirebaseCrashlytics"),
+                .external(name: "Alamofire"),
+                .external(name: "Atlantis"),
             ],
             settings: .settings(base: [
                 "OTHER_LDFLAGS": ["-ObjC"],
