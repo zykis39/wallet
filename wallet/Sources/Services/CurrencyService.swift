@@ -7,6 +7,10 @@
 import Alamofire
 import Foundation
 
+enum CurrencyServiceError: Error {
+    case common(String)
+}
+
 public protocol CurrencyServiceNetworkProtocol {
     func currencies(codes: [String]) async throws -> [Currency]
     func conversionRates(base baseCurrency: Currency, to: [Currency]) async throws -> [ConversionRate]
@@ -16,7 +20,7 @@ public protocol CurrencyServiceStorageProtocol {
     func save(_ currencies: [Currency])
     func save(_ conversionRates: [ConversionRate])
     func readCurrencies() throws -> [Currency]
-    func readConversionRates() throws -> [ConversionRate]
+    func readConversionRates(currencies: [Currency]) throws -> [ConversionRate]
 }
 
 public protocol CurrencyServiceProtocol: CurrencyServiceNetworkProtocol, CurrencyServiceStorageProtocol {}
@@ -88,11 +92,44 @@ extension CurrencyService: CurrencyServiceStorageProtocol {
     func save(_ conversionRates: [ConversionRate]) {}
     
     func readCurrencies() throws -> [Currency] {
-        []
+        guard let path = Bundle.main.path(forResource: "currencies", ofType: "json") else {
+            throw CurrencyServiceError.common("no file found: currencies.json")
+        }
+        do {
+            let data = try Data(contentsOf: URL(fileURLWithPath: path))
+            let decoder = JSONDecoder()
+            let currencies = try decoder.decode([Currency].self, from: data)
+            return currencies
+        } catch {
+            throw CurrencyServiceError.common("error parsing: currencies.json")
+        }
     }
     
-    func readConversionRates() throws -> [ConversionRate] {
-        []
+    func readConversionRates(currencies: [Currency]) throws -> [ConversionRate] {
+        guard let path = Bundle.main.path(forResource: "usd_rates", ofType: "json") else {
+            throw CurrencyServiceError.common("no file found: usd_rates.json")
+        }
+        do {
+            let data = try Data(contentsOf: URL(fileURLWithPath: path))
+            let decoder = JSONDecoder()
+            let ratesDictionary = try decoder.decode([String: Double].self, from: data)
+            
+            guard let source: Currency = currencies.first(where: { $0.code == Currency.USD.code })  else {
+                throw CurrencyServiceError.common("no USD currency found in currencies")
+            }
+
+            let rates = try ratesDictionary.map { rate in
+                guard let destination: Currency = currencies.first(where: { currency in
+                    currency.code == rate.key
+                })  else {
+                    throw CurrencyServiceError.common("no \(rate.key) currency found in currencies")
+                }
+                return ConversionRate(source: source, destination: destination, rate: rate.value)
+            }
+            return rates
+        } catch {
+            throw CurrencyServiceError.common("error parsing: usd_rates.json")
+        }
     }
 }
 

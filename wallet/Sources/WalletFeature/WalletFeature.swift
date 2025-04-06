@@ -109,18 +109,22 @@ public struct WalletFeature {
                 return .run { send in
                     do {
                         let currencies = try await currencyService.currencies(codes: Currency.currencyCodes)
-                        let defaultCurrency = CurrencyManager.shared.defaultCurrency(for: .current, from: currencies)
                         await send(.currenciesFetched(currencies))
-                        await send(.selectedCurrencyChanged(defaultCurrency))
                         
                         let rates = try await currencyService.conversionRates(base: .USD, to: currencies)
                         await send(.conversionRatesFetched(rates))
-                        
-                        // TODO: save currencies in UserDefaults
-                        // TODO: save rates in UserDefaults
+//                        currencyService.save(currencies)
+//                        currencyService.save(rates)
                     } catch {
-                        // TODO: read currencies from UserDefaults
-                        // TODO: read rates from UserDefaults
+                        do {
+                            let currencies = try currencyService.readCurrencies()
+                            await send(.currenciesFetched(currencies))
+                            
+                            let rates = try currencyService.readConversionRates(currencies: currencies)
+                            await send(.conversionRatesFetched(rates))
+                        } catch {
+                            analytics.logEvent(.error("error, trying to get currencies/rates: \(error)"))
+                        }
                     }
                     await send(.prepareItemsAndTransactions)
                 }
@@ -142,7 +146,11 @@ public struct WalletFeature {
                 }
             case let .currenciesFetched(currencies):
                 state.currencies = currencies
-                return .none
+                let defaultCurrency = CurrencyManager.shared.defaultCurrency(for: .current, from: currencies)
+                
+                return .run { send in
+                    await send(.selectedCurrencyChanged(defaultCurrency))
+                }
             case let .conversionRatesFetched(rates):
                 state.rates = rates
                 return .none
@@ -260,52 +268,30 @@ public struct WalletFeature {
             case let .applyTransaction(transaction):
                 /// FIXME:
                 /// транзакции не должны применяться частично в случае ошибок
-                let currencyCode = transaction.currency.code
                 if let sourceIndex = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
                     {
-                    
-                    let source = state.accounts[sourceIndex]
-                    if source.currency.code == currencyCode {
-                        state.accounts[sourceIndex].balance -= transaction.amount
-                    } else {
-                        let rate = ConversionRate.rate(for: transaction.currency, destination: source.currency, rates: state.rates)
-                        state.accounts[sourceIndex].balance -= transaction.amount * rate
-                    }
+                    state.accounts[sourceIndex].balance -= transaction.amount
                 }
                 if let destinationIndex = state.expenses.firstIndex(where: { $0.id == transaction.destination.id }) {
-                    let destination = state.expenses[destinationIndex]
-                    if destination.currency.code == currencyCode {
-                        state.expenses[destinationIndex].balance += transaction.amount
-                    } else {
-                        let rate = ConversionRate.rate(for: transaction.currency, destination: destination.currency, rates: state.rates)
-                        state.expenses[destinationIndex].balance += transaction.amount * rate
-                    }
+                    state.expenses[destinationIndex].balance += transaction.amount * transaction.rate
                 } else if let destinationIndex = state.accounts.firstIndex(where: { $0.id == transaction.destination.id }) {
-                    let destination = state.accounts[destinationIndex]
-                    if destination.currency.code == currencyCode {
-                        state.accounts[destinationIndex].balance += transaction.amount
-                    } else {
-                        let rate = ConversionRate.rate(for: transaction.currency, destination: destination.currency, rates: state.rates)
-                        state.accounts[destinationIndex].balance += transaction.amount * rate
-                    }
+                    state.accounts[destinationIndex].balance += transaction.amount * transaction.rate
                 }
                 return .run { send in
                     // saving new balance after applying transaction
                     await send(.saveWalletItems)
                 }
             case let .revertTransaction(transaction):
-                /// FIXME: apply rates
-                /// How to revert exact amount of money, that was aaplyed?
-                /// rate might be different, when transaction cancelled
-                /// should transaction also contains rate?
+                /// FIXME:
+                /// транзакции не должны применяться частично в случае ошибок
                 if let sourceIndex = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
                     {
                     state.accounts[sourceIndex].balance += transaction.amount
                 }
                 if let destinationIndex = state.expenses.firstIndex(where: { $0.id == transaction.destination.id }) {
-                    state.expenses[destinationIndex].balance -= transaction.amount
+                    state.expenses[destinationIndex].balance -= transaction.amount * transaction.rate
                 } else if let destinationIndex = state.accounts.firstIndex(where: { $0.id == transaction.destination.id }) {
-                    state.accounts[destinationIndex].balance -= transaction.amount
+                    state.accounts[destinationIndex].balance -= transaction.amount * transaction.rate
                 }
                 return .none
             case let .saveTransaction(transaction):

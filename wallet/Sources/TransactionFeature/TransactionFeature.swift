@@ -37,11 +37,11 @@ public struct TransactionFeature: Sendable {
         Reduce { state, action in
             switch action {
             case .confirmTapped:
-                return .run { [state] send in
+                return .run { [state, source = state.source, destination = state.destination, rate = state.sourceDestinationRate] send in
                     await send(.presentedChanged(false))
                     guard state.amount > 0 else { return }
                     
-                    let transaction = WalletTransaction(timestamp: .now, currency: state.source.currency, amount: state.amount, source: state.source, destination: state.destination)
+                    let transaction = WalletTransaction(timestamp: .now, currency: source.currency, amount: state.amount, rate: rate, source: source, destination: destination)
                     await send(.createTransaction(transaction))
                 }
             case .cancelTapped:

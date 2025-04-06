@@ -99,11 +99,13 @@ public struct WalletTransaction: Codable, Equatable, Sendable, Identifiable {
     let timestamp: Date
     let currency: Currency
     let amount: Double
+    /// source.currency to destination.currency rate
+    let rate: Double
     
     let source: WalletItem
     let destination: WalletItem
     
-    static let empty: Self = .init(timestamp: .now, currency: .USD, amount: 0, source: .none, destination: .none)
+    static let empty: Self = .init(timestamp: .now, currency: .USD, amount: 0, rate: 0, source: .none, destination: .none)
     static func canBePerformed(source: WalletItem, destination: WalletItem) -> Bool {
         source.type == .account &&
         (destination.type == .expenses || destination.type == .account) &&
@@ -214,15 +216,17 @@ final class WalletTransactionModel: Sendable {
     var timestamp: Date
     var currency: Currency
     var amount: Double
+    var rate: Double
     
     var source: WalletItem
     var destination: WalletItem
     
-    init(id: UUID, timestamp: Date, currency: Currency, amount: Double, source: WalletItem, destination: WalletItem) {
+    init(id: UUID, timestamp: Date, currency: Currency, amount: Double, rate: Double, source: WalletItem, destination: WalletItem) {
         self.id = id
         self.timestamp = timestamp
         self.currency = currency
         self.amount = amount
+        self.rate = rate
         self.source = source
         self.destination = destination
     }
@@ -232,6 +236,7 @@ final class WalletTransactionModel: Sendable {
                   timestamp: model.timestamp,
                   currency: model.currency,
                   amount: model.amount,
+                  rate: model.rate,
                   source: model.source,
                   destination: model.destination)
     }
@@ -241,6 +246,7 @@ final class WalletTransactionModel: Sendable {
               timestamp: self.timestamp,
               currency: self.currency,
               amount: self.amount,
+              rate: self.rate,
               source: self.source,
               destination: self.destination)
     }
