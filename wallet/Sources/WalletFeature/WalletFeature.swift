@@ -401,6 +401,13 @@ public struct WalletFeature {
                 return .run { send in
                     await send(.saveWalletItems)
                 }
+            case let .walletItemEdit(.deleteTransaction(transaction)):
+                state.transactions = state.transactions.filter { $0.id != transaction.id }
+                
+                return .run { send in
+                    await send(.revertTransaction(transaction))
+                    await send(.deleteTransaction([transaction]))
+                }
             case .walletItemEdit:
                 return .none
             }

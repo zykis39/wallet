@@ -114,6 +114,13 @@ struct WalletItemEditView: View {
                                     .foregroundStyle(isIncome ? .green : .red)
                             }
                         }
+                        .onDelete { indexSet in
+                            for i in indexSet {
+                                if let transaction = store.state.transactions[safe: i] {
+                                    store.send(.deleteTransaction(transaction))
+                                }
+                            }
+                        }
                     }
                 }
                 .foregroundStyle(.white)

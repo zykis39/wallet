@@ -37,6 +37,7 @@ public struct WalletItemEditFeature {
         case deleteWalletItem(UUID)
         case iconSelectionPresentedChanged(Bool)
         case iconSelected(String)
+        case deleteTransaction(WalletTransaction)
     }
     
     public var body: some Reducer<State, Action> {
@@ -111,6 +112,9 @@ public struct WalletItemEditFeature {
             case .createWalletItem:
                 return .none
             case .updateWalletItem:
+                return .none
+            case let .deleteTransaction(transaction):
+                state.transactions = state.transactions.filter { $0.id != transaction.id }
                 return .none
             }
         }
