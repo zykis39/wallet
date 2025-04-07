@@ -24,21 +24,22 @@ struct AppView: View {
                 .fullScreenCover(isPresented: $store.walletItemEdit.presented.sending(\.walletItemEdit.presentedChanged)) {
                     let scoped = store.scope(state: \.walletItemEdit, action: \.walletItemEdit)
                     WalletItemEditView(store: scoped)
-                    .sheet(isPresented: $store.walletItemEdit.iconSelectionPresented.sending(\.walletItemEdit.iconSelectionPresentedChanged)) {
-                        IconSelectionView(store: scoped)
-                    }
+                        .sheet(isPresented: $store.walletItemEdit.iconSelectionPresented.sending(\.walletItemEdit.iconSelectionPresentedChanged)) {
+                            IconSelectionView(store: scoped)
+                        }
                 }
                 .navigationDestination(isPresented: $store.settingsPresented.sending(\.settingsPresentedChanged)) {
                     SettingsView(store: store,
                                  selectedLocale: store.selectedLocale,
                                  selectedCurrency: store.selectedCurrency)
-                        .navigationDestination(isPresented: $store.aboutAppPresented.sending(\.aboutAppPresentedChanged)) {
-                            AboutApplicationView()
-                        }
+                    .navigationDestination(isPresented: $store.aboutAppPresented.sending(\.aboutAppPresentedChanged)) {
+                        AboutApplicationView()
+                    }
                 }
                 .navigationDestination(isPresented: $store.expensesStatisticsPresented.sending(\.expensesStatisticsPresentedChanged)) {
                     ExpensesStatisticsView(store: store)
                 }
         }
+        .environment(\.locale, store.selectedLocale)
     }
 }

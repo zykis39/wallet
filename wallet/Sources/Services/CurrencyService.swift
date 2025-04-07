@@ -38,7 +38,8 @@ final class CurrencyService: CurrencyServiceProtocol {
     }
     
     let base = "https://api.freecurrencyapi.com/v1/"
-    let APIKey = "fca_live_YLZQGJ50z3Ucc0ozfOszHN9ST2WqS7S6cpyuGHrZ"
+//    let APIKey = "fca_live_YLZQGJ50z3Ucc0ozfOszHN9ST2WqS7S6cpyuGHrZ"
+    let APIKey = "fca_live_IbfxWhf2Wj5luTg9EXKbdX2RKe2aiTmAKbxW2z3G"
     
     func currencies(codes: [String]) async throws -> [Currency] {
         let requestString = base + Paths.currencies
