@@ -17,6 +17,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct WalletApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    let store: StoreOf<WalletFeature> = Store(initialState: .initial) {
+        WalletFeature()
+    }
     
     init() {
         #if DEBUG
@@ -26,12 +29,10 @@ struct WalletApp: App {
     
     var body: some Scene {
         WindowGroup {
-            AppView(store: Store(initialState: .initial) {
-                WalletFeature()
-                    ._printChanges()
-            })
-            .modelContainer(SwiftDataContainerProvider.shared.container)
-            .preferredColorScheme(.light)
+            AppView(store: store)
+                .modelContainer(SwiftDataContainerProvider.shared.container)
+                .preferredColorScheme(.light)
+                .environment(\.locale, store.selectedLocale)
         }
     }
 }

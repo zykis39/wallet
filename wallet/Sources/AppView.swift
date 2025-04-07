@@ -28,8 +28,13 @@ struct AppView: View {
                         IconSelectionView(store: scoped)
                     }
                 }
-                .navigationDestination(isPresented: $store.aboutAppPresented.sending(\.aboutAppPresentedChanged)) {
-                    AboutApplicationView()
+                .navigationDestination(isPresented: $store.settingsPresented.sending(\.settingsPresentedChanged)) {
+                    SettingsView(store: store,
+                                 selectedLocale: store.selectedLocale,
+                                 selectedCurrency: store.selectedCurrency)
+                        .navigationDestination(isPresented: $store.aboutAppPresented.sending(\.aboutAppPresentedChanged)) {
+                            AboutApplicationView()
+                        }
                 }
                 .navigationDestination(isPresented: $store.expensesStatisticsPresented.sending(\.expensesStatisticsPresentedChanged)) {
                     ExpensesStatisticsView(store: store)

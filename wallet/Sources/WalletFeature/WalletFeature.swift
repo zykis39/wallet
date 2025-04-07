@@ -10,11 +10,10 @@ import Foundation
 import SwiftData
 import SwiftUI
 
-enum AppStorageKey: String {
-    case accounts
-    case expenses
-    case transactions
-    case wasLaunchedBefore
+enum AppStorageKey {
+    static let wasLaunchedBefore = "wasLaunchedBefore"
+    static let selectedLocaleIdentifier = "selectedLocaleIdentifier"
+    static let selectedCurrencyCode = "selectedCurrencyCode"
 }
 
 @Reducer
@@ -24,6 +23,19 @@ public struct WalletFeature {
         // child
         var transaction: TransactionFeature.State
         var walletItemEdit: WalletItemEditFeature.State
+        
+        // locale
+        var supportedLocales: [Locale] = [
+            .init(identifier: "en"),
+            .init(identifier: "ru"),
+            .init(identifier: "fr"),
+            .init(identifier: "de"),
+            .init(identifier: "he"),
+            .init(identifier: "hi"),
+            .init(identifier: "it"),
+            .init(identifier: "es"),
+        ]
+        var selectedLocale: Locale = .current
         
         // internal
         var selectedCurrency: Currency = .USD
@@ -41,6 +53,7 @@ public struct WalletFeature {
         var dropItem: WalletItem?
         
         // navigation
+        var settingsPresented: Bool = false
         var aboutAppPresented: Bool = false
         var expensesStatisticsPresented: Bool = false
         
@@ -61,7 +74,6 @@ public struct WalletFeature {
         case getCurrenciesAndRates
         case prepareItemsAndTransactions
         case currenciesFetched([Currency])
-        case selectedCurrencyChanged(Currency)
         case conversionRatesFetched([ConversionRate])
         case readWalletItems
         case readTransactions
@@ -76,6 +88,11 @@ public struct WalletFeature {
         case expensesUpdated([WalletItem])
         case transactionsUpdated([WalletTransaction])
         
+        // locale & currency
+        case checkLocale
+        case selectedLocaleChanged(Locale)
+        case selectedCurrencyChanged(Currency)
+        
         // view
         case createNewItemTapped(WalletItem.WalletItemType)
         case itemFrameChanged(WalletItem, CGRect)
@@ -84,6 +101,7 @@ public struct WalletFeature {
         case itemTapped(WalletItem)
         
         // navigation
+        case settingsPresentedChanged(Bool)
         case aboutAppPresentedChanged(Bool)
         case expensesStatisticsPresentedChanged(Bool)
     }
@@ -103,8 +121,21 @@ public struct WalletFeature {
             switch action {
             case .start:
                 return .run { send in
+                    await send(.checkLocale)
                     await send(.getCurrenciesAndRates)
                 }
+            case .checkLocale:
+                if let selectedLocaleIdentifier = appStorage.string(forKey: AppStorageKey.selectedLocaleIdentifier),
+                   let locale = state.supportedLocales.first(where: { $0.identifier == selectedLocaleIdentifier }) {
+                    state.selectedLocale = locale
+                } else {
+                    if let identifier = Locale.current.language.languageCode?.identifier {
+                        state.selectedLocale = .init(identifier: identifier)
+                    } else {
+                        state.selectedLocale = .current
+                    }
+                }
+                return .none
             case .getCurrenciesAndRates:
                 return .run { send in
                     do {
@@ -129,9 +160,9 @@ public struct WalletFeature {
                     await send(.prepareItemsAndTransactions)
                 }
             case .prepareItemsAndTransactions:
-                let wasLaunchedBefore = appStorage.bool(forKey: AppStorageKey.wasLaunchedBefore.rawValue)
+                let wasLaunchedBefore = appStorage.bool(forKey: AppStorageKey.wasLaunchedBefore)
                 if !wasLaunchedBefore {
-                    appStorage.set(true, forKey: AppStorageKey.wasLaunchedBefore.rawValue)
+                    appStorage.set(true, forKey: AppStorageKey.wasLaunchedBefore)
                 }
                 
                 return .run { [currencies = state.currencies] send in
@@ -146,16 +177,29 @@ public struct WalletFeature {
                 }
             case let .currenciesFetched(currencies):
                 state.currencies = currencies
-                let defaultCurrency = CurrencyManager.shared.defaultCurrency(for: .current, from: currencies)
+                
+                var selectedCurrency: Currency?
+                if let code = appStorage.string(forKey: AppStorageKey.selectedCurrencyCode),
+                   let currency = currencies.first(where: { $0.code == code }) {
+                       selectedCurrency = currency
+                } else {
+                    selectedCurrency = CurrencyManager.shared.defaultCurrency(for: .current, from: currencies)
+                }
+                guard let selectedCurrency else { return .none }
                 
                 return .run { send in
-                    await send(.selectedCurrencyChanged(defaultCurrency))
+                    await send(.selectedCurrencyChanged(selectedCurrency))
                 }
             case let .conversionRatesFetched(rates):
                 state.rates = rates
                 return .none
             case let .selectedCurrencyChanged(currency):
                 state.selectedCurrency = currency
+                appStorage.set(currency.code, forKey: AppStorageKey.selectedCurrencyCode)
+                return .none
+            case let .selectedLocaleChanged(locale):
+                state.selectedLocale = locale
+                appStorage.set(locale.identifier, forKey: AppStorageKey.selectedLocaleIdentifier)
                 return .none
             case let .accountsUpdated(accounts):
                 state.accounts = accounts
@@ -325,6 +369,9 @@ public struct WalletFeature {
                 return .run { [currency = state.selectedCurrency, currencies = state.currencies] send in
                     await send(.walletItemEdit(.presentNewItem(itemType, currency, currencies)))
                 }
+            case let .settingsPresentedChanged(presented):
+                state.settingsPresented = presented
+                return .none
             case let .aboutAppPresentedChanged(presented):
                 state.aboutAppPresented = presented
                 return .run { _ in
