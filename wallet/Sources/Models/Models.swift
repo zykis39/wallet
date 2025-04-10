@@ -259,7 +259,7 @@ extension WalletTransaction {
         let currency = self.currency.fixedSymbol
         let isItemSource = self.source.id == item.id
         let to = isItemSource ? self.destination.name.localized() : self.source.name.localized()
-        let result = String.init(format: "%@ %@ %@ %@", arguments: [
+        let result = String.init(format: "%@ %@ %@ (%@)", arguments: [
             isIncome ? "+" : "-",
             CurrencyFormatter.formatter.string(from: NSNumber(value: amount)) ?? "",
             currency,

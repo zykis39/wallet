@@ -11,14 +11,20 @@ enum CurrencyServiceError: Error {
     case common(String)
 }
 
+enum CurrencyFilePaths {
+    static let currencies = "currencies"
+    static let conversionRates = "usd_rates"
+    static let format = "json"
+}
+
 public protocol CurrencyServiceNetworkProtocol {
     func currencies(codes: [String]) async throws -> [Currency]
     func conversionRates(base baseCurrency: Currency, to: [Currency]) async throws -> [ConversionRate]
 }
 
 public protocol CurrencyServiceStorageProtocol {
-    func save(_ currencies: [Currency])
-    func save(_ conversionRates: [ConversionRate])
+    func save(_ currencies: [Currency]) throws
+    func save(_ conversionRates: [ConversionRate]) throws
     func readCurrencies() throws -> [Currency]
     func readConversionRates(currencies: [Currency]) throws -> [ConversionRate]
 }
@@ -88,33 +94,75 @@ final class CurrencyService: CurrencyServiceProtocol {
 }
 
 extension CurrencyService: CurrencyServiceStorageProtocol {
-    func save(_ currencies: [Currency]) {}
+    func save(_ currencies: [Currency]) throws {
+        let documentsPath = try FileManager.default
+            .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+            .appendingPathComponent(CurrencyFilePaths.currencies, conformingTo: .json)
+        do {
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(currencies)
+            try data.write(to: documentsPath)
+        } catch {
+            throw CurrencyServiceError.common("error writing to: currencies.json")
+        }
+    }
     
-    func save(_ conversionRates: [ConversionRate]) {}
+    func save(_ conversionRates: [ConversionRate]) throws {
+        let documentsPath = try FileManager.default
+            .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+            .appendingPathComponent(CurrencyFilePaths.conversionRates, conformingTo: .json)
+        do {
+            let encoder = JSONEncoder()
+            let ratesDictionary: [String: Double] = conversionRates.reduce(into: [:]) {
+                $0[$1.destination.code] = $1.rate
+            }
+            let data = try encoder.encode(ratesDictionary)
+            try data.write(to: documentsPath)
+        } catch {
+            throw CurrencyServiceError.common("error writing to: usd_rates.json")
+        }
+    }
     
     func readCurrencies() throws -> [Currency] {
-        guard let path = Bundle.main.path(forResource: "currencies", ofType: "json") else {
-            throw CurrencyServiceError.common("no file found: currencies.json")
-        }
         do {
-            let data = try Data(contentsOf: URL(fileURLWithPath: path))
+            let documentsPath = try FileManager.default
+                .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+                .appendingPathComponent(CurrencyFilePaths.currencies, conformingTo: .json)
+            let data = try Data(contentsOf: documentsPath)
             let decoder = JSONDecoder()
             let currencies = try decoder.decode([Currency].self, from: data)
             return currencies
         } catch {
-            throw CurrencyServiceError.common("error parsing: currencies.json")
+            guard let resourcesPath = Bundle.main.path(forResource: CurrencyFilePaths.currencies, ofType: CurrencyFilePaths.format) else {
+                throw CurrencyServiceError.common("no file found: currencies.json")
+            }
+            let data = try Data(contentsOf: URL(fileURLWithPath: resourcesPath))
+            let decoder = JSONDecoder()
+            let currencies = try decoder.decode([Currency].self, from: data)
+            return currencies
         }
     }
     
     func readConversionRates(currencies: [Currency]) throws -> [ConversionRate] {
-        guard let path = Bundle.main.path(forResource: "usd_rates", ofType: "json") else {
-            throw CurrencyServiceError.common("no file found: usd_rates.json")
-        }
         do {
-            let data = try Data(contentsOf: URL(fileURLWithPath: path))
+            let documentsPath = try FileManager.default
+                .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+                .appendingPathComponent(CurrencyFilePaths.conversionRates, conformingTo: .json)
+            let data = try Data(contentsOf: documentsPath)
             let decoder = JSONDecoder()
             let ratesDictionary = try decoder.decode([String: Double].self, from: data)
-            
+            return try readRates(ratesDictionary)
+        } catch {
+            guard let resourcesPath = Bundle.main.path(forResource: CurrencyFilePaths.conversionRates, ofType: CurrencyFilePaths.format) else {
+                throw CurrencyServiceError.common("no file found: usd_rates.json")
+            }
+            let data = try Data(contentsOf: URL(fileURLWithPath: resourcesPath))
+            let decoder = JSONDecoder()
+            let ratesDictionary = try decoder.decode([String: Double].self, from: data)
+            return try readRates(ratesDictionary)
+        }
+        
+        func readRates(_ ratesDictionary: [String: Double]) throws -> [ConversionRate] {
             guard let source: Currency = currencies.first(where: { $0.code == Currency.USD.code })  else {
                 throw CurrencyServiceError.common("no USD currency found in currencies")
             }
@@ -128,8 +176,6 @@ extension CurrencyService: CurrencyServiceStorageProtocol {
                 return ConversionRate(source: source, destination: destination, rate: rate.value)
             }
             return rates
-        } catch {
-            throw CurrencyServiceError.common("error parsing: usd_rates.json")
         }
     }
 }

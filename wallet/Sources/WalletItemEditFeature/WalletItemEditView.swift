@@ -18,7 +18,6 @@ struct WalletItemEditView: View {
         )
     }
     
-    
     var headerText: LocalizedStringKey {
         switch store.editType {
         case .new:
@@ -50,6 +49,7 @@ struct WalletItemEditView: View {
                    leftAction: { store.send(.cancelTapped) },
                    rightAction: { store.send(.confirmedTapped) },
                    imageSize: 32)
+            .padding()
             Spacer()
                 .frame(height: 24)
             Text(headerText)
@@ -100,19 +100,14 @@ struct WalletItemEditView: View {
             .scrollContentBackground(.hidden)
             .tint(.black)
             
-            Form {
-                Section("Transactions") {
-                    List {
+            if store.state.transactions.count > 0 {
+                List {
+                    Section {
                         ForEach(store.state.transactions) { transaction in
                             let isIncome = (transaction.destination.id == store.item.id) && (store.item.type == .account)
-                            HStack {
-                                Text(transaction.timestamp.formatted(date: .numeric, time: .omitted))
-                                .foregroundStyle(.black)
-                                .layoutPriority(1)
-                                Spacer()
-                                Text(transaction.representation(for: store.item))
-                                    .foregroundStyle(isIncome ? .green : .red)
-                            }
+                            TransactionCell(leftText: transaction.timestamp.formatted(date: .numeric, time: .omitted),
+                                            rightText: transaction.representation(for: store.item),
+                                            rightTextColor: isIncome ? .green : .red)
                         }
                         .onDelete { indexSet in
                             for i in indexSet {
@@ -121,14 +116,16 @@ struct WalletItemEditView: View {
                                 }
                             }
                         }
+                    } header: {
+                        Text("Transactions")
+                            .font(.system(size: 16))
+                            .textCase(.uppercase)
+                            .foregroundStyle(.white)
                     }
                 }
-                .foregroundStyle(.white)
+                .listStyle(.plain)
+                .tint(.black)
             }
-            .submitLabel(.done)
-            .scrollContentBackground(.hidden)
-            .tint(.black)
-            .opacity(store.state.transactions.count > 0 ? 1 : 0)
             
             if store.editType == .edit {
                 Button {
@@ -139,7 +136,7 @@ struct WalletItemEditView: View {
             }
             Spacer()
         }
-        .padding()
+        .submitLabel(.done)
         .tint(.white)
         .background(Color.walletItemColor(for: store.item.type))
         .ignoresSafeArea(.keyboard)

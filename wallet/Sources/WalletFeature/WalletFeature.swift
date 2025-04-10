@@ -144,8 +144,8 @@ public struct WalletFeature {
                         
                         let rates = try await currencyService.conversionRates(base: .USD, to: currencies)
                         await send(.conversionRatesFetched(rates))
-//                        currencyService.save(currencies)
-//                        currencyService.save(rates)
+                        try currencyService.save(currencies)
+                        try currencyService.save(rates)
                     } catch {
                         do {
                             let currencies = try currencyService.readCurrencies()

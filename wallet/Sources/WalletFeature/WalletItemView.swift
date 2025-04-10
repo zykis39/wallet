@@ -17,8 +17,7 @@ public struct WalletItemView: View {
     }
 
     private var currencyAmount: String {
-        let lessThenZero = item.balance < 0
-        return (lessThenZero ? "-" : "") + "\(abs(Int(item.balance))) " + item.currency.fixedSymbol
+        (CurrencyFormatter.formatter.string(from: .init(value: item.balance)) ?? "") + " " + item.currency.fixedSymbol
     }
     
     private var simpleDrag: some Gesture {
@@ -37,14 +36,17 @@ public struct WalletItemView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .center, spacing: 2) {
+        VStack(alignment: .center, spacing: 4) {
             Text(LocalizedStringKey(item.name))
                 .lineLimit(1)
+                .foregroundStyle(.secondary)
+                .font(.subheadline)
             Circle()
                 .fill(.clear)
                 .frame(width: Constants.size, height: Constants.size)
             Text(currencyAmount)
                 .foregroundStyle(Color.walletItemColor(for: item.type))
+                .font(.system(size: 13))
                 .lineLimit(1)
         }
         .background {
