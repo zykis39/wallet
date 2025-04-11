@@ -20,10 +20,19 @@ extension DependencyValues {
 final class SwiftDataContainerProvider {
     static let shared: SwiftDataContainerProvider = .init()
     
-    var container: ModelContainer {
+    func container(inMemory: Bool) -> ModelContainer {
         do {
-            let configuration = ModelConfiguration(url: URL.documentsDirectory.appending(path: "database.sqlite"))
-            return try ModelContainer(for: WalletItemModel.self, WalletTransactionModel.self, configurations: configuration)
+            let configuration: ModelConfiguration = {
+                switch inMemory {
+                case true:
+                    return .init(isStoredInMemoryOnly: true)
+                case false:
+                    return .init(url: URL.documentsDirectory.appending(path: "database.sqlite"))
+                }
+            }()
+            return try ModelContainer(for: WalletItemModel.self, WalletTransactionModel.self,
+                                      migrationPlan: MigrationPlan.self,
+                                      configurations: configuration)
         } catch {
             fatalError(error.localizedDescription)
         }
@@ -35,12 +44,14 @@ struct Database {
 }
 
 let appContext: ModelContext = {
-    let context = ModelContext(SwiftDataContainerProvider.shared.container)
+    let context = ModelContext(SwiftDataContainerProvider.shared.container(inMemory: false))
+    context.autosaveEnabled = false
     return context
 }()
 
 extension Database: DependencyKey {
     static let liveValue = Self(context: { appContext })
+    static let testValue = Self(context: { appContext })
 }
 
 

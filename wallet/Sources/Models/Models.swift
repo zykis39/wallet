@@ -10,21 +10,23 @@ import SwiftData
 import ComposableArchitecture
 
 // MARK: - Models
+typealias WalletItemModel = SchemaV1.WalletItemModel
+typealias WalletTransactionModel = SchemaV1.WalletTransactionModel
 
 public struct WalletItem: Codable, Hashable, Sendable {
     public enum WalletItemType: Int, Codable, Equatable, Sendable {
         case account, expenses
     }
 
-    var id: UUID = UUID()
-    var timestamp: Date
-    var type: WalletItemType
-    var name: String
-    var icon: String
-    var currency: Currency
-    var balance: Double
+    let id: UUID
+    let timestamp: Date
+    let type: WalletItemType
+    let name: String
+    let icon: String
+    let currency: Currency
+    let balance: Double
     
-    init(id: UUID = UUID(), timestamp: Date = .now, type: WalletItemType, name: String, icon: String, currency: Currency, balance: Double) {
+    init(id: UUID, timestamp: Date, type: WalletItemType, name: String, icon: String, currency: Currency, balance: Double) {
         self.id = id
         self.timestamp = timestamp
         self.type = type
@@ -105,7 +107,6 @@ public struct WalletTransaction: Codable, Equatable, Sendable, Identifiable {
     let source: WalletItem
     let destination: WalletItem
     
-    static let empty: Self = .init(timestamp: .now, currency: .USD, amount: 0, rate: 0, source: .none, destination: .none)
     static func canBePerformed(source: WalletItem, destination: WalletItem) -> Bool {
         source.type == .account &&
         (destination.type == .expenses || destination.type == .account) &&
@@ -150,106 +151,21 @@ extension ConversionRate {
 }
 
 extension WalletItem {
-    static let none: Self = .init(type: .account, name: "", icon: "", currency: .USD, balance: 0)
+    static let none: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 0), type: .account, name: "", icon: "", currency: .USD, balance: 0)
     
     // default accounts
     static let defaultAccounts: [Self] = [card, cash]
-    static let card: Self = .init(timestamp: .init(timeIntervalSince1970: 1), type: .account, name: "Card", icon: "creditcard", currency: .USD, balance: 0)
-    static let cash: Self = .init(timestamp: .init(timeIntervalSince1970: 2), type: .account, name: "Cash", icon: "wallet.bifold", currency: .USD, balance: 0)
+    static let card: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 1), type: .account, name: "Card", icon: "creditcard", currency: .USD, balance: 0)
+    static let cash: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 2), type: .account, name: "Cash", icon: "wallet.bifold", currency: .USD, balance: 0)
     
     // default expences
     static let defaultExpenses: [Self] = [groceries, cafe, transport, shopping, services, entertainments]
-    static let groceries: Self = .init(timestamp: .init(timeIntervalSince1970: 1), type: .expenses, name: "Groceries", icon: "carrot", currency: .USD, balance: 0)
-    static let cafe: Self = .init(timestamp: .init(timeIntervalSince1970: 2), type: .expenses, name: "Cafe", icon: "fork.knife", currency: .USD, balance: 0)
-    static let transport: Self = .init(timestamp: .init(timeIntervalSince1970: 3), type: .expenses, name: "Transport", icon: "bus.fill", currency: .USD, balance: 0)
-    static let shopping: Self = .init(timestamp: .init(timeIntervalSince1970: 4), type: .expenses, name: "Shopping", icon: "handbag", currency: .USD, balance: 0)
-    static let services: Self = .init(timestamp: .init(timeIntervalSince1970: 5), type: .expenses, name: "Services", icon: "network", currency: .USD, balance: 0)
-    static let entertainments: Self = .init(timestamp: .init(timeIntervalSince1970: 6), type: .expenses, name: "Entertainments", icon: "party.popper", currency: .USD, balance: 0)
-}
-
-
-// MARK: - SwiftData Models
-
-@Model
-final class WalletItemModel: Sendable {
-    @Attribute(.unique) var id: UUID
-    var timestamp: Date
-    var type: WalletItem.WalletItemType
-    var name: String
-    var icon: String
-    var currency: Currency
-    var balance: Double
-    
-    init(id: UUID, timestamp: Date, type: WalletItem.WalletItemType, name: String, icon: String, currency: Currency, balance: Double) {
-        self.id = id
-        self.timestamp = timestamp
-        self.type = type
-        self.name = name
-        self.icon = icon
-        self.currency = currency
-        self.balance = balance
-    }
-    
-    convenience init(model: WalletItem) {
-        self.init(id: model.id,
-                  timestamp: model.timestamp,
-                  type: model.type,
-                  name: model.name,
-                  icon: model.icon,
-                  currency: model.currency,
-                  balance: model.balance)
-    }
-    
-    var valueType: WalletItem {
-        return .init(id: self.id,
-                     type: self.type,
-                     name: self.name,
-                     icon: self.icon,
-                     currency: self.currency,
-                     balance: self.balance)
-    }
-}
-
-@Model
-final class WalletTransactionModel: Sendable {
-    @Attribute(.unique) var id: UUID
-    var timestamp: Date
-    var currency: Currency
-    var amount: Double
-    var rate: Double
-    
-    var source: WalletItem
-    var destination: WalletItem
-    
-    init(id: UUID, timestamp: Date, currency: Currency, amount: Double, rate: Double, source: WalletItem, destination: WalletItem) {
-        self.id = id
-        self.timestamp = timestamp
-        self.currency = currency
-        self.amount = amount
-        self.rate = rate
-        self.source = source
-        self.destination = destination
-    }
-    
-    convenience init(model: WalletTransaction) {
-        self.init(id: model.id,
-                  timestamp: model.timestamp,
-                  currency: model.currency,
-                  amount: model.amount,
-                  rate: model.rate,
-                  source: model.source,
-                  destination: model.destination)
-    }
-    
-    var valueType: WalletTransaction {
-        .init(id: self.id,
-              timestamp: self.timestamp,
-              currency: self.currency,
-              amount: self.amount,
-              rate: self.rate,
-              source: self.source,
-              destination: self.destination)
-    }
+    static let groceries: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 1), type: .expenses, name: "Groceries", icon: "carrot", currency: .USD, balance: 0)
+    static let cafe: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 2), type: .expenses, name: "Cafe", icon: "fork.knife", currency: .USD, balance: 0)
+    static let transport: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 3), type: .expenses, name: "Transport", icon: "bus.fill", currency: .USD, balance: 0)
+    static let shopping: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 4), type: .expenses, name: "Shopping", icon: "handbag", currency: .USD, balance: 0)
+    static let services: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 5), type: .expenses, name: "Services", icon: "network", currency: .USD, balance: 0)
+    static let entertainments: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 6), type: .expenses, name: "Entertainments", icon: "party.popper", currency: .USD, balance: 0)
 }
 
 extension WalletTransaction {

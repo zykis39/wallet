@@ -29,7 +29,7 @@ struct WalletApp: App {
             AppView(store: Store(initialState: .initial) {
                 WalletFeature()
             })
-            .modelContainer(SwiftDataContainerProvider.shared.container)
+            .modelContainer(SwiftDataContainerProvider.shared.container(inMemory: false))
             .preferredColorScheme(.light)
         }
     }

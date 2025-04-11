@@ -26,6 +26,7 @@ final class FirebaseAnalyticsClient: AnalyticsClient {
     func logEvent(_ event: Event) {
         switch event {
         case let .error(message):
+            Analytics.logEvent("error", parameters: ["message": message])
             Crashlytics.crashlytics().log(message)
         case let .appStarted(firstLaunch):
             Analytics.logEvent("AppStarted", parameters: ["firstLaunch": firstLaunch])

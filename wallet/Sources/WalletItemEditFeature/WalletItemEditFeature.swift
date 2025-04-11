@@ -63,11 +63,15 @@ public struct WalletItemEditFeature {
                     }
                 }()
                 
+                let newItem = WalletItem(id: UUID(),
+                                         timestamp: .now,
+                                         type: type,
+                                         name: "",
+                                         icon: randomIcon,
+                                         currency: currency,
+                                         balance: 0)
                 state.editType = .new
-                state.item = .none
-                state.item.type = type
-                state.item.icon = randomIcon
-                state.item.currency = currency
+                state.item = newItem
                 state.transactions = []
                 state.currencies = currencies
                 state.rates = []
@@ -91,19 +95,51 @@ public struct WalletItemEditFeature {
                 state.presented = presented
                 return .none
             case let .nameChanged(name):
-                state.item.name = name
+                let item = state.item
+                let editedItem = WalletItem(id: item.id,
+                                            timestamp: item.timestamp,
+                                            type: item.type,
+                                            name: name,
+                                            icon: item.icon,
+                                            currency: item.currency,
+                                            balance: item.balance)
+                state.item = editedItem
                 return .none
             case let .balanceChanged(balance):
-                state.item.balance = balance
+                let item = state.item
+                let editedItem = WalletItem(id: item.id,
+                                            timestamp: item.timestamp,
+                                            type: item.type,
+                                            name: item.name,
+                                            icon: item.icon,
+                                            currency: item.currency,
+                                            balance: balance)
+                state.item = editedItem
                 return .none
             case let .currencyChanged(currency):
-                state.item.currency = currency
+                let item = state.item
+                let editedItem = WalletItem(id: item.id,
+                                            timestamp: item.timestamp,
+                                            type: item.type,
+                                            name: item.name,
+                                            icon: item.icon,
+                                            currency: currency,
+                                            balance: item.balance)
+                state.item = editedItem
                 return .none
             case let .iconSelectionPresentedChanged(presented):
                 state.iconSelectionPresented = presented
                 return .none
             case let .iconSelected(icon):
-                state.item.icon = icon
+                let item = state.item
+                let editedItem = WalletItem(id: item.id,
+                                            timestamp: item.timestamp,
+                                            type: item.type,
+                                            name: item.name,
+                                            icon: icon,
+                                            currency: item.currency,
+                                            balance: item.balance)
+                state.item = editedItem
                 return .run { send in
                     await send(.iconSelectionPresentedChanged(false))
                 }

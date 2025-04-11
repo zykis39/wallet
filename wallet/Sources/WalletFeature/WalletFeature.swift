@@ -77,7 +77,7 @@ public struct WalletFeature {
         case conversionRatesFetched([ConversionRate])
         case readWalletItems
         case readTransactions
-        case saveWalletItems
+        case saveWalletItems([WalletItem])
         case deleteTransaction([WalletTransaction])
         case deleteWalletItem(UUID)
         case generateDefaultWalletItems(Currency)
@@ -270,10 +270,11 @@ public struct WalletFeature {
                                balance: $0.balance)
                 }
                 
-                return .run { send in
-                    await send(.saveWalletItems)
+                return .run { [accounts = state.accounts, expenses = state.expenses] send in
+                    await send(.saveWalletItems(accounts + expenses))
                 }
             case let .itemFrameChanged(item, frame):
+                // FIXME: не вызывается для нового элемента
                 state.itemFrames[item] = frame
                 return .none
             case let .onItemDragging(offset, point, item):
@@ -310,34 +311,113 @@ public struct WalletFeature {
                     analytics.logEvent(.itemTapped(itemName: item.name))
                 }
             case let .applyTransaction(transaction):
-                /// FIXME:
-                /// транзакции не должны применяться частично в случае ошибок
-                if let sourceIndex = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
+                var destinationType: WalletItem.WalletItemType?
+                var sourceIndex: Int?
+                var destinationIndex: Int?
+                
+                if let idx = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
                     {
-                    state.accounts[sourceIndex].balance -= transaction.amount
+                    sourceIndex = idx
                 }
-                if let destinationIndex = state.expenses.firstIndex(where: { $0.id == transaction.destination.id }) {
-                    state.expenses[destinationIndex].balance += transaction.amount * transaction.rate
-                } else if let destinationIndex = state.accounts.firstIndex(where: { $0.id == transaction.destination.id }) {
-                    state.accounts[destinationIndex].balance += transaction.amount * transaction.rate
+                if let idx = state.expenses.firstIndex(where: { $0.id == transaction.destination.id }) {
+                    destinationIndex = idx
+                    destinationType = .expenses
+                } else if let idx = state.accounts.firstIndex(where: { $0.id == transaction.destination.id }) {
+                    destinationIndex = idx
+                    destinationType = .account
                 }
+                
+                /// prevent transaction to be partly applied
+                guard let destinationType,
+                      let sourceIndex,
+                      let destinationIndex else { return .none }
+                
+                let src = transaction.source
+                let updatedSource = WalletItem(id: src.id,
+                                               timestamp: src.timestamp,
+                                               type: src.type,
+                                               name: src.name,
+                                               icon: src.icon,
+                                               currency: src.currency,
+                                               balance: src.balance - transaction.amount)
+                
+                let dst = transaction.destination
+                let updatedDestination = WalletItem(id: dst.id,
+                                                    timestamp: dst.timestamp,
+                                                    type: dst.type,
+                                                    name: dst.name,
+                                                    icon: dst.icon,
+                                                    currency: dst.currency,
+                                                    balance: dst.balance + transaction.amount * transaction.rate)
+                
+                switch destinationType {
+                case .account:
+                    state.accounts[sourceIndex] = updatedSource
+                    state.accounts[destinationIndex] = updatedDestination
+                    break
+                case .expenses:
+                    state.accounts[sourceIndex] = updatedSource
+                    state.expenses[destinationIndex] = updatedDestination
+                    break
+                }
+                
                 return .run { send in
-                    // saving new balance after applying transaction
-                    await send(.saveWalletItems)
+                    await send(.saveWalletItems([updatedSource, updatedDestination]))
                 }
             case let .revertTransaction(transaction):
-                /// FIXME:
-                /// транзакции не должны применяться частично в случае ошибок
-                if let sourceIndex = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
+                var destinationType: WalletItem.WalletItemType?
+                var sourceIndex: Int?
+                var destinationIndex: Int?
+                
+                if let idx = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
                     {
-                    state.accounts[sourceIndex].balance += transaction.amount
+                    sourceIndex = idx
                 }
-                if let destinationIndex = state.expenses.firstIndex(where: { $0.id == transaction.destination.id }) {
-                    state.expenses[destinationIndex].balance -= transaction.amount * transaction.rate
-                } else if let destinationIndex = state.accounts.firstIndex(where: { $0.id == transaction.destination.id }) {
-                    state.accounts[destinationIndex].balance -= transaction.amount * transaction.rate
+                if let idx = state.expenses.firstIndex(where: { $0.id == transaction.destination.id }) {
+                    destinationIndex = idx
+                    destinationType = .expenses
+                } else if let idx = state.accounts.firstIndex(where: { $0.id == transaction.destination.id }) {
+                    destinationIndex = idx
+                    destinationType = .account
                 }
-                return .none
+                
+                /// prevent transaction to be partly applied
+                guard let destinationType,
+                      let sourceIndex,
+                      let destinationIndex else { return .none }
+                
+                let src = transaction.source
+                let updatedSource = WalletItem(id: src.id,
+                                               timestamp: src.timestamp,
+                                               type: src.type,
+                                               name: src.name,
+                                               icon: src.icon,
+                                               currency: src.currency,
+                                               balance: src.balance + transaction.amount)
+                
+                let dst = transaction.destination
+                let updatedDestination = WalletItem(id: dst.id,
+                                                    timestamp: dst.timestamp,
+                                                    type: dst.type,
+                                                    name: dst.name,
+                                                    icon: dst.icon,
+                                                    currency: dst.currency,
+                                                    balance: dst.balance - transaction.amount * transaction.rate)
+                
+                switch destinationType {
+                case .account:
+                    state.accounts[sourceIndex] = updatedSource
+                    state.accounts[destinationIndex] = updatedDestination
+                    break
+                case .expenses:
+                    state.accounts[sourceIndex] = updatedSource
+                    state.expenses[destinationIndex] = updatedDestination
+                    break
+                }
+                
+                return .run { send in
+                    await send(.saveWalletItems([updatedSource, updatedDestination]))
+                }
             case let .saveTransaction(transaction):
                 do {
                     try database.context().insert(WalletTransactionModel(model: transaction))
@@ -421,7 +501,6 @@ public struct WalletFeature {
                     // clear DB
                     await send(.deleteTransaction(transactionsToRemove))
                     await send(.deleteWalletItem(id))
-                    await send(.saveWalletItems) // need to update balance after reverse
                     // close sheet
                     await send(.walletItemEdit(.presentedChanged(false)))
                 }
@@ -434,7 +513,7 @@ public struct WalletFeature {
                 }
                 return .run { send in
                     analytics.logEvent(.itemCreated(itemName: item.name, currency: item.currency.code))
-                    await send(.saveWalletItems)
+                    await send(.saveWalletItems([item]))
                 }
             case let .walletItemEdit(.updateWalletItem(item)):
                 switch item.type {
@@ -446,7 +525,7 @@ public struct WalletFeature {
                     state.expenses[index] = item
                 }
                 return .run { send in
-                    await send(.saveWalletItems)
+                    await send(.saveWalletItems([item]))
                 }
             case let .walletItemEdit(.deleteTransaction(transaction)):
                 state.transactions = state.transactions.filter { $0.id != transaction.id }
