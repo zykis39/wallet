@@ -23,12 +23,18 @@ struct WalletFeatureTests {
             WalletFeature()
         }
         
-        var item = store.state.accounts.first(where: { $0.name == "Cash" })!
-        item.balance = 15
+        let item = store.state.accounts.first(where: { $0.name == "Cash" })!
+        let updatedItem = WalletItem(id: item.id,
+                                     timestamp: item.timestamp,
+                                     type: item.type,
+                                     name: item.name,
+                                     icon: item.icon,
+                                     currency: item.currency,
+                                     balance: 15)
         
-        await store.send(.walletItemEdit(.updateWalletItem(item))) {
+        await store.send(.walletItemEdit(.updateWalletItem(updatedItem))) {
             let itemIndex = $0.accounts.firstIndex(where: { $0.id == item.id })!
-            $0.accounts[itemIndex].balance = 15
+            $0.accounts[itemIndex] = updatedItem
         }
         
         await store.receive(\.saveWalletItems)
@@ -37,17 +43,24 @@ struct WalletFeatureTests {
     @Test
     func testItemUpdateUpdateItemInDatabase() async {
         // setup
-        let database = Database.testValue
-        let testState = WalletFeature.State(transaction: .initial, walletItemEdit: .initial, accounts: WalletItem.defaultAccounts, expenses: WalletItem.defaultExpenses, transactions: [])
+        let testContext: () -> ModelContext = {
+            let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+            let container = try! ModelContainer(for: WalletItemModel.self, WalletTransactionModel.self, configurations: configuration)
+            return ModelContext(container)
+        }
+        let database = Database(context: testContext)
+        
+        let testState = WalletFeature.State(transaction: .initial, walletItemEdit: .initial, accounts: [.card], expenses: [.cafe], transactions: [])
         let store = TestStore(initialState: testState) {
             WalletFeature()
         } withDependencies: { dependencyValues in
             dependencyValues.database = database
         }
         
-        await store.send(.saveWalletItems)
-        let itemDescriptor = FetchDescriptor<WalletItemModel>(predicate: #Predicate<WalletItemModel> { _ in true }, sortBy: [ .init(\.timestamp, order: .reverse) ])
-        
+        let items = store.state.accounts + store.state.expenses
+        await store.send(.saveWalletItems(items))
+        let itemDescriptor = FetchDescriptor<WalletItemModel>()
+
         let models = try! database.context().fetch(itemDescriptor)
         let hasChanges = try! database.context().hasChanges
         print("models: \(models.map { $0.valueType.name })")
