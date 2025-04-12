@@ -17,6 +17,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct WalletApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    var isTest: Bool {
+        if let _ = NSClassFromString("XCTest") {
+            return true
+        } else {
+            return false
+        }
+    }
     
     init() {
         #if DEBUG
@@ -29,7 +36,7 @@ struct WalletApp: App {
             AppView(store: Store(initialState: .initial) {
                 WalletFeature()
             })
-            .modelContainer(SwiftDataContainerProvider.shared.container(inMemory: false))
+            .modelContainer(SwiftDataContainerProvider.shared.container(inMemory: isTest))
             .preferredColorScheme(.light)
         }
     }

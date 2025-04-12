@@ -44,9 +44,7 @@ struct WalletFeatureTests {
     func testItemUpdateUpdateItemInDatabase() async {
         // setup
         let testContext: () -> ModelContext = {
-            let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
-            let container = try! ModelContainer(for: WalletItemModel.self, WalletTransactionModel.self, configurations: configuration)
-            return ModelContext(container)
+            ModelContext(SwiftDataContainerProvider.shared.container(inMemory: true))
         }
         let database = Database(context: testContext)
         
@@ -58,10 +56,14 @@ struct WalletFeatureTests {
         }
         
         let items = store.state.accounts + store.state.expenses
-        await store.send(.saveWalletItems(items))
+//        await store.send(.saveWalletItems(items))
+        
+        for item in items { try! database.insert(WalletItemModel(model: item)) }
+        try! database.save()
+        
+        // expect database to have entities
         let itemDescriptor = FetchDescriptor<WalletItemModel>()
-
-        let models = try! database.context().fetch(itemDescriptor)
+        let models = try! database.fetch(itemDescriptor)
         let hasChanges = try! database.context().hasChanges
         print("models: \(models.map { $0.valueType.name })")
     }

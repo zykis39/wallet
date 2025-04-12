@@ -215,8 +215,8 @@ public struct WalletFeature {
                 /// So, filtering happens outside SwiftData, in-memory
                 let itemDescriptor = FetchDescriptor<WalletItemModel>(predicate: #Predicate<WalletItemModel> { _ in true }, sortBy: [ .init(\.timestamp, order: .reverse) ])
                 do {
-                    let accounts = try database.context().fetch<WalletItemModel>(itemDescriptor).filter { $0.type == .account }.map { $0.valueType }
-                    let expenses = try database.context().fetch<WalletItemModel>(itemDescriptor).filter { $0.type == .expenses }.map { $0.valueType }
+                    let accounts = try database.fetch(itemDescriptor).filter { $0.type == .account }.map { $0.valueType }
+                    let expenses = try database.fetch(itemDescriptor).filter { $0.type == .expenses }.map { $0.valueType }
                     return .run { [accounts, expenses] send in
                         await send(.accountsUpdated(accounts))
                         await send(.expensesUpdated(expenses))
@@ -225,13 +225,11 @@ public struct WalletFeature {
                     analytics.logEvent(.error("WalletItem decoding error: \(error.localizedDescription)"))
                 }
                 return .none
-            case .saveWalletItems:
-                let models = [state.accounts, state.expenses].flatMap { $0 }.map { WalletItemModel(model: $0) }
+            case let .saveWalletItems(items):
+                let models = items.map { WalletItemModel(model: $0) }
                 do {
-                    for m in models {
-                        try database.context().insert(m)
-                    }
-                    try database.context().save()
+                    try database.insert(models)
+                    try database.save()
                 } catch {
                     analytics.logEvent(.error("error, applying transaction to DB: \(error)"))
                 }
@@ -241,7 +239,7 @@ public struct WalletFeature {
                 /// So, filtering happens outside SwiftData, in-memory
                 let transactionsDescriptor = FetchDescriptor<WalletTransactionModel>(predicate: #Predicate<WalletTransactionModel> { _ in true }, sortBy: [])
                 do {
-                    let transactions = try database.context().fetch<WalletTransactionModel>(transactionsDescriptor).map { $0.valueType }
+                    let transactions = try database.fetch(transactionsDescriptor).map { $0.valueType }
                     return .run { send in
                         await send(.transactionsUpdated(transactions))
                     }
@@ -420,8 +418,8 @@ public struct WalletFeature {
                 }
             case let .saveTransaction(transaction):
                 do {
-                    try database.context().insert(WalletTransactionModel(model: transaction))
-                    try database.context().save()
+                    try database.insert(WalletTransactionModel(model: transaction))
+                    try database.save()
                 } catch {
                     analytics.logEvent(.error("error, applying transaction to DB: \(error)"))
                 }
@@ -430,8 +428,8 @@ public struct WalletFeature {
                 do {
                     let transactionIds = transactions.map { $0.id }
                     let predicate = #Predicate<WalletTransactionModel> { transactionIds.contains($0.id) }
-                    try database.context().delete(model: WalletTransactionModel.self, where: predicate)
-                    try database.context().save()
+                    try database.delete(model: WalletTransactionModel.self, where: predicate)
+                    try database.save()
                 } catch {
                     analytics.logEvent(.error("error, removing transactions from DB: \(error)"))
                 }
@@ -439,8 +437,8 @@ public struct WalletFeature {
             case let .deleteWalletItem(id):
                 do {
                     let predicate = #Predicate<WalletItemModel> { $0.id == id }
-                    try database.context().delete(model: WalletItemModel.self, where: predicate)
-                    try database.context().save()
+                    try database.delete(model: WalletItemModel.self, where: predicate)
+                    try database.save()
                 } catch {
                     analytics.logEvent(.error("error, removing wallet item from DB: \(error)"))
                 }

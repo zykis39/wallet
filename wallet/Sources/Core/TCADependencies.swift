@@ -41,6 +41,30 @@ final class SwiftDataContainerProvider {
 
 struct Database {
     var context: () throws -> ModelContext
+    
+    func save() throws {
+        try context().save()
+    }
+    
+    func insert<T>(_ model: T) throws where T: PersistentModel {
+        try context().insert(model)
+    }
+    
+    func insert<T>(_ models: [T]) throws where T: PersistentModel {
+        _ = try models.map { try insert($0) }
+    }
+    
+    func delete<T>(_ model: T) throws where T: PersistentModel {
+        try context().delete(model)
+    }
+    
+    func delete<T>(model: T.Type, where predicate: Predicate<T>? = nil, includeSubclasses: Bool = true) throws where T : PersistentModel {
+        try context().delete(model: model, where: predicate, includeSubclasses: includeSubclasses)
+    }
+    
+    func fetch<T>(_ descriptor: FetchDescriptor<T>) throws -> [T] where T : PersistentModel {
+        try context().fetch(descriptor)
+    }
 }
 
 let appContext: ModelContext = {
