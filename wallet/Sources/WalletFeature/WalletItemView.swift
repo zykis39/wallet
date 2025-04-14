@@ -9,19 +9,20 @@ import ComposableArchitecture
 import SwiftUI
 
 public struct WalletItemView: View {
-    public var store: StoreOf<WalletFeature>
-    private let item: WalletItem
     private struct Constants {
         static let size: CGFloat = 64
         static let imageSize: CGFloat = 42
     }
+    
+    public var store: StoreOf<WalletFeature>
+    private let item: WalletItem
 
     private var currencyAmount: String {
         (CurrencyFormatter.formatter.string(from: .init(value: item.balance)) ?? "") + " " + item.currency.fixedSymbol
     }
     
     private var simpleDrag: some Gesture {
-        DragGesture(coordinateSpace: .named("WalletSpace"))
+        DragGesture(coordinateSpace: .global)
             .onChanged({ [store] value in
                 store.send(.onItemDragging(value.translation, value.location, item))
             })
@@ -76,7 +77,7 @@ public struct WalletItemView: View {
             store.send(.itemTapped(item))
         }
         .onGeometryChange(for: CGRect.self) { proxy in
-            proxy.frame(in: .named("WalletSpace"))
+            proxy.frame(in: .global)
         } action: { newValue in
             store.send(.itemFrameChanged(item, newValue))
         }

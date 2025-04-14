@@ -37,14 +37,18 @@ public struct WalletFeature {
         ]
         var selectedLocale: Locale = .current
         
-        // internal
+        // currency & rates
         var selectedCurrency: Currency = .USD
         var currencies: [Currency] = [.USD]
         var rates: [ConversionRate] = []
         
+        // data
         var accounts: [WalletItem]
         var expenses: [WalletItem]
         var transactions: [WalletTransaction]
+        
+        /// changing state in case of dragging is expensive
+        /// forcing to redraw whole scene, when we move an item
         
         // drag and drop
         var itemFrames: [WalletItem: CGRect] = [:]
@@ -84,8 +88,6 @@ public struct WalletFeature {
         case applyTransaction(WalletTransaction)
         case revertTransaction(WalletTransaction)
         case saveTransaction(WalletTransaction)
-        case accountsUpdated([WalletItem])
-        case expensesUpdated([WalletItem])
         case transactionsUpdated([WalletTransaction])
         
         // locale & currency
@@ -201,26 +203,21 @@ public struct WalletFeature {
                 state.selectedLocale = locale
                 appStorage.set(locale.identifier, forKey: AppStorageKey.selectedLocaleIdentifier)
                 return .none
-            case let .accountsUpdated(accounts):
-                state.accounts = accounts
-                return .none
-            case let .expensesUpdated(expenses):
-                state.expenses = expenses
-                return .none
             case let .transactionsUpdated(transactions):
                 state.transactions = transactions
                 return .none
             case .readWalletItems:
                 /// FIXME: Predicates cause runtime error, when dealing with Enums
                 /// So, filtering happens outside SwiftData, in-memory
-                let itemDescriptor = FetchDescriptor<WalletItemModel>(predicate: #Predicate<WalletItemModel> { _ in true }, sortBy: [ .init(\.timestamp, order: .reverse) ])
+                let itemDescriptor = FetchDescriptor<WalletItemModel>(predicate: #Predicate<WalletItemModel> { _ in true }, sortBy: [ .init(\.timestamp, order: .forward) ])
                 do {
                     let accounts = try database.fetch(itemDescriptor).filter { $0.type == .account }.map { $0.valueType }
+                    _ = accounts.map { print("\($0.name): \($0.timestamp)") }
                     let expenses = try database.fetch(itemDescriptor).filter { $0.type == .expenses }.map { $0.valueType }
-                    return .run { [accounts, expenses] send in
-                        await send(.accountsUpdated(accounts))
-                        await send(.expensesUpdated(expenses))
-                    }
+                    _ = expenses.map { print("\($0.name): \($0.timestamp)") }
+                    state.accounts = accounts
+                    state.expenses = expenses
+                    return .none
                 } catch {
                     analytics.logEvent(.error("WalletItem decoding error: \(error.localizedDescription)"))
                 }

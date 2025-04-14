@@ -6,13 +6,11 @@ struct WalletView: View {
     
     public init(store: StoreOf<WalletFeature>) {
         self.store = store
-        calculateAccountPages()
     }
     
     private struct Constants {
         static let elementsInRow: Int = 4
-        static let minColumnWidth: CGFloat = 40
-        static let maxColumnWidth: CGFloat = 120
+        static let minColumnWidth: CGFloat = 80
         static let rowSpacing: CGFloat = 12
     }
     
@@ -40,17 +38,7 @@ struct WalletView: View {
             }
     }
     
-    private var accountColumns: [GridItem] = Array(repeatElement(GridItem(.flexible(minimum: Constants.minColumnWidth, maximum: .greatestFiniteMagnitude)), count: Constants.elementsInRow))
-    
-    private var accountPages: [Int: [WalletItem]] = [:]
-    private mutating func calculateAccountPages() {
-        for (index, item) in store.accounts.enumerated() {
-            let page = index / Constants.elementsInRow
-            var pageItems = accountPages[page, default: []]
-            pageItems.append(item)
-            accountPages[page] = pageItems
-        }
-    }
+    private var expensesColumns: [GridItem] = Array(repeatElement(GridItem(.flexible(minimum: Constants.minColumnWidth, maximum: .greatestFiniteMagnitude)), count: Constants.elementsInRow))
     
     private var expensesDragging: Bool {
         guard let item = store.state.dragItem else { return false }
@@ -70,25 +58,18 @@ struct WalletView: View {
             .frame(maxHeight: 44)
             
             Divider()
-            // FIXME: wrap into TabView, fix clipping
-            HStackEqualSpacingLayout(columnsNumber: Constants.elementsInRow, minElementWidth: Constants.minColumnWidth, maxElementWidth: Constants.maxColumnWidth) {
-                ForEach(accountPages[0] ?? [], id: \.self) { pageItem in
-                    WalletItemView(store: store, item: pageItem)
-                        .zIndex(store.state.dragItem == pageItem ? 1 : 0)
-                }
-                AddButton(color: .yellow) {
-                    store.send(.createNewItemTapped(.account))
-                }
-            }
-            .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: 100)
-            .zIndex(expensesDragging ? 0 : 1)
+            
+            AccountsView(store: store)
+                .frame(maxHeight: 120)
+                .zIndex(expensesDragging ? 0 : 1)
             
             Divider()
             
             ScrollView(.vertical) {
-                LazyVGrid(columns: accountColumns, alignment: .center, spacing: Constants.rowSpacing) {
+                LazyVGrid(columns: expensesColumns, alignment: .center, spacing: Constants.rowSpacing) {
                     ForEach(store.expenses, id: \.self) { item in
-                        WalletItemView(store: store, item: item)
+                        WalletItemView(store: store,
+                                       item: item)
                     }
                     AddButton(color: .green) {
                         store.send(.createNewItemTapped(.expenses))
@@ -101,6 +82,5 @@ struct WalletView: View {
             
             Spacer()
         }
-        .coordinateSpace(name: "WalletSpace")
     }
 }

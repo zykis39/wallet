@@ -59,3 +59,16 @@ struct HeaderCancelConfirm: View {
         }
     }
 }
+
+#Preview {
+    HeaderCancelConfirm(leftSystemImageName: "xmark.circle.fill",
+                        rightSystemImageName: "checkmark.circle.fill",
+                        leftAction: {},
+                        rightAction: {},
+                        imageSize: 32,
+                        middleSystemImageName: "arrow.right",
+                        leftText: "Cash",
+                        rightText: "Groceries")
+    .padding()
+    .tint(.gray)
+}

@@ -96,3 +96,16 @@ struct TransactionView: View {
         }
     }
 }
+
+#Preview {
+    TransactionView(store:
+            .init(initialState:
+                    TransactionFeature.State(presented: true,
+                                             amount: 240.03,
+                                             source: .card,
+                                             destination: .groceries,
+                                             sourceDestinationRate: 1.0),
+                  reducer: {
+        TransactionFeature()
+    }))
+}
