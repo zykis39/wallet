@@ -114,7 +114,7 @@ public struct WalletTransaction: Codable, Equatable, Sendable, Identifiable {
     }
 }
 
-public enum Period: CaseIterable {
+public enum Period: CaseIterable, Sendable {
     case day, week, month
     var representation: LocalizedStringKey {
         switch self {
@@ -226,4 +226,46 @@ extension WalletItem {
         "movieclapper",
         "birthday.cake",
     ]
+}
+
+extension Spending {
+    static func calculateSpendings(_ transactions: [WalletTransaction], expenses: [WalletItem], period: Period, rates: [ConversionRate], currency: Currency) -> [Spending] {
+        let granularity: Calendar.Component = {
+            switch period {
+            case .day: .day
+            case .week: .weekOfMonth
+            case .month: .month
+            }
+        }()
+        let expensesIDs: [UUID: Double] = transactions
+            .filter { $0.destination.type == .expenses }
+            .filter { $0.timestamp.isEqual(to: .now, toGranularity: granularity) }
+            .reduce(into: [:]) { (result: inout [UUID: Double], transaction: WalletTransaction) in
+                if transaction.currency.code == currency.code {
+                    result[transaction.destination.id, default: 0] += transaction.amount
+                } else {
+                    let rate = ConversionRate.rate(for: transaction.currency, destination: currency, rates: rates)
+                    result[transaction.destination.id, default: 0] += transaction.amount * rate
+                }
+            }
+        let overallExpenses: Double = expensesIDs.values.reduce(0) { $0 + $1 }
+        
+        let items = expensesIDs.sorted { $0.value > $1.value }.enumerated().compactMap { (index, item) -> Spending? in
+            guard let walletItem = expenses.first(where: { $0.id == item.key }) else { return nil }
+            return Spending(
+                name: walletItem.name,
+                icon: walletItem.icon,
+                expenses: item.value,
+                percent: item.value / overallExpenses,
+                currency: currency,
+                color: Spending.preferredColors[safe: index] ?? .yellow)
+        }
+        
+        guard items.count > 0 else {
+            return [.init(name: "", icon: "", expenses: 0.0, percent: 1.0, currency: .USD, color: .blue)]
+        }
+        
+        return items
+    }
+
 }

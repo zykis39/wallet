@@ -23,6 +23,7 @@ public struct WalletFeature {
         // child
         var transaction: TransactionFeature.State
         var walletItemEdit: WalletItemEditFeature.State
+        var spendings: SpendingsFeature.State
         
         // locale
         var supportedLocales: [Locale] = [
@@ -63,6 +64,7 @@ public struct WalletFeature {
         
         static let initial: Self = .init(transaction: .initial,
                                          walletItemEdit: .initial,
+                                         spendings: .initial,
                                          accounts: [],
                                          expenses: [],
                                          transactions: [])
@@ -72,6 +74,7 @@ public struct WalletFeature {
         // child
         case transaction(TransactionFeature.Action)
         case walletItemEdit(WalletItemEditFeature.Action)
+        case spendings(SpendingsFeature.Action)
         
         // internal
         case start
@@ -105,7 +108,7 @@ public struct WalletFeature {
         // navigation
         case settingsPresentedChanged(Bool)
         case aboutAppPresentedChanged(Bool)
-        case expensesStatisticsPresentedChanged(Bool)
+        case presentSpendings
     }
     
     @Dependency(\.currencyService) var currencyService
@@ -118,6 +121,9 @@ public struct WalletFeature {
         }
         Scope(state: \.walletItemEdit, action: \.walletItemEdit) {
             WalletItemEditFeature()
+        }
+        Scope(state: \.spendings, action: \.spendings) {
+            SpendingsFeature()
         }
         Reduce { state, action in
             switch action {
@@ -452,11 +458,29 @@ public struct WalletFeature {
                 return .run { _ in
                     analytics.logEvent(.aboutScreenTransition)
                 }
-            case let .expensesStatisticsPresentedChanged(presented):
-                state.expensesStatisticsPresented = presented
-                return .run { _ in
-                    analytics.logEvent(.expensesStatisticsScreenTransition)
+            case .presentSpendings:
+                return .run { send in
+                    await send(.spendings(.recalculateAndPresentSpendings(.month)))
                 }
+                // MARK: - Spendings
+            case let .spendings(.recalculateAndPresentSpendings(period)):
+                let spendings = Spending.calculateSpendings(state.transactions,
+                                                            expenses: state.expenses,
+                                                            period: period,
+                                                            rates: state.rates,
+                                                            currency: state.selectedCurrency)
+                let chartSections = spendings.map {
+                    PieChartSection(angle: $0.percent * 100 * 360,
+                                    color: $0.color,
+                                    opacity: $0.expenses == 0 ? 0.5 : 1)
+                }
+                let currency = state.selectedCurrency
+                return .run { send in
+                    await send(.spendings(.presentSpendings(currency, spendings, chartSections)))
+                }
+            case .spendings:
+                return .none
+                
                 // MARK: - Transaction
             case let .transaction(.createTransaction(transaction)):
                 state.transactions.append(transaction)

@@ -36,8 +36,9 @@ struct AppView: View {
                         AboutApplicationView()
                     }
                 }
-                .navigationDestination(isPresented: $store.expensesStatisticsPresented.sending(\.expensesStatisticsPresentedChanged)) {
-                    ExpensesStatisticsView(store: store)
+                .navigationDestination(isPresented: $store.spendings.presented.sending(\.spendings.presentedChanged)) {
+                    let scoped = store.scope(state: \.spendings, action: \.spendings)
+                    SpendingsStatisticsView(store: scoped)
                 }
         }
         .environment(\.locale, store.selectedLocale)

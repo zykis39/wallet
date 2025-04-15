@@ -42,7 +42,7 @@ struct AccountsView: View {
 }
 
 #Preview {
-    AccountsView(store: .init(initialState: WalletFeature.State(transaction: .initial, walletItemEdit: .initial, accounts: [.card, .cash], expenses: [], transactions: []), reducer: {
+    AccountsView(store: .init(initialState: WalletFeature.State(transaction: .initial, walletItemEdit: .initial, spendings: .initial, accounts: [.card, .cash], expenses: [], transactions: []), reducer: {
         WalletFeature()
     }))
 }

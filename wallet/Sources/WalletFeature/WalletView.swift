@@ -53,7 +53,7 @@ struct WalletView: View {
                          leftSystemImageName: "gearshape.fill",
                          rightSystemImageName: "chart.bar.xaxis",
                          leftAction: { store.send(.settingsPresentedChanged(true)) },
-                         rightAction: { store.send(.expensesStatisticsPresentedChanged(true)) },
+                         rightAction: { store.send(.presentSpendings) },
                          imageSize: 24)
             .frame(maxHeight: 44)
             
