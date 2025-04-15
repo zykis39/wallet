@@ -101,6 +101,7 @@ public struct WalletTransaction: Codable, Equatable, Sendable, Identifiable {
     let timestamp: Date
     let currency: Currency
     let amount: Double
+    let commentary: String
     /// source.currency to destination.currency rate
     let rate: Double
     

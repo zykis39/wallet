@@ -63,16 +63,18 @@ enum SchemaV1: VersionedSchema {
         var timestamp: Date
         var currency: Currency
         var amount: Double
+        var commentary: String
         var rate: Double
         
         var source: WalletItem
         var destination: WalletItem
         
-        init(id: UUID, timestamp: Date, currency: Currency, amount: Double, rate: Double, source: WalletItem, destination: WalletItem) {
+        init(id: UUID, timestamp: Date, currency: Currency, amount: Double, commentary: String, rate: Double, source: WalletItem, destination: WalletItem) {
             self.id = id
             self.timestamp = timestamp
             self.currency = currency
             self.amount = amount
+            self.commentary = commentary
             self.rate = rate
             self.source = source
             self.destination = destination
@@ -83,6 +85,7 @@ enum SchemaV1: VersionedSchema {
                       timestamp: model.timestamp,
                       currency: model.currency,
                       amount: model.amount,
+                      commentary: model.commentary,
                       rate: model.rate,
                       source: model.source,
                       destination: model.destination)
@@ -93,6 +96,7 @@ enum SchemaV1: VersionedSchema {
                   timestamp: self.timestamp,
                   currency: self.currency,
                   amount: self.amount,
+                  commentary: self.commentary,
                   rate: self.rate,
                   source: self.source,
                   destination: self.destination)
