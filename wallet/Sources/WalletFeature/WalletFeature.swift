@@ -470,7 +470,9 @@ public struct WalletFeature {
                                                             rates: state.rates,
                                                             currency: state.selectedCurrency)
                 let chartSections = spendings.map {
-                    PieChartSection(angle: $0.percent * 100 * 360,
+                    PieChartSection(name: $0.name,
+                                    angle: $0.percent * 360,
+                                    icon: $0.icon,
                                     color: $0.color,
                                     opacity: $0.expenses == 0 ? 0.5 : 1)
                 }
