@@ -15,15 +15,18 @@ struct AboutApplicationView: View {
     ]
     let features = [
         "Custom Drag-n-Drop",
+        "Animated Swift Charts",
         "Persistant Storage",
-        "Localization",
+        "Localization (8 languages)",
         "Currency Converter",
         "Expenses statistics",
         "Adaptive interface",
     ]
     let plans = [
-        "Transactions deletion",
         "Drag-n-Drop animations",
+        "Transaction commentary",
+        "Accounts/Expenses rearrangment",
+        "Fixing multi-currency transaction rate, depending on the entering currency",
         "double-currency TextField",
     ]
     let contacts = [

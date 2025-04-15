@@ -27,6 +27,12 @@ struct SpendingsStatisticsView: View {
     var body: some View {
         GeometryReader { proxy in
             VStack(alignment: .center) {
+                Picker("Period", selection: $store.period.sending(\.periodChanged)) {
+                    ForEach(Period.allCases, id: \.self) { period in
+                        Text(period.representation)
+                    }
+                }
+                .pickerStyle(.segmented)
                 let s = abs(proxy.size.width - 48)
                 ZStack {
                     PieChartsView(data: $store.chartSections.sending(\.chartSectionsChanged))
@@ -38,39 +44,31 @@ struct SpendingsStatisticsView: View {
                     }
                 }
                 .frame(width: s, height: s)
-                .padding(.bottom, 16)
-                
-                Picker("Period", selection: $store.period.sending(\.periodChanged)) {
-                    ForEach(Period.allCases, id: \.self) { period in
-                        Text(period.representation)
-                    }
-                }
-                .pickerStyle(.segmented)
+                .padding(.vertical, 16)
                 
                 if hasTransactions {
-                    List {
-                        Grid {
+                    Grid(alignment: .center) {
+                        ForEach(store.state.spendings, id: \.name) { item in
                             GridRow {
-                                Text("Category")
-                                Text("%")
-                                Text("Total")
+                                Text(LocalizedStringKey(item.name))
+                                Text((CurrencyFormatter.formatter.string(from: .init(value: item.percent * 100)) ?? "") + "%")
+                                Text((CurrencyFormatter.formatter.string(from: .init(value: item.expenses)) ?? "") + " " + item.currency.fixedSymbol)
                             }
-                            Divider()
-                            ForEach(store.state.spendings, id: \.self) { item in
-                                GridRow {
-                                    Text(LocalizedStringKey(item.name))
-                                    Text((CurrencyFormatter.formatter.string(from: .init(value: item.percent * 100)) ?? "") + "%")
-                                    Text((CurrencyFormatter.formatter.string(from: .init(value: item.expenses)) ?? "") + " " + item.currency.fixedSymbol)
-                                }
-                                .background(item.color)
-                                .foregroundStyle(.white)
-                                
-                                if item != store.state.spendings.last {
-                                    Divider()
-                                }
+                            .background {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(item.color)
+                                    .padding(.horizontal, -10)
+                                    .padding(.vertical, -2)
+                            }
+                            .foregroundStyle(.white)
+                            
+                            if item != store.state.spendings.last {
+                                Divider()
                             }
                         }
                     }
+                    .animation(.easeInOut, value: store.state.spendings)
+                    
                     Spacer()
                 } else {
                     Spacer()

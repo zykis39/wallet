@@ -70,7 +70,6 @@ public struct WalletItemView: View {
                 .fill((store.state.dropItem == item) ? .green.opacity(0.2) : .clear)
                 .cornerRadius(4)
                 .padding(-4)
-            
         }
         .gesture(simpleDrag)
         .onTapGesture {
