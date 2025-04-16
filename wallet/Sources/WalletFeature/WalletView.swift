@@ -13,33 +13,8 @@ struct WalletView: View {
         static let minColumnWidth: CGFloat = 80
         static let rowSpacing: CGFloat = 12
     }
-    
-    private var balance: Double {
-        store.state.accounts.reduce(0) {
-            if store.state.selectedCurrency == $1.currency {
-                return $0 + $1.balance
-            } else {
-                let rate = ConversionRate.rate(for: $1.currency, destination: store.state.selectedCurrency, rates: store.state.rates)
-                return $0 + $1.balance * rate
-            }
-        }
-    }
-    private var expenses: Double {
-        store.state.transactions
-            .filter { $0.destination.type == .expenses }
-            .filter { $0.timestamp.isEqual(to: .now, toGranularity: .month) }
-            .reduce(0) {
-                if $1.currency == store.state.selectedCurrency {
-                    return $0 + $1.amount
-                } else {
-                    let rate = ConversionRate.rate(for: $1.currency, destination: store.state.selectedCurrency, rates: store.state.rates)
-                    return $0 + $1.amount * rate
-                }
-            }
-    }
-    
-    private var expensesColumns: [GridItem] = Array(repeatElement(GridItem(.flexible(minimum: Constants.minColumnWidth, maximum: .greatestFiniteMagnitude)), count: Constants.elementsInRow))
-    
+
+    private let expensesColumns: [GridItem] = Array(repeatElement(GridItem(.flexible(minimum: Constants.minColumnWidth, maximum: .greatestFiniteMagnitude)), count: Constants.elementsInRow))
     private var expensesDragging: Bool {
         guard let item = store.state.dragItem else { return false }
         return store.expenses.contains(item)
@@ -47,8 +22,8 @@ struct WalletView: View {
     
     public var body: some View {
         VStack(alignment: .leading) {
-            HeaderWallet(balance: balance,
-                         expenses: expenses,
+            HeaderWallet(balance: store.state.balance,
+                         expenses: store.state.monthExpenses,
                          currency: store.state.selectedCurrency,
                          leftSystemImageName: "gearshape.fill",
                          rightSystemImageName: "chart.bar.xaxis",

@@ -44,6 +44,8 @@ public struct WalletFeature {
         var rates: [ConversionRate] = []
         
         // data
+        var balance: Double
+        var monthExpenses: Double
         var accounts: [WalletItem]
         var expenses: [WalletItem]
         var transactions: [WalletTransaction]
@@ -65,6 +67,8 @@ public struct WalletFeature {
         static let initial: Self = .init(transaction: .initial,
                                          walletItemEdit: .initial,
                                          spendings: .initial,
+                                         balance: 0,
+                                         monthExpenses: 0,
                                          accounts: [],
                                          expenses: [],
                                          transactions: [])
@@ -80,6 +84,8 @@ public struct WalletFeature {
         case start
         case getCurrenciesAndRates
         case prepareItemsAndTransactions
+        case calculateBalance
+        case calculateExpenses
         case currenciesFetched([Currency])
         case conversionRatesFetched([ConversionRate])
         case readWalletItems
@@ -183,6 +189,31 @@ public struct WalletFeature {
                         await send(.readTransactions)
                     }
                 }
+            case .calculateBalance:
+                let balance: Double = state.accounts.reduce(0) {
+                    if state.selectedCurrency == $1.currency {
+                        return $0 + $1.balance
+                    } else {
+                        let rate = ConversionRate.rate(for: $1.currency, destination: state.selectedCurrency, rates: state.rates)
+                        return $0 + $1.balance * rate
+                    }
+                }
+                state.balance = balance
+                return .none
+            case .calculateExpenses:
+                let monthExpenses: Double = state.transactions
+                    .filter { $0.destination.type == .expenses }
+                    .filter { $0.timestamp.isEqual(to: .now, toGranularity: .month) }
+                    .reduce(0) {
+                        if $1.currency == state.selectedCurrency {
+                            return $0 + $1.amount
+                        } else {
+                            let rate = ConversionRate.rate(for: $1.currency, destination: state.selectedCurrency, rates: state.rates)
+                            return $0 + $1.amount * rate
+                        }
+                    }
+                state.monthExpenses = monthExpenses
+                return .none
             case let .currenciesFetched(currencies):
                 state.currencies = currencies
                 
@@ -211,7 +242,9 @@ public struct WalletFeature {
                 return .none
             case let .transactionsUpdated(transactions):
                 state.transactions = transactions
-                return .none
+                return .run { send in
+                    await send(.calculateExpenses)
+                }
             case .readWalletItems:
                 /// FIXME: Predicates cause runtime error, when dealing with Enums
                 /// So, filtering happens outside SwiftData, in-memory
@@ -223,11 +256,12 @@ public struct WalletFeature {
                     _ = expenses.map { print("\($0.name): \($0.timestamp)") }
                     state.accounts = accounts
                     state.expenses = expenses
-                    return .none
                 } catch {
                     analytics.logEvent(.error("WalletItem decoding error: \(error.localizedDescription)"))
                 }
-                return .none
+                return .run { send in
+                    await send(.calculateBalance)
+                }
             case let .saveWalletItems(items):
                 let models = items.map { WalletItemModel(model: $0) }
                 do {
@@ -273,6 +307,7 @@ public struct WalletFeature {
                 
                 return .run { [accounts = state.accounts, expenses = state.expenses] send in
                     await send(.saveWalletItems(accounts + expenses))
+                    await send(.calculateBalance)
                 }
             case let .itemFrameChanged(item, frame):
                 // FIXME: не вызывается для нового элемента
@@ -364,6 +399,8 @@ public struct WalletFeature {
                 
                 return .run { send in
                     await send(.saveWalletItems([updatedSource, updatedDestination]))
+                    await send(.calculateBalance)
+                    await send(.calculateExpenses)
                 }
             case let .revertTransaction(transaction):
                 var destinationType: WalletItem.WalletItemType?
@@ -418,6 +455,8 @@ public struct WalletFeature {
                 
                 return .run { send in
                     await send(.saveWalletItems([updatedSource, updatedDestination]))
+                    await send(.calculateBalance)
+                    await send(.calculateExpenses)
                 }
             case let .saveTransaction(transaction):
                 do {
@@ -535,6 +574,7 @@ public struct WalletFeature {
                 return .run { send in
                     analytics.logEvent(.itemCreated(itemName: item.name, currency: item.currency.code))
                     await send(.saveWalletItems([item]))
+                    await send(.calculateBalance)
                 }
             case let .walletItemEdit(.updateWalletItem(item)):
                 switch item.type {
@@ -547,6 +587,7 @@ public struct WalletFeature {
                 }
                 return .run { send in
                     await send(.saveWalletItems([item]))
+                    await send(.calculateBalance)
                 }
             case let .walletItemEdit(.deleteTransaction(transaction)):
                 state.transactions = state.transactions.filter { $0.id != transaction.id }

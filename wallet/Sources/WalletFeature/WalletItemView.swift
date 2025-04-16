@@ -43,8 +43,9 @@ public struct WalletItemView: View {
                 .foregroundStyle(.secondary)
                 .font(.subheadline)
             Circle()
-                .fill(.clear)
+                .fill(Color.walletItemColor(for: item.type).opacity(0.2))
                 .frame(width: Constants.size, height: Constants.size)
+                .highPriorityGesture(simpleDrag)
             Text(currencyAmount)
                 .foregroundStyle(Color.walletItemColor(for: item.type))
                 .font(.system(size: 13))
@@ -66,12 +67,12 @@ public struct WalletItemView: View {
                     .foregroundStyle(.white)
             }
             .offset(store.state.dragItem == item ? store.state.draggingOffset : .zero)
+            .animation(.easeInOut.speed(4), value: store.state.draggingOffset)
             Rectangle()
-                .fill((store.state.dropItem == item) ? .green.opacity(0.2) : .clear)
+                .fill((store.state.dropItem == item) ? .green.opacity(0.1) : .clear)
                 .cornerRadius(4)
                 .padding(-4)
         }
-        .gesture(simpleDrag)
         .onTapGesture {
             store.send(.itemTapped(item))
         }

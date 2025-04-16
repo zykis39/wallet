@@ -48,6 +48,7 @@ struct SpendingsStatisticsView: View {
                 
                 if hasTransactions {
                     Grid(alignment: .center) {
+                        Divider()
                         ForEach(store.state.spendings, id: \.name) { item in
                             GridRow {
                                 Text(LocalizedStringKey(item.name))

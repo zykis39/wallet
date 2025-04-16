@@ -22,7 +22,8 @@ struct AccountsView: View {
                     HStackEqualSpacing(pageWidth: proxy.size.width,
                                        columnsNumber: Constants.itemsInRow,
                                        minElementWidth: Constants.minElementWidth,
-                                       maxElementWidth: Constants.maxElementWidth) {
+                                       maxElementWidth: Constants.maxElementWidth,
+                                       offset: -10) {
                         ForEach(store.state.accounts, id: \.self) { item in
                             WalletItemView(store: store,
                                            item: item)
@@ -42,7 +43,7 @@ struct AccountsView: View {
 }
 
 #Preview {
-    AccountsView(store: .init(initialState: WalletFeature.State(transaction: .initial, walletItemEdit: .initial, spendings: .initial, accounts: [.card, .cash], expenses: [], transactions: []), reducer: {
+    AccountsView(store: .init(initialState: WalletFeature.State(transaction: .initial, walletItemEdit: .initial, spendings: .initial, balance: 0, monthExpenses: 0, accounts: [.card, .cash], expenses: [], transactions: []), reducer: {
         WalletFeature()
     }))
 }
