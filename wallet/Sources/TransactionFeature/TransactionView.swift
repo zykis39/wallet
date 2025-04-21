@@ -39,7 +39,6 @@ struct TransactionView: View {
             Divider()
             
             HStack {
-                Spacer()
                 TextField("", text: $amountInSourceCurrency)
                     .textFieldStyle(.roundedBorder)
                     .font(Font.system(size: 60, design: .default))
@@ -87,6 +86,12 @@ struct TransactionView: View {
                 }
             }
             
+            // commentary
+            HStack {
+                TextField("Commentary", text: $store.commentary.sending(\.commentaryChanged))
+                    .textFieldStyle(.roundedBorder)
+            }
+            
             Spacer()
         }
         .padding()
@@ -104,7 +109,8 @@ struct TransactionView: View {
                                              amount: 240.03,
                                              source: .card,
                                              destination: .groceries,
-                                             sourceDestinationRate: 1.0),
+                                             sourceDestinationRate: 1.0,
+                                             commentary: ""),
                   reducer: {
         TransactionFeature()
     }))

@@ -17,8 +17,9 @@ public struct TransactionFeature: Sendable {
         var source: WalletItem
         var destination: WalletItem
         var sourceDestinationRate: Double
+        var commentary: String
         
-        static let initial: Self = .init(presented: false, amount: 0, source: .none, destination: .none, sourceDestinationRate: 1)
+        static let initial: Self = .init(presented: false, amount: 0, source: .none, destination: .none, sourceDestinationRate: 1, commentary: "")
     }
     
     public enum Action: Sendable {
@@ -31,6 +32,7 @@ public struct TransactionFeature: Sendable {
         case confirmTapped
         case presentedChanged(Bool)
         case amountChanged(Double)
+        case commentaryChanged(String)
     }
     
     public var body: some Reducer<State, Action> {
@@ -41,7 +43,7 @@ public struct TransactionFeature: Sendable {
                     await send(.presentedChanged(false))
                     guard state.amount > 0 else { return }
                     
-                    let transaction = WalletTransaction(timestamp: .now, currency: source.currency, amount: state.amount, commentary: "", rate: rate, source: source, destination: destination)
+                    let transaction = WalletTransaction(timestamp: .now, currency: source.currency, amount: state.amount, commentary: state.commentary, rate: rate, source: source, destination: destination)
                     await send(.createTransaction(transaction))
                 }
             case .cancelTapped:
@@ -62,6 +64,9 @@ public struct TransactionFeature: Sendable {
                 return .none
             case let .amountChanged(amount):
                 state.amount = amount
+                return .none
+            case let .commentaryChanged(commentary):
+                state.commentary = commentary
                 return .none
             }
         }

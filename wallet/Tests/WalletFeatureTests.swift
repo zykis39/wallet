@@ -18,7 +18,14 @@ struct WalletFeatureTests {
     @Test
     func testUpdateWalletItemBalance() async {
         // setup
-        let testState = WalletFeature.State(transaction: .initial, walletItemEdit: .initial, accounts: WalletItem.defaultAccounts, expenses: WalletItem.defaultExpenses, transactions: [])
+        let testState = WalletFeature.State(transaction: .initial,
+                                            walletItemEdit: .initial,
+                                            spendings: .initial,
+                                            balance: 0,
+                                            monthExpenses: 0,
+                                            accounts: [.card, .cash],
+                                            expenses: [.cafe],
+                                            transactions: [])
         let store = TestStore(initialState: testState) {
             WalletFeature()
         }
@@ -48,7 +55,14 @@ struct WalletFeatureTests {
         }
         let database = Database(context: testContext)
         
-        let testState = WalletFeature.State(transaction: .initial, walletItemEdit: .initial, accounts: [.card], expenses: [.cafe], transactions: [])
+        let testState = WalletFeature.State(transaction: .initial,
+                                            walletItemEdit: .initial,
+                                            spendings: .initial,
+                                            balance: 0,
+                                            monthExpenses: 0,
+                                            accounts: [.card],
+                                            expenses: [.cafe],
+                                            transactions: [])
         let store = TestStore(initialState: testState) {
             WalletFeature()
         } withDependencies: { dependencyValues in

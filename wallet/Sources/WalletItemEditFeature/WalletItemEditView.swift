@@ -105,9 +105,12 @@ struct WalletItemEditView: View {
                     Section {
                         ForEach(store.state.transactions) { transaction in
                             let isIncome = (transaction.destination.id == store.item.id) && (store.item.type == .account)
-                            TransactionCell(leftText: transaction.timestamp.formatted(date: .numeric, time: .omitted),
-                                            rightText: transaction.representation(for: store.item),
-                                            rightTextColor: isIncome ? .green : .red)
+                            TransactionCell(amount: transaction.representation(for: store.item),
+                                            date: transaction.timestamp.formatted(date: .numeric, time: .omitted),
+                                            source: transaction.source.name,
+                                            destination: transaction.destination.name,
+                                            commentary: transaction.commentary,
+                                            amountTextColor: isIncome ? .green : .red)
                         }
                         .onDelete { indexSet in
                             for i in indexSet {
