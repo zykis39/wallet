@@ -126,6 +126,17 @@ public enum Period: CaseIterable, Sendable {
     }
 }
 
+public enum TransactionPeriod: CaseIterable, Sendable {
+    case today, yesterday, all
+    var representation: LocalizedStringKey {
+        switch self {
+        case .today: "TransactionPeriod.Today"
+        case .yesterday: "TransactionPeriod.Yesterday"
+        case .all: "TransactionPeriod.All"
+        }
+    }
+}
+
 public struct ConversionRate: Codable, Sendable, Hashable {
     let source: Currency
     let destination: Currency

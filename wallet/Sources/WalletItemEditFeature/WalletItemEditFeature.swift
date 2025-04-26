@@ -17,9 +17,11 @@ public struct WalletItemEditFeature {
         var currencies: [Currency]
         var rates: [ConversionRate]
         var transactions: [WalletTransaction]
+        var transactionsForCurrentPeriod: [WalletTransaction]
+        var transactionsPeriod: TransactionPeriod
         var iconSelectionPresented: Bool = false
         
-        static let initial: Self = .init(editType: .new, presented: false, item: .none, currencies: [], rates: [], transactions: [])
+        static let initial: Self = .init(editType: .new, presented: false, item: .none, currencies: [], rates: [], transactions: [], transactionsForCurrentPeriod: [], transactionsPeriod: .today)
     }
     
     public enum Action: Sendable {
@@ -38,6 +40,7 @@ public struct WalletItemEditFeature {
         case iconSelectionPresentedChanged(Bool)
         case iconSelected(String)
         case deleteTransaction(WalletTransaction)
+        case periodChanged(TransactionPeriod)
     }
     
     public var body: some Reducer<State, Action> {
@@ -51,6 +54,7 @@ public struct WalletItemEditFeature {
                 state.rates = conversionRates
                 
                 return .run { send in
+                    await send(.periodChanged(.today))
                     await send(.presentedChanged(true))
                 }
             case let .presentNewItem(type, currency, currencies):
@@ -151,6 +155,19 @@ public struct WalletItemEditFeature {
                 return .none
             case let .deleteTransaction(transaction):
                 state.transactions = state.transactions.filter { $0.id != transaction.id }
+                return .none
+            case let .periodChanged(period):
+                state.transactionsPeriod = period
+                state.transactionsForCurrentPeriod = state.transactions.filter { t in
+                    switch period {
+                    case .today:
+                        return Calendar.current.isDateInToday(t.timestamp)
+                    case .yesterday:
+                        return Calendar.current.isDateInYesterday(t.timestamp)
+                    case .all:
+                        return true
+                    }
+                }.sorted(by: { $0.timestamp > $1.timestamp })
                 return .none
             }
         }

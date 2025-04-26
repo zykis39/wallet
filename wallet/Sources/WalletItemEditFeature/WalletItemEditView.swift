@@ -103,7 +103,7 @@ struct WalletItemEditView: View {
             if store.state.transactions.count > 0 {
                 List {
                     Section {
-                        ForEach(store.state.transactions) { transaction in
+                        ForEach(store.state.transactionsForCurrentPeriod) { transaction in
                             let isIncome = (transaction.destination.id == store.item.id) && (store.item.type == .account)
                             TransactionCell(amount: transaction.representation(for: store.item),
                                             date: transaction.timestamp.formatted(date: .numeric, time: .omitted),
@@ -114,16 +114,18 @@ struct WalletItemEditView: View {
                         }
                         .onDelete { indexSet in
                             for i in indexSet {
-                                if let transaction = store.state.transactions[safe: i] {
+                                if let transaction = store.state.transactionsForCurrentPeriod[safe: i] {
                                     store.send(.deleteTransaction(transaction))
                                 }
                             }
                         }
                     } header: {
-                        Text("Transactions")
-                            .font(.system(size: 16))
-                            .textCase(.uppercase)
-                            .foregroundStyle(.white)
+                        Picker("TransactionPeriod", selection: $store.transactionsPeriod.sending(\.periodChanged)) {
+                            ForEach(TransactionPeriod.allCases, id: \.self) { period in
+                                Text(period.representation)
+                            }
+                        }
+                        .pickerStyle(.segmented)
                     }
                 }
                 .listStyle(.plain)
