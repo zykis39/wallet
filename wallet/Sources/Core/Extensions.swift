@@ -52,3 +52,11 @@ extension String {
         return String(format: NSLocalizedString(self, comment: ""), locale: nil)
     }
 }
+
+extension URLSessionConfiguration {
+    static var startupConfiguration: URLSessionConfiguration {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 1
+        return configuration
+    }
+}

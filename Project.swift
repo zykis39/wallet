@@ -8,6 +8,7 @@ let project = Project(
             destinations: .iOS,
             product: .app,
             bundleId: "com.zykis.wallet",
+            deploymentTargets: .iOS("18.0"),
             infoPlist: .file(path: "wallet/Resources/wallet-Info.plist"),
             sources: ["wallet/Sources/**"],
             resources: ["wallet/Resources/**"],

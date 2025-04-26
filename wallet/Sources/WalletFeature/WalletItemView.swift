@@ -69,7 +69,7 @@ public struct WalletItemView: View {
             .offset(store.state.dragItem == item ? store.state.draggingOffset : .zero)
             .animation(.easeInOut.speed(4), value: store.state.draggingOffset)
             Rectangle()
-                .fill((store.state.dropItem == item) ? .green.opacity(0.1) : .clear)
+                .fill((store.state.dropItem == item) ? .green.opacity(0.2) : .clear)
                 .cornerRadius(4)
                 .padding(-4)
         }

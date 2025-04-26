@@ -43,9 +43,10 @@ final class CurrencyService: CurrencyServiceProtocol {
         static let baseCurrency = "base_currency"
     }
     
-    let base = "https://api.freecurrencyapi.com/v1/"
-//    let APIKey = "fca_live_YLZQGJ50z3Ucc0ozfOszHN9ST2WqS7S6cpyuGHrZ"
-    let APIKey = "fca_live_IbfxWhf2Wj5luTg9EXKbdX2RKe2aiTmAKbxW2z3G"
+    private let base = "https://api.freecurrencyapi.com/v1/"
+    private let sessionManager = Alamofire.Session(configuration: .startupConfiguration)
+//    private let APIKey = "fca_live_YLZQGJ50z3Ucc0ozfOszHN9ST2WqS7S6cpyuGHrZ"
+    private let APIKey = "fca_live_IbfxWhf2Wj5luTg9EXKbdX2RKe2aiTmAKbxW2z3G"
     
     func currencies(codes: [String]) async throws -> [Currency] {
         let requestString = base + Paths.currencies
@@ -53,7 +54,8 @@ final class CurrencyService: CurrencyServiceProtocol {
             ParamKeys.apikey: APIKey,
             ParamKeys.currencies: codes.joined(separator: ",")
         ]
-        let request = AF.request(requestString, parameters: params)
+        
+        let request = sessionManager.request(requestString, parameters: params)
         let result = await request
             .validate()
             .serializingDecodable(CurrencyResponse.self)
@@ -75,7 +77,7 @@ final class CurrencyService: CurrencyServiceProtocol {
             ParamKeys.currencies: to.map { $0.code }.joined(separator: ",")
         ]
         
-        let request = AF.request(requestString, parameters: params)
+        let request = sessionManager.request(requestString, parameters: params)
         let result = await request
             .validate()
             .serializingDecodable(CurrecyRatesResponse.self)
