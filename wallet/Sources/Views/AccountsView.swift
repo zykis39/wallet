@@ -42,8 +42,8 @@ struct AccountsView: View {
     }
 }
 
-#Preview {
-    AccountsView(store: .init(initialState: WalletFeature.State(transaction: .initial, walletItemEdit: .initial, spendings: .initial, balance: 0, monthExpenses: 0, accounts: [.card, .cash], expenses: [], transactions: []), reducer: {
-        WalletFeature()
-    }))
-}
+//#Preview {
+//    AccountsView(store: .init(initialState: WalletFeature.State(transaction: .initial, walletItemEdit: .initial, spendings: .initial, balance: 0, monthExpenses: 0, accounts: [.card, .cash], expenses: [], transactions: []), reducer: {
+//        WalletFeature()
+//    }))
+//}

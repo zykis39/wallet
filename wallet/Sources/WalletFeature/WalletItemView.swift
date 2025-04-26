@@ -79,7 +79,7 @@ public struct WalletItemView: View {
         .onGeometryChange(for: CGRect.self) { proxy in
             proxy.frame(in: .global)
         } action: { newValue in
-            store.send(.itemFrameChanged(item, newValue))
+            store.send(.itemFrameChanged(item.id, newValue))
         }
     }
 }

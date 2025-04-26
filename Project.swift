@@ -33,7 +33,10 @@ let project = Project(
                 "OTHER_LDFLAGS": ["-ObjC"],
                 "DEBUG_INFORMATION_FORMAT": "dwarf-with-dsym",
             ]),
-            launchArguments: [.launchArgument(name: "-FIRDebugEnabled", isEnabled: true)]
+            launchArguments: [
+//                .launchArgument(name: "-FIRDebugEnabled", isEnabled: true),
+                .launchArgument(name: "-FIRDebugDisabled", isEnabled: true),
+            ]
         ),
         .target(
             name: "walletTests",

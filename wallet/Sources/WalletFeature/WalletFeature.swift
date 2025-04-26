@@ -54,7 +54,7 @@ public struct WalletFeature {
         /// forcing to redraw whole scene, when we move an item
         
         // drag and drop
-        var itemFrames: [WalletItem: CGRect] = [:]
+        var itemFrames: [UUID: CGRect] = [:]
         var draggingOffset: CGSize = .zero
         var dragItem: WalletItem?
         var dropItem: WalletItem?
@@ -91,7 +91,7 @@ public struct WalletFeature {
         case readWalletItems
         case readTransactions
         case saveWalletItems([WalletItem])
-        case deleteTransaction([WalletTransaction])
+        case deleteTransactions([UUID])
         case deleteWalletItem(UUID)
         case generateDefaultWalletItems(Currency)
         case applyTransaction(WalletTransaction)
@@ -106,7 +106,7 @@ public struct WalletFeature {
         
         // view
         case createNewItemTapped(WalletItem.WalletItemType)
-        case itemFrameChanged(WalletItem, CGRect)
+        case itemFrameChanged(UUID, CGRect?)
         case onItemDragging(CGSize, CGPoint, WalletItem)
         case onDraggingStopped
         case itemTapped(WalletItem)
@@ -309,16 +309,18 @@ public struct WalletFeature {
                     await send(.saveWalletItems(accounts + expenses))
                     await send(.calculateBalance)
                 }
-            case let .itemFrameChanged(item, frame):
+            case let .itemFrameChanged(itemId, frame):
                 // FIXME: не вызывается для нового элемента
-                state.itemFrames[item] = frame
+                state.itemFrames[itemId] = frame
                 return .none
             case let .onItemDragging(offset, point, item):
                 state.draggingOffset = offset
                 state.dragItem = item
 
                 let droppingItemFrames = state.itemFrames.filter { $0.value.contains(point) }
-                guard let dropItem = droppingItemFrames.keys.first, WalletTransaction.canBePerformed(source: item, destination: dropItem) else {
+                guard let dropItemId = droppingItemFrames.keys.first,
+                      let dropItem = [state.accounts, state.expenses].flatMap({ $0 }).first(where: { $0.id == dropItemId }),
+                        WalletTransaction.canBePerformed(source: item, destination: dropItem) else {
                     state.dropItem = nil
                     return .none
                 }
@@ -366,9 +368,11 @@ public struct WalletFeature {
                 /// prevent transaction to be partly applied
                 guard let destinationType,
                       let sourceIndex,
-                      let destinationIndex else { return .none }
+                      let destinationIndex,
+                      let src = state.accounts.first(where: { transaction.source.id == $0.id }),
+                      let dst = [state.accounts, state.expenses].flatMap ({ $0 }).first(where: { transaction.destination.id == $0.id })
+                else { return .none }
                 
-                let src = transaction.source
                 let updatedSource = WalletItem(id: src.id,
                                                timestamp: src.timestamp,
                                                type: src.type,
@@ -377,7 +381,6 @@ public struct WalletFeature {
                                                currency: src.currency,
                                                balance: src.balance - transaction.amount)
                 
-                let dst = transaction.destination
                 let updatedDestination = WalletItem(id: dst.id,
                                                     timestamp: dst.timestamp,
                                                     type: dst.type,
@@ -420,11 +423,18 @@ public struct WalletFeature {
                 }
                 
                 /// prevent transaction to be partly applied
+                /// may be partially apply is not that bad
+                /// example: partially revert transaction after deleting expense/account
                 guard let destinationType,
                       let sourceIndex,
-                      let destinationIndex else { return .none }
-                
-                let src = transaction.source
+                      let destinationIndex,
+                      let src = state.accounts.first(where: { transaction.source.id == $0.id }),
+                      let dst = [state.accounts, state.expenses].flatMap ({ $0 }).first(where: { transaction.destination.id == $0.id })
+                else {
+                    analytics.logEvent(.error("error, reverting partly applied transaction: \(transaction)"))
+                    return .none
+                }
+                                      
                 let updatedSource = WalletItem(id: src.id,
                                                timestamp: src.timestamp,
                                                type: src.type,
@@ -433,7 +443,7 @@ public struct WalletFeature {
                                                currency: src.currency,
                                                balance: src.balance + transaction.amount)
                 
-                let dst = transaction.destination
+                
                 let updatedDestination = WalletItem(id: dst.id,
                                                     timestamp: dst.timestamp,
                                                     type: dst.type,
@@ -442,13 +452,12 @@ public struct WalletFeature {
                                                     currency: dst.currency,
                                                     balance: dst.balance - transaction.amount * transaction.rate)
                 
+                state.accounts[sourceIndex] = updatedSource
                 switch destinationType {
                 case .account:
-                    state.accounts[sourceIndex] = updatedSource
                     state.accounts[destinationIndex] = updatedDestination
                     break
                 case .expenses:
-                    state.accounts[sourceIndex] = updatedSource
                     state.expenses[destinationIndex] = updatedDestination
                     break
                 }
@@ -466,9 +475,12 @@ public struct WalletFeature {
                     analytics.logEvent(.error("error, applying transaction to DB: \(error)"))
                 }
                 return .none
-            case let .deleteTransaction(transactions):
+            case let .deleteTransactions(transactionIds):
+                // remove from memory
+                state.transactions = state.transactions.filter { !transactionIds.contains($0.id) }
+                
+                // remove from db
                 do {
-                    let transactionIds = transactions.map { $0.id }
                     let predicate = #Predicate<WalletTransactionModel> { transactionIds.contains($0.id) }
                     try database.delete(model: WalletTransactionModel.self, where: predicate)
                     try database.save()
@@ -477,6 +489,9 @@ public struct WalletFeature {
                 }
                 return .none
             case let .deleteWalletItem(id):
+                state.accounts = state.accounts.filter { $0.id != id }
+                state.expenses = state.expenses.filter { $0.id != id }
+                
                 do {
                     let predicate = #Predicate<WalletItemModel> { $0.id == id }
                     try database.delete(model: WalletItemModel.self, where: predicate)
@@ -484,7 +499,9 @@ public struct WalletFeature {
                 } catch {
                     analytics.logEvent(.error("error, removing wallet item from DB: \(error)"))
                 }
-                return .none
+                return .run { send in
+                    await send(.itemFrameChanged(id, nil))
+                }
             case let .createNewItemTapped(itemType):
                 return .run { [currency = state.selectedCurrency, currencies = state.currencies] send in
                     await send(.walletItemEdit(.presentNewItem(itemType, currency, currencies)))
@@ -539,19 +556,6 @@ public struct WalletFeature {
             case let .walletItemEdit(.deleteWalletItem(id)):
                 // remove related transactions
                 let transactionsToRemove = state.transactions.filter { $0.source.id == id || $0.destination.id == id }
-                state.transactions.removeAll(where: { transaction in
-                    transactionsToRemove.contains { $0.id == transaction.id }
-                })
-                
-                // remove item
-                guard let item: WalletItem = [state.accounts, state.expenses].flatMap({ $0 }).filter({ $0.id == id }).first else { return .none }
-                
-                switch item.type {
-                case .account:
-                    state.accounts.removeAll { $0.id == item.id }
-                case .expenses:
-                    state.expenses.removeAll { $0.id == item.id }
-                }
                 
                 return .run { [transactionsToRemove] send in
                     for t in transactionsToRemove {
@@ -559,7 +563,7 @@ public struct WalletFeature {
                         await send(.revertTransaction(t))
                     }
                     // clear DB
-                    await send(.deleteTransaction(transactionsToRemove))
+                    await send(.deleteTransactions(transactionsToRemove.map { $0.id }))
                     await send(.deleteWalletItem(id))
                     // close sheet
                     await send(.walletItemEdit(.presentedChanged(false)))
@@ -590,11 +594,9 @@ public struct WalletFeature {
                     await send(.calculateBalance)
                 }
             case let .walletItemEdit(.deleteTransaction(transaction)):
-                state.transactions = state.transactions.filter { $0.id != transaction.id }
-                
                 return .run { send in
                     await send(.revertTransaction(transaction))
-                    await send(.deleteTransaction([transaction]))
+                    await send(.deleteTransactions([transaction.id]))
                 }
             case .walletItemEdit:
                 return .none
