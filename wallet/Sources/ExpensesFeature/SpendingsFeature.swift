@@ -23,7 +23,7 @@ public struct SpendingsFeature: Reducer {
     
     public enum Action: Sendable {
         case recalculateAndPresentSpendings(Period)
-        case presentSpendings(Currency, [Spending], [PieChartSection])
+        case presentSpendings(Period, Currency, [Spending], [PieChartSection])
         case presentedChanged(Bool)
         case chartSectionsChanged([PieChartSection])
         case periodChanged(Period)
@@ -32,7 +32,8 @@ public struct SpendingsFeature: Reducer {
     public var body: some Reducer <State, Action> {
         Reduce { state, action in
             switch action {
-            case let .presentSpendings(currency, spendings, chartSections):
+            case let .presentSpendings(period, currency, spendings, chartSections):
+                state.period = period
                 state.currency = currency
                 state.spendings = spendings
                 return .run { [chartSections] send in

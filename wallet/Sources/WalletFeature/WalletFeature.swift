@@ -529,8 +529,8 @@ public struct WalletFeature {
                     analytics.logEvent(.aboutScreenTransition)
                 }
             case .presentSpendings:
-                return .run { send in
-                    await send(.spendings(.recalculateAndPresentSpendings(.month)))
+                return .run { [period = state.spendings.period] send in
+                    await send(.spendings(.recalculateAndPresentSpendings(period)))
                 }
                 // MARK: - Spendings
             case let .spendings(.recalculateAndPresentSpendings(period)):
@@ -553,7 +553,7 @@ public struct WalletFeature {
                 }
                 let currency = state.selectedCurrency
                 return .run { send in
-                    await send(.spendings(.presentSpendings(currency, spendings, chartSections)))
+                    await send(.spendings(.presentSpendings(period, currency, spendings, chartSections)))
                 }
             case .spendings:
                 return .none
