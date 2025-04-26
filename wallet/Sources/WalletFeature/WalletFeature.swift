@@ -94,6 +94,7 @@ public struct WalletFeature {
         case deleteTransactions([UUID])
         case deleteWalletItem(UUID)
         case generateDefaultWalletItems(Currency)
+        case generateTestTransactions(Currency)
         case applyTransaction(WalletTransaction)
         case revertTransaction(WalletTransaction)
         case saveTransaction(WalletTransaction)
@@ -183,7 +184,11 @@ public struct WalletFeature {
                     if !wasLaunchedBefore {
                         analytics.logEvent(.appStarted(firstLaunch: !wasLaunchedBefore))
                         let currency = CurrencyManager.shared.defaultCurrency(for: .current, from: currencies)
+                        
                         await send(.generateDefaultWalletItems(currency))
+                        #if DEBUG
+                        await send(.generateTestTransactions(currency))
+                        #endif
                     } else {
                         await send(.readWalletItems)
                         await send(.readTransactions)
@@ -308,6 +313,15 @@ public struct WalletFeature {
                 return .run { [accounts = state.accounts, expenses = state.expenses] send in
                     await send(.saveWalletItems(accounts + expenses))
                     await send(.calculateBalance)
+                }
+            case let .generateTestTransactions(currency):
+                let transactions = WalletTransaction.testTransactions(currency)
+                state.transactions = transactions
+                return .run { send in
+                    for t in transactions {
+                        await send(.applyTransaction(t))
+                        await send(.saveTransaction(t))
+                    }
                 }
             case let .itemFrameChanged(itemId, frame):
                 // FIXME: не вызывается для нового элемента
@@ -525,12 +539,17 @@ public struct WalletFeature {
                                                             period: period,
                                                             rates: state.rates,
                                                             currency: state.selectedCurrency)
+                var middleAngle: Double = -90.0
                 let chartSections = spendings.map {
-                    PieChartSection(name: $0.name,
-                                    angle: $0.percent * 360,
-                                    icon: $0.icon,
-                                    color: $0.color,
-                                    opacity: $0.expenses == 0 ? 0.5 : 1)
+                    let angle = $0.percent * 360
+                    middleAngle += angle / 2
+                    defer { middleAngle += angle / 2 }
+                    return PieChartSection(name: $0.name,
+                                           angle: angle,
+                                           middleAngle: middleAngle,
+                                           icon: $0.icon,
+                                           color: $0.color,
+                                           opacity: $0.expenses == 0 ? 0.5 : 1)
                 }
                 let currency = state.selectedCurrency
                 return .run { send in

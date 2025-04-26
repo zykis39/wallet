@@ -10,6 +10,7 @@ import SwiftUI
 
 struct SpendingsStatisticsView: View {
     @Bindable var store: StoreOf<SpendingsFeature>
+    let animation = Animation.easeInOut(duration: 0.3)
     
     init(store: StoreOf<SpendingsFeature>) {
         self.store = store
@@ -35,7 +36,7 @@ struct SpendingsStatisticsView: View {
                 .pickerStyle(.segmented)
                 let s = abs(proxy.size.width - 48)
                 ZStack {
-                    PieChartsView(data: $store.chartSections.sending(\.chartSectionsChanged))
+                    PieChartsView(data: $store.chartSections.sending(\.chartSectionsChanged), animation: animation, size: proxy.size.width)
                     VStack {
                         Text("Total:")
                             .foregroundStyle(.secondary)
@@ -68,7 +69,7 @@ struct SpendingsStatisticsView: View {
                             }
                         }
                     }
-                    .animation(.easeInOut, value: store.state.spendings)
+                    .animation(animation, value: store.state.spendings)
                     
                     Spacer()
                 } else {

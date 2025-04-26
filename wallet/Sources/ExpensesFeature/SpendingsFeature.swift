@@ -35,14 +35,8 @@ public struct SpendingsFeature: Reducer {
             case let .presentSpendings(currency, spendings, chartSections):
                 state.currency = currency
                 state.spendings = spendings
-                // initial angles are equal
-                state.chartSections = chartSections.map {
-                    PieChartSection(name: $0.name, angle: 1, icon: $0.icon, color: $0.color, opacity: $0.opacity)
-                }
                 return .run { [chartSections] send in
                     await send(.presentedChanged(true))
-                    // then animating to actual angles
-                    try? await Task.sleep(for: .seconds(0.3))
                     await send(.chartSectionsChanged(chartSections))
                 }
             case let .presentedChanged(presented):
@@ -66,6 +60,7 @@ public struct SpendingsFeature: Reducer {
 public struct PieChartSection: Hashable, Sendable {
     let name: String
     let angle: Double
+    let middleAngle: Double
     let icon: String
     let color: Color
     let opacity: Double
