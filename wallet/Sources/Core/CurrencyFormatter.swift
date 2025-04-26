@@ -8,6 +8,8 @@ import SwiftUI
 
 final class CurrencyFormatter {
     static func formattedTextField(_ oldValue: String, _ newValue: String) -> String {
+        guard newValue != "0" else { return "" }
+        
         var finalValue = newValue
         if newValue.count > oldValue.count {
             finalValue = self.processInsert(oldValue: oldValue, newValue: newValue)
@@ -45,6 +47,7 @@ final class CurrencyFormatter {
         formatter.minimumFractionDigits = 0
         formatter.maximumFractionDigits = 2
         formatter.decimalSeparator = "."
+        formatter.zeroSymbol = ""
         return formatter
     }()
 }

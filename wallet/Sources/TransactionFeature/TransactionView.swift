@@ -7,7 +7,6 @@
 
 import ComposableArchitecture
 import SwiftUI
-//import CurrencyField
 
 struct TransactionView: View {
     @Bindable var store: StoreOf<TransactionFeature>
@@ -21,6 +20,7 @@ struct TransactionView: View {
     @FocusState var focused: FocusField?
     @State var amountInSourceCurrency: String = ""
     @State var amountInDestinationCurrency: String = ""
+    @State var restrictCurrencyChange: Bool = false
     let generator = UINotificationFeedbackGenerator()
     
     var body: some View {
@@ -29,7 +29,14 @@ struct TransactionView: View {
                                 rightSystemImageName: "checkmark.circle.fill",
                                 leftAction: { [store] in store.send(.cancelTapped) },
                                 rightAction: {
-                [store, generator] in store.send(.confirmTapped)
+                [store, generator] in
+                if restrictCurrencyChange,
+                   let sourceAmount = Double(amountInSourceCurrency),
+                   let destinationAmount = Double(amountInDestinationCurrency) {
+                    let rate = destinationAmount / sourceAmount
+                    store.send(.sourceDestinationRateChanged(rate))
+                }
+                store.send(.confirmTapped)
                 generator.notificationOccurred(.success)
             },
                                 imageSize: 32,
@@ -52,9 +59,11 @@ struct TransactionView: View {
                         self.amountInSourceCurrency = value
                         store.send(.amountChanged(Double(value) ?? 0))
                         
-                        let destinationAmount: Double = (Double(value) ?? 0) * store.state.sourceDestinationRate
-                        let destinationString = CurrencyFormatter.formatter.string(from: .init(value: destinationAmount))
-                        amountInDestinationCurrency = destinationString ?? ""
+                        if !restrictCurrencyChange {
+                            let destinationAmount: Double = (Double(value) ?? 0) * store.state.sourceDestinationRate
+                            let destinationString = CurrencyFormatter.formatter.string(from: .init(value: destinationAmount))
+                            amountInDestinationCurrency = destinationString ?? ""
+                        }
                     }
                 Text(store.state.source.currency.fixedSymbol)
                     .font(Font.system(size: 60, design: .default))
@@ -75,10 +84,12 @@ struct TransactionView: View {
                             let value = CurrencyFormatter.formattedTextField(oldValue, newValue)
                             self.amountInDestinationCurrency = value
                             
-                            let sourceAmount: Double = (Double(value) ?? 0) / store.state.sourceDestinationRate
-                            let sourceString = CurrencyFormatter.formatter.string(from: .init(value: sourceAmount))
-                            amountInSourceCurrency = sourceString ?? ""
-                            store.send(.amountChanged(sourceAmount))
+                            if !restrictCurrencyChange {
+                                let sourceAmount: Double = (Double(value) ?? 0) / store.state.sourceDestinationRate
+                                let sourceString = CurrencyFormatter.formatter.string(from: .init(value: sourceAmount))
+                                amountInSourceCurrency = sourceString ?? ""
+                                store.send(.amountChanged(sourceAmount))
+                            }
                         }
                     Text(store.state.destination.currency.fixedSymbol)
                         .font(Font.system(size: 60, design: .default))
@@ -99,19 +110,26 @@ struct TransactionView: View {
         .onAppear {
             focused = .sourceTextField
         }
+        /// letting user to choose his own conversion rate
+        .onChange(of: focused) { oldValue, newValue in
+            guard amountInSourceCurrency.isEmpty && amountInDestinationCurrency.isEmpty else {
+                restrictCurrencyChange = true
+                return
+            }
+        }
     }
 }
 
-#Preview {
-    TransactionView(store:
-            .init(initialState:
-                    TransactionFeature.State(presented: true,
-                                             amount: 240.03,
-                                             source: .card,
-                                             destination: .groceries,
-                                             sourceDestinationRate: 1.0,
-                                             commentary: ""),
-                  reducer: {
-        TransactionFeature()
-    }))
-}
+//#Preview {
+//    TransactionView(store:
+//            .init(initialState:
+//                    TransactionFeature.State(presented: true,
+//                                             amount: 240.03,
+//                                             source: .card,
+//                                             destination: .groceries,
+//                                             sourceDestinationRate: 1.0,
+//                                             commentary: ""),
+//                  reducer: {
+//        TransactionFeature()
+//    }))
+//}

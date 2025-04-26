@@ -32,6 +32,7 @@ public struct TransactionFeature: Sendable {
         case confirmTapped
         case presentedChanged(Bool)
         case amountChanged(Double)
+        case sourceDestinationRateChanged(Double)
         case commentaryChanged(String)
     }
     
@@ -67,6 +68,9 @@ public struct TransactionFeature: Sendable {
                 return .none
             case let .commentaryChanged(commentary):
                 state.commentary = commentary
+                return .none
+            case let .sourceDestinationRateChanged(rate):
+                state.sourceDestinationRate = rate
                 return .none
             }
         }
