@@ -39,6 +39,11 @@ struct AboutApplicationView: View {
     var body: some View {
         VStack(alignment: .center) {
             Form {
+                if let appVersion = UIApplication.appVersion {
+                    Section("Version:") {
+                        Text(appVersion)
+                    }
+                }
                 Section("Stack:") {
                     ForEach(stack, id: \.self) { framework in
                         Text("•" + framework)

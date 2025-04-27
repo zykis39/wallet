@@ -64,7 +64,6 @@ public struct PieChartSection: Hashable, Sendable {
     let middleAngle: Double
     let icon: String
     let color: Color
-    let opacity: Double
 }
 
 public struct Spending: Hashable, Sendable {

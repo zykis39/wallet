@@ -548,8 +548,7 @@ public struct WalletFeature {
                                            angle: angle,
                                            middleAngle: middleAngle,
                                            icon: $0.icon,
-                                           color: $0.color,
-                                           opacity: $0.expenses == 0 ? 0.5 : 1)
+                                           color: $0.color)
                 }
                 let currency = state.selectedCurrency
                 return .run { send in

@@ -273,7 +273,7 @@ extension Spending {
         }
         
         guard items.count > 0 else {
-            return [.init(name: "", icon: "", expenses: 0.0, percent: 1.0, currency: .USD, color: .red)]
+            return [.init(name: "", icon: "", expenses: 0.0, percent: 0.0, currency: .USD, color: .red.opacity(0.5))]
         }
         
         return items
