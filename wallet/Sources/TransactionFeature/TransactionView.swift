@@ -61,7 +61,7 @@ struct TransactionView: View {
                         
                         if !restrictCurrencyChange {
                             let destinationAmount: Double = (Double(value) ?? 0) * store.state.sourceDestinationRate
-                            let destinationString = CurrencyFormatter.formatter.string(from: .init(value: destinationAmount))
+                            let destinationString = CurrencyFormatter.formatterWithoutZeroSymbol.string(from: .init(value: destinationAmount))
                             amountInDestinationCurrency = destinationString ?? ""
                         }
                     }
@@ -86,7 +86,7 @@ struct TransactionView: View {
                             
                             if !restrictCurrencyChange {
                                 let sourceAmount: Double = (Double(value) ?? 0) / store.state.sourceDestinationRate
-                                let sourceString = CurrencyFormatter.formatter.string(from: .init(value: sourceAmount))
+                                let sourceString = CurrencyFormatter.formatterWithoutZeroSymbol.string(from: .init(value: sourceAmount))
                                 amountInSourceCurrency = sourceString ?? ""
                                 store.send(.amountChanged(sourceAmount))
                             }
@@ -112,7 +112,7 @@ struct TransactionView: View {
         }
         /// letting user to choose his own conversion rate
         .onChange(of: focused) { oldValue, newValue in
-            guard amountInSourceCurrency.isEmpty && amountInDestinationCurrency.isEmpty else {
+            guard amountInSourceCurrency.isEmpty && amountInDestinationCurrency.isEmpty && newValue == .destinationTextField else {
                 restrictCurrencyChange = true
                 return
             }

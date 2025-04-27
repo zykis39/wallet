@@ -41,13 +41,22 @@ final class CurrencyFormatter {
         return formatter.string(from: NSNumber(value: value)) ?? ""
     }
     
-    static var formatter: NumberFormatter = {
+    static var formatterWithoutZeroSymbol: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 0
         formatter.maximumFractionDigits = 2
         formatter.decimalSeparator = "."
         formatter.zeroSymbol = ""
+        return formatter
+    }()
+    
+    static var formatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+        formatter.decimalSeparator = "."
         return formatter
     }()
 }
