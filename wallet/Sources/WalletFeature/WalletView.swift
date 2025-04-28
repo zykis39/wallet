@@ -21,7 +21,7 @@ struct WalletView: View {
     }
     
     public var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .center) {
             HeaderWallet(balance: store.state.balance,
                          expenses: store.state.monthExpenses,
                          currency: store.state.selectedCurrency,
@@ -56,6 +56,17 @@ struct WalletView: View {
             .zIndex(expensesDragging ? 1 : 0)
             
             Spacer()
+            Button { [weak store] in
+                store?.send(.dragModeChanged(.normal))
+            } label: {
+                Text("Done")
+                    .frame(minWidth: 120)
+            }
+            .buttonStyle(.bordered)
+            .opacity(store.state.dragMode == .reordering ? 1.0 : 0.0)
+        }
+        .onTapGesture { [weak store] in
+            store?.send(.dragModeChanged(.normal))
         }
     }
 }

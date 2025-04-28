@@ -19,16 +19,16 @@ public struct WalletItem: Codable, Hashable, Sendable {
     }
 
     let id: UUID
-    let timestamp: Date
+    let order: UInt
     let type: WalletItemType
     let name: String
     let icon: String
     let currency: Currency
     let balance: Double
     
-    init(id: UUID, timestamp: Date, type: WalletItemType, name: String, icon: String, currency: Currency, balance: Double) {
+    init(id: UUID, order: UInt, type: WalletItemType, name: String, icon: String, currency: Currency, balance: Double) {
         self.id = id
-        self.timestamp = timestamp
+        self.order = order
         self.type = type
         self.name = name
         self.icon = icon
@@ -163,21 +163,21 @@ extension ConversionRate {
 }
 
 extension WalletItem {
-    static let none: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 0), type: .account, name: "", icon: "", currency: .USD, balance: 0)
+    static let none: Self = .init(id: UUID(), order: 0, type: .account, name: "", icon: "", currency: .USD, balance: 0)
     
     // default accounts
     static let defaultAccounts: [Self] = [card, cash]
-    static let card: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 1), type: .account, name: "Card", icon: "creditcard", currency: .USD, balance: 0)
-    static let cash: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 2), type: .account, name: "Cash", icon: "wallet.bifold", currency: .USD, balance: 0)
+    static let card: Self = .init(id: UUID(), order: 0, type: .account, name: "Card", icon: "creditcard", currency: .USD, balance: 0)
+    static let cash: Self = .init(id: UUID(), order: 1, type: .account, name: "Cash", icon: "wallet.bifold", currency: .USD, balance: 0)
     
     // default expences
     static let defaultExpenses: [Self] = [groceries, cafe, transport, shopping, services, entertainments]
-    static let groceries: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 1), type: .expenses, name: "Groceries", icon: "carrot", currency: .USD, balance: 0)
-    static let cafe: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 2), type: .expenses, name: "Cafe", icon: "fork.knife", currency: .USD, balance: 0)
-    static let transport: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 3), type: .expenses, name: "Transport", icon: "bus.fill", currency: .USD, balance: 0)
-    static let shopping: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 4), type: .expenses, name: "Shopping", icon: "handbag", currency: .USD, balance: 0)
-    static let services: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 5), type: .expenses, name: "Services", icon: "network", currency: .USD, balance: 0)
-    static let entertainments: Self = .init(id: UUID(), timestamp: .init(timeIntervalSince1970: 6), type: .expenses, name: "Entertainments", icon: "party.popper", currency: .USD, balance: 0)
+    static let groceries: Self = .init(id: UUID(), order: 0, type: .expenses, name: "Groceries", icon: "carrot.fill", currency: .USD, balance: 0)
+    static let cafe: Self = .init(id: UUID(), order: 1, type: .expenses, name: "Cafe", icon: "fork.knife", currency: .USD, balance: 0)
+    static let transport: Self = .init(id: UUID(), order: 2, type: .expenses, name: "Transport", icon: "bus.fill", currency: .USD, balance: 0)
+    static let shopping: Self = .init(id: UUID(), order: 3, type: .expenses, name: "Shopping", icon: "handbag", currency: .USD, balance: 0)
+    static let services: Self = .init(id: UUID(), order: 4, type: .expenses, name: "Services", icon: "network", currency: .USD, balance: 0)
+    static let entertainments: Self = .init(id: UUID(), order: 5, type: .expenses, name: "Entertainments", icon: "party.popper", currency: .USD, balance: 0)
 }
 
 extension WalletTransaction {

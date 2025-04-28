@@ -27,16 +27,16 @@ struct TransactionView: View {
         VStack(alignment: .trailing) {
             HeaderCancelConfirm(leftSystemImageName: "xmark.circle.fill",
                                 rightSystemImageName: "checkmark.circle.fill",
-                                leftAction: { [store] in store.send(.cancelTapped) },
+                                leftAction: { [weak store] in store?.send(.cancelTapped) },
                                 rightAction: {
-                [store, generator] in
+                [weak store, generator] in
                 if restrictCurrencyChange,
                    let sourceAmount = Double(amountInSourceCurrency),
                    let destinationAmount = Double(amountInDestinationCurrency) {
                     let rate = destinationAmount / sourceAmount
-                    store.send(.sourceDestinationRateChanged(rate))
+                    store?.send(.sourceDestinationRateChanged(rate))
                 }
-                store.send(.confirmTapped)
+                store?.send(.confirmTapped)
                 generator.notificationOccurred(.success)
             },
                                 imageSize: 32,
@@ -52,14 +52,14 @@ struct TransactionView: View {
                     .keyboardType(.decimalPad)
                     .focused($focused, equals: .sourceTextField)
                     .multilineTextAlignment(.trailing)
-                    .onChange(of: amountInSourceCurrency) { oldValue, newValue in
+                    .onChange(of: amountInSourceCurrency) { [weak store] oldValue, newValue in
                         guard focused == .sourceTextField else { return }
                         
                         let value = CurrencyFormatter.formattedTextField(oldValue, newValue)
                         self.amountInSourceCurrency = value
-                        store.send(.amountChanged(Double(value) ?? 0))
+                        store?.send(.amountChanged(Double(value) ?? 0))
                         
-                        if !restrictCurrencyChange {
+                        if !restrictCurrencyChange, let store {
                             let destinationAmount: Double = (Double(value) ?? 0) * store.state.sourceDestinationRate
                             let destinationString = CurrencyFormatter.formatterWithoutZeroSymbol.string(from: .init(value: destinationAmount))
                             amountInDestinationCurrency = destinationString ?? ""
@@ -78,17 +78,17 @@ struct TransactionView: View {
                         .keyboardType(.decimalPad)
                         .focused($focused, equals: .destinationTextField)
                         .multilineTextAlignment(.trailing)
-                        .onChange(of: amountInDestinationCurrency) { oldValue, newValue in
+                        .onChange(of: amountInDestinationCurrency) { [weak store] oldValue, newValue in
                             guard focused == .destinationTextField else { return }
                             
                             let value = CurrencyFormatter.formattedTextField(oldValue, newValue)
                             self.amountInDestinationCurrency = value
                             
                             if !restrictCurrencyChange {
-                                let sourceAmount: Double = (Double(value) ?? 0) / store.state.sourceDestinationRate
+                                let sourceAmount: Double = (Double(value) ?? 0) / (store?.state.sourceDestinationRate ?? 1.0)
                                 let sourceString = CurrencyFormatter.formatterWithoutZeroSymbol.string(from: .init(value: sourceAmount))
                                 amountInSourceCurrency = sourceString ?? ""
-                                store.send(.amountChanged(sourceAmount))
+                                store?.send(.amountChanged(sourceAmount))
                             }
                         }
                     Text(store.state.destination.currency.fixedSymbol)
@@ -112,8 +112,10 @@ struct TransactionView: View {
         }
         /// letting user to choose his own conversion rate
         .onChange(of: focused) { oldValue, newValue in
-            guard amountInSourceCurrency.isEmpty && amountInDestinationCurrency.isEmpty && newValue == .destinationTextField else {
-                restrictCurrencyChange = true
+            guard amountInSourceCurrency.isEmpty && amountInDestinationCurrency.isEmpty else {
+                if newValue == .destinationTextField {
+                    restrictCurrencyChange = true
+                }
                 return
             }
         }

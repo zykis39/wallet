@@ -68,7 +68,7 @@ public struct WalletItemEditFeature {
                 }()
                 
                 let newItem = WalletItem(id: UUID(),
-                                         timestamp: .now,
+                                         order: 0,
                                          type: type,
                                          name: "",
                                          icon: randomIcon,
@@ -101,7 +101,7 @@ public struct WalletItemEditFeature {
             case let .nameChanged(name):
                 let item = state.item
                 let editedItem = WalletItem(id: item.id,
-                                            timestamp: item.timestamp,
+                                            order: item.order,
                                             type: item.type,
                                             name: name,
                                             icon: item.icon,
@@ -112,7 +112,7 @@ public struct WalletItemEditFeature {
             case let .balanceChanged(balance):
                 let item = state.item
                 let editedItem = WalletItem(id: item.id,
-                                            timestamp: item.timestamp,
+                                            order: item.order,
                                             type: item.type,
                                             name: item.name,
                                             icon: item.icon,
@@ -123,7 +123,7 @@ public struct WalletItemEditFeature {
             case let .currencyChanged(currency):
                 let item = state.item
                 let editedItem = WalletItem(id: item.id,
-                                            timestamp: item.timestamp,
+                                            order: item.order,
                                             type: item.type,
                                             name: item.name,
                                             icon: item.icon,
@@ -137,7 +137,7 @@ public struct WalletItemEditFeature {
             case let .iconSelected(icon):
                 let item = state.item
                 let editedItem = WalletItem(id: item.id,
-                                            timestamp: item.timestamp,
+                                            order: item.order,
                                             type: item.type,
                                             name: item.name,
                                             icon: icon,

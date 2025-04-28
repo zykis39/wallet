@@ -16,6 +16,11 @@ enum AppStorageKey {
     static let selectedCurrencyCode = "selectedCurrencyCode"
 }
 
+public enum DragMode: Equatable, Sendable {
+    case normal
+    case reordering
+}
+
 @Reducer
 public struct WalletFeature {
     @ObservableState
@@ -44,6 +49,7 @@ public struct WalletFeature {
         var rates: [ConversionRate] = []
         
         // data
+        var dragMode: DragMode = .normal
         var balance: Double
         var monthExpenses: Double
         var accounts: [WalletItem]
@@ -56,6 +62,7 @@ public struct WalletFeature {
         // drag and drop
         var itemFrames: [UUID: CGRect] = [:]
         var draggingOffset: CGSize = .zero
+        var draggingPoint: CGPoint?
         var dragItem: WalletItem?
         var dropItem: WalletItem?
         
@@ -99,6 +106,7 @@ public struct WalletFeature {
         case revertTransaction(WalletTransaction)
         case saveTransaction(WalletTransaction)
         case transactionsUpdated([WalletTransaction])
+        case dragModeChanged(DragMode)
         
         // locale & currency
         case checkLocale
@@ -253,12 +261,12 @@ public struct WalletFeature {
             case .readWalletItems:
                 /// FIXME: Predicates cause runtime error, when dealing with Enums
                 /// So, filtering happens outside SwiftData, in-memory
-                let itemDescriptor = FetchDescriptor<WalletItemModel>(predicate: #Predicate<WalletItemModel> { _ in true }, sortBy: [ .init(\.timestamp, order: .forward) ])
+                let itemDescriptor = FetchDescriptor<WalletItemModel>(predicate: #Predicate<WalletItemModel> { _ in true }, sortBy: [ .init(\.order, order: .forward) ])
                 do {
                     let accounts = try database.fetch(itemDescriptor).filter { $0.type == .account }.map { $0.valueType }
-                    _ = accounts.map { print("\($0.name): \($0.timestamp)") }
+                    _ = accounts.map { print("\($0.name): \($0.order)") }
                     let expenses = try database.fetch(itemDescriptor).filter { $0.type == .expenses }.map { $0.valueType }
-                    _ = expenses.map { print("\($0.name): \($0.timestamp)") }
+                    _ = expenses.map { print("\($0.name): \($0.order)") }
                     state.accounts = accounts
                     state.expenses = expenses
                 } catch {
@@ -292,7 +300,7 @@ public struct WalletFeature {
             case let .generateDefaultWalletItems(currency):
                 state.accounts = WalletItem.defaultAccounts.map {
                     WalletItem(id: $0.id,
-                               timestamp: $0.timestamp,
+                               order: $0.order,
                                type: $0.type,
                                name: $0.name,
                                icon: $0.icon,
@@ -302,7 +310,7 @@ public struct WalletFeature {
                 
                 state.expenses = WalletItem.defaultExpenses.map {
                     WalletItem(id: $0.id,
-                               timestamp: $0.timestamp,
+                               order: $0.order,
                                type: $0.type,
                                name: $0.name,
                                icon: $0.icon,
@@ -329,31 +337,85 @@ public struct WalletFeature {
                 return .none
             case let .onItemDragging(offset, point, item):
                 state.draggingOffset = offset
+                state.draggingPoint = point
                 state.dragItem = item
-
                 let droppingItemFrames = state.itemFrames.filter { $0.value.contains(point) }
-                guard let dropItemId = droppingItemFrames.keys.first,
-                      let dropItem = [state.accounts, state.expenses].flatMap({ $0 }).first(where: { $0.id == dropItemId }),
-                        WalletTransaction.canBePerformed(source: item, destination: dropItem) else {
-                    state.dropItem = nil
+                
+                switch state.dragMode {
+                case .normal:
+                    guard let dropItemId = droppingItemFrames.keys.first,
+                          let dropItem = [state.accounts, state.expenses].flatMap({ $0 }).first(where: { $0.id == dropItemId }),
+                            WalletTransaction.canBePerformed(source: item, destination: dropItem) else {
+                        state.dropItem = nil
+                        return .none
+                    }
+                    
+                    state.dropItem = dropItem
+                    return .none
+                    
+                case .reordering:
+                    guard let dropItemId = droppingItemFrames.keys.first,
+                          let dropItem = [state.accounts, state.expenses].flatMap({ $0 }).first(where: { $0.id == dropItemId }),
+                          let droppingFrame = droppingItemFrames.first?.value,
+                          item.id != dropItem.id,
+                          dropItem.type == item.type
+                    else { return .none }
+                    
+                    let centerX = droppingFrame.origin.x + droppingFrame.size.width / 2
+                    let placingBefore: Bool = point.x < centerX
+                    
+                    switch item.type {
+                    case .account:
+                        reorder(dragItemId: item.id,
+                                dropItemId: dropItemId,
+                                placingBefore: placingBefore,
+                                in: &state.accounts)
+                    case .expenses:
+                        reorder(dragItemId: item.id,
+                                dropItemId: dropItemId,
+                                placingBefore: placingBefore,
+                                in: &state.expenses)
+                    }
+                    
+                    func reorder(dragItemId: UUID, dropItemId: UUID, placingBefore: Bool, in items: inout [WalletItem]) {
+                        guard let dropItemIdx = items.firstIndex(where: { $0.id == dropItemId }),
+                              let dragItemIdx = items.firstIndex(where: { $0.id == dragItemId }) else { return }
+                        let targetIdx = placingBefore ? dropItemIdx : dropItemIdx + 1
+                        if targetIdx < dragItemIdx {
+                            items.remove(at: dragItemIdx)
+                            items.insert(item, at: targetIdx)
+                        } else {
+                            items.insert(item, at: targetIdx)
+                            items.remove(at: dragItemIdx)
+                        }
+                    }
+                    
                     return .none
                 }
-                
-                state.dropItem = dropItem
-                return .none
             case .onDraggingStopped:
-                let dragItem = state.dragItem
-                let dropItem = state.dropItem
-                
-                state.draggingOffset = .zero
-                state.dragItem = nil
-                state.dropItem = nil
-                
-                guard let dragItem, let dropItem else { return .none }
-                return .run { [rates = state.rates] send in
-                    analytics.logEvent(.draggingStopped(source: dragItem.name, destination: dropItem.name))
-                    let rate = ConversionRate.rate(for: dragItem.currency, destination: dropItem.currency, rates: rates)
-                    await send(.transaction(.onItemDropped(dragItem, dropItem, rate)))
+                switch state.dragMode {
+                case .normal:
+                    let dragItem = state.dragItem
+                    let dropItem = state.dropItem
+                    
+                    state.draggingOffset = .zero
+                    state.draggingPoint = nil
+                    state.dragItem = nil
+                    state.dropItem = nil
+                    
+                    guard let dragItem, let dropItem else { return .none }
+                    return .run { [rates = state.rates] send in
+                        analytics.logEvent(.draggingStopped(source: dragItem.name, destination: dropItem.name))
+                        let rate = ConversionRate.rate(for: dragItem.currency, destination: dropItem.currency, rates: rates)
+                        await send(.transaction(.onItemDropped(dragItem, dropItem, rate)))
+                    }
+                    
+                case .reordering:
+                    state.draggingOffset = .zero
+                    state.draggingPoint = nil
+                    state.dragItem = nil
+                    state.dropItem = nil
+                    return .none
                 }
             case let .itemTapped(item):
                 let transactions = state.transactions.filter { $0.source.id == item.id || $0.destination.id == item.id }
@@ -388,7 +450,7 @@ public struct WalletFeature {
                 else { return .none }
                 
                 let updatedSource = WalletItem(id: src.id,
-                                               timestamp: src.timestamp,
+                                               order: src.order,
                                                type: src.type,
                                                name: src.name,
                                                icon: src.icon,
@@ -396,7 +458,7 @@ public struct WalletFeature {
                                                balance: src.balance - transaction.amount)
                 
                 let updatedDestination = WalletItem(id: dst.id,
-                                                    timestamp: dst.timestamp,
+                                                    order: dst.order,
                                                     type: dst.type,
                                                     name: dst.name,
                                                     icon: dst.icon,
@@ -450,7 +512,7 @@ public struct WalletFeature {
                 }
                                       
                 let updatedSource = WalletItem(id: src.id,
-                                               timestamp: src.timestamp,
+                                               order: src.order,
                                                type: src.type,
                                                name: src.name,
                                                icon: src.icon,
@@ -459,7 +521,7 @@ public struct WalletFeature {
                 
                 
                 let updatedDestination = WalletItem(id: dst.id,
-                                                    timestamp: dst.timestamp,
+                                                    order: dst.order,
                                                     type: dst.type,
                                                     name: dst.name,
                                                     icon: dst.icon,
@@ -532,6 +594,33 @@ public struct WalletFeature {
                 return .run { [period = state.spendings.period] send in
                     await send(.spendings(.recalculateAndPresentSpendings(period)))
                 }
+            case let .dragModeChanged(dragMode):
+                for (idx, item) in state.accounts.enumerated() {
+                    let newItem = WalletItem(id: item.id,
+                                             order: UInt(idx),
+                                             type: item.type,
+                                             name: item.name,
+                                             icon: item.icon,
+                                             currency: item.currency,
+                                             balance: item.balance)
+                    state.accounts[idx] = newItem
+                }
+                
+                for (idx, item) in state.expenses.enumerated() {
+                    let newItem = WalletItem(id: item.id,
+                                             order: UInt(idx),
+                                             type: item.type,
+                                             name: item.name,
+                                             icon: item.icon,
+                                             currency: item.currency,
+                                             balance: item.balance)
+                    state.expenses[idx] = newItem
+                }
+                
+                state.dragMode = dragMode
+                return .run { [items = state.accounts + state.expenses] send in
+                    await send(.saveWalletItems(items))
+                }
                 // MARK: - Spendings
             case let .spendings(.recalculateAndPresentSpendings(period)):
                 let spendings = Spending.calculateSpendings(state.transactions,
@@ -587,15 +676,31 @@ public struct WalletFeature {
                     await send(.walletItemEdit(.presentedChanged(false)))
                 }
             case let .walletItemEdit(.createWalletItem(item)):
+                let order: UInt = {
+                    switch item.type {
+                    case .account:
+                        return (state.accounts.map { $0.order }.max() ?? 0) + 1
+                    case .expenses:
+                        return (state.expenses.map { $0.order }.max() ?? 0) + 1
+                    }
+                }()
+                let orderedItem = WalletItem(id: item.id,
+                                             order: order,
+                                             type: item.type,
+                                             name: item.name,
+                                             icon: item.icon,
+                                             currency: item.currency,
+                                             balance: item.balance)
+                
                 switch item.type {
                 case .account:
-                    state.accounts.append(item)
+                    state.accounts.append(orderedItem)
                 case .expenses:
-                    state.expenses.append(item)
+                    state.expenses.append(orderedItem)
                 }
                 return .run { send in
-                    analytics.logEvent(.itemCreated(itemName: item.name, currency: item.currency.code))
-                    await send(.saveWalletItems([item]))
+                    analytics.logEvent(.itemCreated(itemName: orderedItem.name, currency: orderedItem.currency.code))
+                    await send(.saveWalletItems([orderedItem]))
                     await send(.calculateBalance)
                 }
             case let .walletItemEdit(.updateWalletItem(item)):

@@ -22,15 +22,9 @@ final class SwiftDataContainerProvider {
     
     func container(inMemory: Bool) -> ModelContainer {
         do {
-            let configuration: ModelConfiguration = {
-                switch inMemory {
-                case true:
-                    return .init(isStoredInMemoryOnly: true)
-                case false:
-                    return .init(url: URL.documentsDirectory.appending(path: "database.sqlite"))
-                }
-            }()
-            return try ModelContainer(for: WalletItemModel.self, WalletTransactionModel.self,
+            let configuration = ModelConfiguration(url: URL.documentsDirectory.appending(path: "database.sqlite"))
+            let schema = Schema(versionedSchema: SchemaV1.self)
+            return try ModelContainer(for: schema,
                                       migrationPlan: MigrationPlan.self,
                                       configurations: configuration)
         } catch {

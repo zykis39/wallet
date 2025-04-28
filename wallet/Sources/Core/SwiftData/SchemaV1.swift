@@ -19,16 +19,16 @@ enum SchemaV1: VersionedSchema {
     @Model
     final class WalletItemModel: Sendable {
         @Attribute(.unique) var id: UUID
-        var timestamp: Date
+        var order: UInt
         var type: WalletItem.WalletItemType
         var name: String
         var icon: String
         var currency: Currency
         var balance: Double
         
-        init(id: UUID, timestamp: Date, type: WalletItem.WalletItemType, name: String, icon: String, currency: Currency, balance: Double) {
+        init(id: UUID, order: UInt, type: WalletItem.WalletItemType, name: String, icon: String, currency: Currency, balance: Double) {
             self.id = id
-            self.timestamp = timestamp
+            self.order = order
             self.type = type
             self.name = name
             self.icon = icon
@@ -38,7 +38,7 @@ enum SchemaV1: VersionedSchema {
         
         convenience init(model: WalletItem) {
             self.init(id: model.id,
-                      timestamp: model.timestamp,
+                      order: model.order,
                       type: model.type,
                       name: model.name,
                       icon: model.icon,
@@ -48,7 +48,7 @@ enum SchemaV1: VersionedSchema {
         
         var valueType: WalletItem {
             return .init(id: self.id,
-                         timestamp: self.timestamp,
+                         order: self.order,
                          type: self.type,
                          name: self.name,
                          icon: self.icon,

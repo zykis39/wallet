@@ -12,22 +12,30 @@ public struct WalletItemView: View {
     private struct Constants {
         static let size: CGFloat = 64
         static let imageSize: CGFloat = 42
+        static let longPressDuration = 0.5
     }
     
     public var store: StoreOf<WalletFeature>
     private let item: WalletItem
+    @State fileprivate var pressingClass: PressingClass = .init(pressing: false)
+    @State private var shakeAnimationRunning: Bool = false
+    
+    struct ShakeAnimationProperties {
+        var angle: Double = 0.0
+    }
 
     private var currencyAmount: String {
         (CurrencyFormatter.formatter.string(from: .init(value: item.balance)) ?? "") + " " + item.currency.fixedSymbol
     }
     
     private var simpleDrag: some Gesture {
-        DragGesture(coordinateSpace: .global)
-            .onChanged({ [store] value in
-                store.send(.onItemDragging(value.translation, value.location, item))
+        DragGesture(minimumDistance: 5, coordinateSpace: .global)
+            .onChanged({ [weak store] value in
+                pressingClass.pressing = false
+                store?.send(.onItemDragging(value.translation, value.location, item))
             })
-            .onEnded { [store] _ in
-                store.send(.onDraggingStopped)
+            .onEnded { [weak store] _ in
+                store?.send(.onDraggingStopped)
             }
     }
     
@@ -45,7 +53,8 @@ public struct WalletItemView: View {
             Circle()
                 .fill(Color.walletItemColor(for: item.type).opacity(0.2))
                 .frame(width: Constants.size, height: Constants.size)
-                .highPriorityGesture(simpleDrag)
+                .gesture(simpleDrag)
+                
             Text(currencyAmount)
                 .foregroundStyle(Color.walletItemColor(for: item.type))
                 .font(.system(size: 13))
@@ -66,20 +75,52 @@ public struct WalletItemView: View {
                     .frame(width: Constants.imageSize, height: Constants.imageSize)
                     .foregroundStyle(.white)
             }
-            .offset(store.state.dragItem == item ? store.state.draggingOffset : .zero)
+            .offset((store.state.dragItem == item && store.state.dragMode == .normal) ? store.state.draggingOffset : .zero)
             .animation(.easeInOut.speed(4), value: store.state.draggingOffset)
             Rectangle()
                 .fill((store.state.dropItem == item) ? .green.opacity(0.2) : .clear)
                 .cornerRadius(4)
                 .padding(-4)
         }
-        .onTapGesture {
-            store.send(.itemTapped(item))
+        .offset((store.state.dragItem == item && store.state.dragMode == .reordering) ? store.state.draggingOffset : .zero)
+        .animation(.easeInOut.speed(4), value: store.state.draggingOffset)
+        .onLongPressGesture(perform: {},
+                            onPressingChanged: { [weak store] pressed in
+            pressingClass.pressing = pressed
+            if pressed {
+                Task { [pressingClass] in
+                    try? await Task.sleep(for: .seconds(Constants.longPressDuration))
+                    if pressingClass.pressing {
+                        store?.send(.dragModeChanged(.reordering))
+                    }
+                }
+            }
+        })
+        .keyframeAnimator(initialValue: ShakeAnimationProperties(),
+                          repeating: store.state.dragMode == .reordering,
+                          content: { content, value in
+            content.rotationEffect(.degrees(value.angle), anchor: .center)
+        }, keyframes: { _ in
+            KeyframeTrack(\.angle) {
+                SpringKeyframe(-3, duration: 0.15)
+                SpringKeyframe(3, duration: 0.15)
+            }
+        })
+        .onTapGesture { [weak store] in
+            store?.send(.itemTapped(item))
         }
         .onGeometryChange(for: CGRect.self) { proxy in
             proxy.frame(in: .global)
-        } action: { newValue in
-            store.send(.itemFrameChanged(item.id, newValue))
+        } action: { [weak store] newValue in
+            store?.send(.itemFrameChanged(item.id, newValue))
         }
+    }
+}
+
+/// need a reference type to capture and cancel long press gesture
+fileprivate class PressingClass {
+    var pressing: Bool
+    init(pressing: Bool) {
+        self.pressing = pressing
     }
 }

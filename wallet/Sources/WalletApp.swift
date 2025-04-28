@@ -35,7 +35,7 @@ struct WalletApp: App {
         WindowGroup {
             AppView(store: Store(initialState: .initial) {
                 WalletFeature()
-                    ._printChanges()
+//                    ._printChanges()
             })
             .modelContainer(SwiftDataContainerProvider.shared.container(inMemory: isTest))
             .preferredColorScheme(.light)
