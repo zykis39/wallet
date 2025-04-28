@@ -62,7 +62,6 @@ public struct WalletFeature {
         // drag and drop
         var itemFrames: [UUID: CGRect] = [:]
         var draggingOffset: CGSize = .zero
-        var draggingPoint: CGPoint?
         var dragItem: WalletItem?
         var dropItem: WalletItem?
         
@@ -337,7 +336,6 @@ public struct WalletFeature {
                 return .none
             case let .onItemDragging(offset, point, item):
                 state.draggingOffset = offset
-                state.draggingPoint = point
                 state.dragItem = item
                 let droppingItemFrames = state.itemFrames.filter { $0.value.contains(point) }
                 
@@ -399,7 +397,6 @@ public struct WalletFeature {
                     let dropItem = state.dropItem
                     
                     state.draggingOffset = .zero
-                    state.draggingPoint = nil
                     state.dragItem = nil
                     state.dropItem = nil
                     
@@ -412,7 +409,6 @@ public struct WalletFeature {
                     
                 case .reordering:
                     state.draggingOffset = .zero
-                    state.draggingPoint = nil
                     state.dragItem = nil
                     state.dropItem = nil
                     return .none

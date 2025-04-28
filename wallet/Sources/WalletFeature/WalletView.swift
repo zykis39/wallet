@@ -46,8 +46,8 @@ struct WalletView: View {
                         WalletItemView(store: store,
                                        item: item)
                     }
-                    AddButton(color: .green) {
-                        store.send(.createNewItemTapped(.expenses))
+                    AddButton(color: .green) { [weak store] in
+                        store?.send(.createNewItemTapped(.expenses))
                     }
                 }
             }
@@ -57,13 +57,26 @@ struct WalletView: View {
             
             Spacer()
             Button { [weak store] in
-                store?.send(.dragModeChanged(.normal))
+                guard let store else { return }
+                switch store.state.dragMode {
+                case .normal:
+                    store.send(.dragModeChanged(.reordering))
+                case .reordering:
+                    store.send(.dragModeChanged(.normal))
+                }
             } label: {
-                Text("Done")
-                    .frame(minWidth: 120)
+                switch store.state.dragMode {
+                case .normal:
+                    Image(systemName: "square.grid.3x3.square")
+                        .resizable()
+                        .frame(width: 28, height: 28, alignment: .center)
+                        .foregroundStyle(.white)
+                case .reordering:
+                    Text("Done")
+                        .frame(minWidth: 120)
+                }
             }
             .buttonStyle(.bordered)
-            .opacity(store.state.dragMode == .reordering ? 1.0 : 0.0)
         }
         .onTapGesture { [weak store] in
             store?.send(.dragModeChanged(.normal))
