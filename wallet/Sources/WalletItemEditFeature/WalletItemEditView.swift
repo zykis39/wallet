@@ -134,7 +134,7 @@ struct WalletItemEditView: View {
             
             if store.editType == .edit {
                 Button {
-                    store.send(.deleteWalletItem(store.item.id))
+                    store.send(.showAlertChanged(true))
                 } label: {
                     Text("Delete")
                 }
@@ -146,5 +146,25 @@ struct WalletItemEditView: View {
         .background(Color.walletItemColor(for: store.item.type))
         .ignoresSafeArea(.keyboard)
         .toolbarVisibility(.hidden, for: .navigationBar)
+        .alert("Delete %@?".localized(with: ["\"\(store.item.name.localized())\""]), isPresented: $store.showAlert.sending(\.showAlertChanged), actions: {
+            Button {
+                let deleteTransactions = false
+                store.send(.deleteWalletItem(store.item.id, deleteTransactions))
+                store.send(.showAlertChanged(false))
+                store.send(.presentedChanged(false))
+            } label: { Text("Delete only icon") }
+            Button {
+                let deleteTransactions = true
+                store.send(.deleteWalletItem(store.item.id, deleteTransactions))
+                store.send(.showAlertChanged(false))
+                store.send(.presentedChanged(false))
+            } label: { Text("Delete all transactions") }
+            Button {
+                store.send(.showAlertChanged(false))
+            } label: { Text("Cancel") }
+        }, message: {
+            let name = "\"\(store.item.name.localized())\""
+            Text("Deleting %@, you want:".localized(with: [name]))
+        })
     }
 }

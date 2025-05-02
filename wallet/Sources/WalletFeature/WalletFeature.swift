@@ -171,7 +171,7 @@ public struct WalletFeature {
             case .getCurrenciesAndRates:
                 return .run { send in
                     do {
-                        let currencies = try await currencyService.currencies(codes: Currency.currencyCodes)
+                        let currencies = try currencyService.readCurrencies()
                         await send(.currenciesFetched(currencies))
                         
                         let rates = try await currencyService.conversionRates(base: .USD, to: currencies)
@@ -181,8 +181,6 @@ public struct WalletFeature {
                     } catch {
                         do {
                             let currencies = try currencyService.readCurrencies()
-                            await send(.currenciesFetched(currencies))
-                            
                             let rates = try currencyService.readConversionRates(currencies: currencies)
                             await send(.conversionRatesFetched(rates))
                         } catch {
@@ -678,9 +676,9 @@ public struct WalletFeature {
                 return .none
                 
                 // MARK: - WalletItemEdit
-            case let .walletItemEdit(.deleteWalletItem(id)):
+            case let .walletItemEdit(.deleteWalletItem(id, deleteTransactions)):
                 // remove related transactions
-                let transactionsToRemove = state.transactions.filter { $0.source.id == id || $0.destination.id == id }
+                let transactionsToRemove = deleteTransactions ? state.transactions.filter { $0.source.id == id || $0.destination.id == id } : []
                 
                 return .run { [transactionsToRemove] send in
                     for t in transactionsToRemove {

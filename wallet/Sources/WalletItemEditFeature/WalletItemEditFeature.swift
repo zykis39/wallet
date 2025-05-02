@@ -20,6 +20,7 @@ public struct WalletItemEditFeature {
         var transactionsForCurrentPeriod: [WalletTransaction]
         var transactionsPeriod: TransactionPeriod
         var iconSelectionPresented: Bool = false
+        var showAlert: Bool = false
         
         static let initial: Self = .init(editType: .new, presented: false, item: .none, currencies: [], rates: [], transactions: [], transactionsForCurrentPeriod: [], transactionsPeriod: .today)
     }
@@ -36,11 +37,12 @@ public struct WalletItemEditFeature {
         case currencyChanged(Currency)
         case createWalletItem(WalletItem)
         case updateWalletItem(WalletItem)
-        case deleteWalletItem(UUID)
+        case deleteWalletItem(UUID, Bool)
         case iconSelectionPresentedChanged(Bool)
         case iconSelected(String)
         case deleteTransaction(WalletTransaction)
         case periodChanged(TransactionPeriod)
+        case showAlertChanged(Bool)
     }
     
     public var body: some Reducer<State, Action> {
@@ -168,6 +170,9 @@ public struct WalletItemEditFeature {
                         return true
                     }
                 }.sorted(by: { $0.timestamp > $1.timestamp })
+                return .none
+            case let .showAlertChanged(show):
+                state.showAlert = show
                 return .none
             }
         }
