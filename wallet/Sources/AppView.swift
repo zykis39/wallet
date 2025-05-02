@@ -31,7 +31,9 @@ struct AppView: View {
                 .navigationDestination(isPresented: $store.settingsPresented.sending(\.settingsPresentedChanged)) {
                     SettingsView(store: store,
                                  selectedLocale: store.selectedLocale,
-                                 selectedCurrency: store.selectedCurrency)
+                                 selectedCurrency: store.selectedCurrency,
+                                 isReorderButtonVisible: store.isReorderButtonHidden,
+                    )
                     .navigationDestination(isPresented: $store.aboutAppPresented.sending(\.aboutAppPresentedChanged)) {
                         AboutApplicationView()
                     }

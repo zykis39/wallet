@@ -14,11 +14,14 @@ struct SettingsView: View {
     let locales: [Locale]
     @State var selectedLocale: Locale
     @State var selectedCurrency: Currency
+    @State var isReorderButtonHidden: Bool
+    @Dependency(\.defaultAppStorage) var appStorage
     
-    init(store: StoreOf<WalletFeature>, selectedLocale: Locale, selectedCurrency: Currency) {
+    init(store: StoreOf<WalletFeature>, selectedLocale: Locale, selectedCurrency: Currency, isReorderButtonVisible: Bool) {
         self.store = store
         self.selectedLocale = selectedLocale
         self.selectedCurrency = selectedCurrency
+        self.isReorderButtonHidden = isReorderButtonVisible
         self.currencies = store.state.currencies
         self.locales = store.state.supportedLocales
     }
@@ -53,6 +56,12 @@ struct SettingsView: View {
                 }
             }
             
+            Section("Common") {
+                Toggle(isOn: $isReorderButtonHidden) {
+                    Text("Hide reorder button")
+                }
+            }
+            
             Button("Settings.About.ButtonTitle") {
                 store.send(.aboutAppPresentedChanged(true))
             }
@@ -61,7 +70,10 @@ struct SettingsView: View {
             Button("Save") {
                 store.send(.selectedLocaleChanged(selectedLocale))
                 store.send(.selectedCurrencyChanged(selectedCurrency))
+                store.send(.isReorderButtonHiddenChanged(isReorderButtonHidden))
                 store.send(.settingsPresentedChanged(false))
+                
+                appStorage.set(isReorderButtonHidden, forKey: AppStorageKey.isReorderButtonHidden)
             }
         }
     }

@@ -57,27 +57,29 @@ struct WalletView: View {
                 .zIndex(expensesDragging ? 1 : 0)
                 
                 Spacer()
-                Button { [weak store] in
-                    guard let store else { return }
-                    switch store.state.dragMode {
-                    case .normal:
-                        store.send(.dragModeChanged(.reordering))
-                    case .reordering:
-                        store.send(.dragModeChanged(.normal))
+                if !store.state.isReorderButtonHidden {
+                    Button { [weak store] in
+                        guard let store else { return }
+                        switch store.state.dragMode {
+                        case .normal:
+                            store.send(.dragModeChanged(.reordering))
+                        case .reordering:
+                            store.send(.dragModeChanged(.normal))
+                        }
+                    } label: {
+                        switch store.state.dragMode {
+                        case .normal:
+                            Image(systemName: "square.grid.3x3.square")
+                                .resizable()
+                                .frame(width: 28, height: 28, alignment: .center)
+                                .foregroundStyle(.white)
+                        case .reordering:
+                            Text("Done")
+                                .frame(minWidth: 120)
+                        }
                     }
-                } label: {
-                    switch store.state.dragMode {
-                    case .normal:
-                        Image(systemName: "square.grid.3x3.square")
-                            .resizable()
-                            .frame(width: 28, height: 28, alignment: .center)
-                            .foregroundStyle(.white)
-                    case .reordering:
-                        Text("Done")
-                            .frame(minWidth: 120)
-                    }
+                    .buttonStyle(.bordered)
                 }
-                .buttonStyle(.bordered)
             }
             .onTapGesture { [weak store] in
                 store?.send(.dragModeChanged(.normal))

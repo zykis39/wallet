@@ -14,6 +14,7 @@ enum AppStorageKey {
     static let wasLaunchedBefore = "wasLaunchedBefore"
     static let selectedLocaleIdentifier = "selectedLocaleIdentifier"
     static let selectedCurrencyCode = "selectedCurrencyCode"
+    static let isReorderButtonHidden = "isReorderButtonHidden"
 }
 
 public enum DragMode: Equatable, Sendable {
@@ -41,10 +42,12 @@ public struct WalletFeature {
             .init(identifier: "it"),
             .init(identifier: "es"),
         ]
-        var selectedLocale: Locale = .current
         
-        // currency & rates
+        // settings
+        var selectedLocale: Locale = .current
         var selectedCurrency: Currency = .USD
+        var isReorderButtonHidden: Bool = true
+        
         var currencies: [Currency] = [.USD]
         var rates: [ConversionRate] = []
         
@@ -89,6 +92,7 @@ public struct WalletFeature {
         
         // internal
         case start
+        case readSettings
         case getCurrenciesAndRates
         case prepareItemsAndTransactions
         case calculateBalance
@@ -108,10 +112,11 @@ public struct WalletFeature {
         case transactionsUpdated([WalletTransaction])
         case dragModeChanged(DragMode)
         
-        // locale & currency
         case checkLocale
+        // settings
         case selectedLocaleChanged(Locale)
         case selectedCurrencyChanged(Currency)
+        case isReorderButtonHiddenChanged(Bool)
         
         // view
         case createNewItemTapped(WalletItem.WalletItemType)
@@ -144,9 +149,13 @@ public struct WalletFeature {
             switch action {
             case .start:
                 return .run { send in
+                    await send(.readSettings)
                     await send(.checkLocale)
                     await send(.getCurrenciesAndRates)
                 }
+            case .readSettings:
+                state.isReorderButtonHidden = appStorage.bool(forKey: AppStorageKey.isReorderButtonHidden)
+                return .none
             case .checkLocale:
                 if let selectedLocaleIdentifier = appStorage.string(forKey: AppStorageKey.selectedLocaleIdentifier),
                    let locale = state.supportedLocales.first(where: { $0.identifier == selectedLocaleIdentifier }) {
@@ -252,6 +261,9 @@ public struct WalletFeature {
             case let .selectedLocaleChanged(locale):
                 state.selectedLocale = locale
                 appStorage.set(locale.identifier, forKey: AppStorageKey.selectedLocaleIdentifier)
+                return .none
+            case let .isReorderButtonHiddenChanged(visible):
+                state.isReorderButtonHidden = visible
                 return .none
             case let .transactionsUpdated(transactions):
                 state.transactions = transactions
