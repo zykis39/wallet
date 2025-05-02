@@ -83,20 +83,11 @@ struct WalletView: View {
                 store?.send(.dragModeChanged(.normal))
             }
             
-            /*
-            let frame = store.state.itemFrames[store.dragItem?.id ?? UUID(), default: .zero]
-            let framePos: CGPoint = .init(x: frame.origin.x + frame.width / 2,
-                                          y: frame.origin.y + frame.height / 2)
-            let offsetFromCenter: CGSize = .init(width: framePos.x - store.state.draggingStartLocation.x,
-                                                 height: framePos.y - store.state.draggingStartLocation.y)
-             */
-            
             // WalletItemView for dragging
-            WalletItemView(store: store, item: store.state.dragItem ?? .none)
+            WalletItemView(store: store, item: store.state.dragItem ?? .none, tag: "DragItem")
                 .opacity((store.state.dragItem != nil && store.state.dragMode == .reordering) ? 1 : 0)
-                .position(x: store.state.draggingLocation.x/* + offsetFromCenter.width*/,
-                          y: store.state.draggingLocation.y/* + offsetFromCenter.height*/)
-//                .animation(.easeInOut.speed(4), value: store.state.draggingLocation)
+                .position(x: store.state.draggingLocation.x,
+                          y: store.state.draggingLocation.y)
         }.coordinateSpace(name: "WalletSpace")
     }
 }

@@ -597,32 +597,40 @@ public struct WalletFeature {
                     await send(.spendings(.recalculateAndPresentSpendings(period)))
                 }
             case let .dragModeChanged(dragMode):
-                for (idx, item) in state.accounts.enumerated() {
-                    let newItem = WalletItem(id: item.id,
-                                             order: UInt(idx),
-                                             type: item.type,
-                                             name: item.name,
-                                             icon: item.icon,
-                                             currency: item.currency,
-                                             balance: item.balance)
-                    state.accounts[idx] = newItem
-                }
-                
-                for (idx, item) in state.expenses.enumerated() {
-                    let newItem = WalletItem(id: item.id,
-                                             order: UInt(idx),
-                                             type: item.type,
-                                             name: item.name,
-                                             icon: item.icon,
-                                             currency: item.currency,
-                                             balance: item.balance)
-                    state.expenses[idx] = newItem
-                }
-                
                 state.dragMode = dragMode
-                return .run { [items = state.accounts + state.expenses] send in
-                    await send(.saveWalletItems(items))
+                
+                switch dragMode {
+                case .normal:
+                    for (idx, item) in state.accounts.enumerated() {
+                        let newItem = WalletItem(id: item.id,
+                                                 order: UInt(idx),
+                                                 type: item.type,
+                                                 name: item.name,
+                                                 icon: item.icon,
+                                                 currency: item.currency,
+                                                 balance: item.balance)
+                        state.accounts[idx] = newItem
+                    }
+                    
+                    for (idx, item) in state.expenses.enumerated() {
+                        let newItem = WalletItem(id: item.id,
+                                                 order: UInt(idx),
+                                                 type: item.type,
+                                                 name: item.name,
+                                                 icon: item.icon,
+                                                 currency: item.currency,
+                                                 balance: item.balance)
+                        state.expenses[idx] = newItem
+                    }
+                    
+                    return .run { [items = state.accounts + state.expenses] send in
+                        await send(.saveWalletItems(items))
+                    }
+                    
+                case .reordering:
+                    return .none
                 }
+                
                 // MARK: - Spendings
             case let .spendings(.recalculateAndPresentSpendings(period)):
                 let spendings = Spending.calculateSpendings(state.transactions,

@@ -19,6 +19,7 @@ public struct WalletItemView: View {
     private let item: WalletItem
     @State fileprivate var pressingClass: PressingClass = .init(pressing: false)
     @State private var shakeAnimationRunning: Bool = false
+    private var tag: String? = nil
     
     struct ShakeAnimationProperties {
         var angle: Double = 0.0
@@ -39,9 +40,10 @@ public struct WalletItemView: View {
             }
     }
     
-    public init(store: StoreOf<WalletFeature>, item: WalletItem) {
+    public init(store: StoreOf<WalletFeature>, item: WalletItem, tag: String? = nil) {
         self.store = store
         self.item = item
+        self.tag = tag
     }
 
     public var body: some View {
@@ -82,9 +84,9 @@ public struct WalletItemView: View {
                 .cornerRadius(4)
                 .padding(-4)
         }
-        .opacity((store.state.dragItem == item && store.state.dragMode == .reordering) ? 0 : 1)
-//        .offset((store.state.dragItem == item && store.state.dragMode == .reordering) ? store.state.draggingOffset : .zero)
-//        .animation(.easeInOut.speed(4), value: store.state.draggingOffset)
+        .opacity((store.state.dragItem == item &&
+                  store.state.dragMode == .reordering &&
+                  tag != "DragItem") ? 0.3 : 1)
         .onLongPressGesture(perform: {},
                             onPressingChanged: { [weak store] pressed in
             pressingClass.pressing = pressed
