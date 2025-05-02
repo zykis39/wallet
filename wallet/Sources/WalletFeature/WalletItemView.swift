@@ -29,10 +29,10 @@ public struct WalletItemView: View {
     }
     
     private var simpleDrag: some Gesture {
-        DragGesture(minimumDistance: 5, coordinateSpace: .global)
+        DragGesture(minimumDistance: 5, coordinateSpace: .named("WalletSpace"))
             .onChanged({ [weak store] value in
                 pressingClass.pressing = false
-                store?.send(.onItemDragging(value.translation, value.location, item))
+                store?.send(.onItemDragging(value.translation, value.location, value.startLocation, item))
             })
             .onEnded { [weak store] _ in
                 store?.send(.onDraggingStopped)
@@ -82,8 +82,9 @@ public struct WalletItemView: View {
                 .cornerRadius(4)
                 .padding(-4)
         }
-        .offset((store.state.dragItem == item && store.state.dragMode == .reordering) ? store.state.draggingOffset : .zero)
-        .animation(.easeInOut.speed(4), value: store.state.draggingOffset)
+        .opacity((store.state.dragItem == item && store.state.dragMode == .reordering) ? 0 : 1)
+//        .offset((store.state.dragItem == item && store.state.dragMode == .reordering) ? store.state.draggingOffset : .zero)
+//        .animation(.easeInOut.speed(4), value: store.state.draggingOffset)
         .onLongPressGesture(perform: {},
                             onPressingChanged: { [weak store] pressed in
             pressingClass.pressing = pressed
@@ -97,7 +98,7 @@ public struct WalletItemView: View {
             }
         })
         .keyframeAnimator(initialValue: ShakeAnimationProperties(),
-                          repeating: store.state.dragMode == .reordering,
+                          repeating: store.state.dragMode == .reordering && store.state.dragItem != item,
                           content: { content, value in
             content.rotationEffect(.degrees(value.angle), anchor: .center)
         }, keyframes: { _ in
@@ -110,7 +111,7 @@ public struct WalletItemView: View {
             store?.send(.itemTapped(item))
         }
         .onGeometryChange(for: CGRect.self) { proxy in
-            proxy.frame(in: .global)
+            proxy.frame(in: .named("WalletSpace"))
         } action: { [weak store] newValue in
             store?.send(.itemFrameChanged(item.id, newValue))
         }
