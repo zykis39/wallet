@@ -63,7 +63,6 @@ public struct WalletFeature {
         var itemFrames: [UUID: CGRect] = [:]
         var draggingOffset: CGSize = .zero
         var draggingLocation: CGPoint = .zero
-        var draggingStartLocation: CGPoint = .zero
         var dragItem: WalletItem?
         var dropItem: WalletItem?
         
@@ -117,7 +116,7 @@ public struct WalletFeature {
         // view
         case createNewItemTapped(WalletItem.WalletItemType)
         case itemFrameChanged(UUID, CGRect?)
-        case onItemDragging(CGSize, CGPoint, CGPoint, WalletItem)
+        case onItemDragging(CGSize, CGPoint, WalletItem)
         case onDraggingStopped
         case itemTapped(WalletItem)
         
@@ -336,12 +335,9 @@ public struct WalletFeature {
                 // FIXME: не вызывается для нового элемента
                 state.itemFrames[itemId] = frame
                 return .none
-            case let .onItemDragging(offset, point, startPoint, item):
+            case let .onItemDragging(offset, point, item):
                 state.draggingOffset = offset
-                print("position: \(point)")
-                print("start position: \(startPoint)")
                 state.draggingLocation = point
-                state.draggingStartLocation = startPoint
                 state.dragItem = item
                 let droppingItemFrames = state.itemFrames.filter { $0.value.contains(point) }
                 

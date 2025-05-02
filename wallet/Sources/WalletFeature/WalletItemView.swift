@@ -33,7 +33,7 @@ public struct WalletItemView: View {
         DragGesture(minimumDistance: 5, coordinateSpace: .named("WalletSpace"))
             .onChanged({ [weak store] value in
                 pressingClass.pressing = false
-                store?.send(.onItemDragging(value.translation, value.location, value.startLocation, item))
+                store?.send(.onItemDragging(value.translation, value.location, item))
             })
             .onEnded { [weak store] _ in
                 store?.send(.onDraggingStopped)
@@ -115,6 +115,7 @@ public struct WalletItemView: View {
         .onGeometryChange(for: CGRect.self) { proxy in
             proxy.frame(in: .named("WalletSpace"))
         } action: { [weak store] newValue in
+            guard tag == nil else { return }
             store?.send(.itemFrameChanged(item.id, newValue))
         }
     }

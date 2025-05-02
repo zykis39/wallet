@@ -84,10 +84,11 @@ struct WalletView: View {
             }
             
             // WalletItemView for dragging
-            WalletItemView(store: store, item: store.state.dragItem ?? .none, tag: "DragItem")
-                .opacity((store.state.dragItem != nil && store.state.dragMode == .reordering) ? 1 : 0)
-                .position(x: store.state.draggingLocation.x,
-                          y: store.state.draggingLocation.y)
+            if (store.state.dragItem != nil && store.state.dragMode == .reordering) {
+                WalletItemView(store: store, item: store.state.dragItem ?? .none, tag: "DragItem")
+                    .position(x: store.state.draggingLocation.x,
+                              y: store.state.draggingLocation.y)
+            }
         }.coordinateSpace(name: "WalletSpace")
     }
 }
