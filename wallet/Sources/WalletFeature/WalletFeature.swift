@@ -5,6 +5,7 @@
 //  Created by Артём Зайцев on 09.03.2025.
 //
 
+import Combine
 import ComposableArchitecture
 import Foundation
 import SwiftData
@@ -20,6 +21,10 @@ enum AppStorageKey {
 public enum DragMode: Equatable, Sendable {
     case normal
     case reordering
+}
+
+public enum CancelID: Hashable, Sendable {
+    static let changeScrollPositionEffectID = "changeScrollPositionEffectID"
 }
 
 @Reducer
@@ -52,20 +57,21 @@ public struct WalletFeature {
         var rates: [ConversionRate] = []
         
         // data
-        var dragMode: DragMode = .normal
         var balance: Double
         var monthExpenses: Double
         var accounts: [WalletItem]
         var expenses: [WalletItem]
         var transactions: [WalletTransaction]
         
-        /// changing state in case of dragging is expensive
-        /// forcing to redraw whole scene, when we move an item
+        // view
+        var accountsScrollPosition: ScrollPosition = .init(x: 0)
         
         // drag and drop
+        var dragMode: DragMode = .normal
         var itemFrames: [UUID: CGRect] = [:]
         var draggingOffset: CGSize = .zero
         var draggingLocation: CGPoint = .zero
+        var draggingTime: Date? = nil
         var dragItem: WalletItem?
         var dropItem: WalletItem?
         
@@ -119,9 +125,10 @@ public struct WalletFeature {
         case isReorderButtonHiddenChanged(Bool)
         
         // view
+        case accountsScrollPositionChanged(ScrollPosition)
         case createNewItemTapped(WalletItem.WalletItemType)
         case itemFrameChanged(UUID, CGRect?)
-        case onItemDragging(CGSize, CGPoint, WalletItem)
+        case onItemDragging(CGSize, CGPoint, Date, WalletItem)
         case onDraggingStopped
         case itemTapped(WalletItem)
         
@@ -135,6 +142,7 @@ public struct WalletFeature {
     @Dependency(\.analytics) var analytics
     @Dependency(\.database) var database
     @Dependency(\.defaultAppStorage) var appStorage
+    @Dependency(\.continuousClock) var clock
     public var body: some Reducer<State, Action> {
         Scope(state: \.transaction, action: \.transaction) {
             TransactionFeature()
@@ -268,6 +276,9 @@ public struct WalletFeature {
                 return .run { send in
                     await send(.calculateExpenses)
                 }
+            case let .accountsScrollPositionChanged(position):
+                state.accountsScrollPosition = position
+                return .none
             case .readWalletItems:
                 /// FIXME: Predicates cause runtime error, when dealing with Enums
                 /// So, filtering happens outside SwiftData, in-memory
@@ -342,26 +353,26 @@ public struct WalletFeature {
                     }
                 }
             case let .itemFrameChanged(itemId, frame):
-                // FIXME: не вызывается для нового элемента
                 state.itemFrames[itemId] = frame
                 return .none
-            case let .onItemDragging(offset, point, item):
+            case let .onItemDragging(offset, point, date, item):
                 state.draggingOffset = offset
                 state.draggingLocation = point
+                state.draggingTime = date
                 state.dragItem = item
                 let droppingItemFrames = state.itemFrames.filter { $0.value.contains(point) }
-                
+
                 switch state.dragMode {
                 case .normal:
                     guard let dropItemId = droppingItemFrames.keys.first,
                           let dropItem = [state.accounts, state.expenses].flatMap({ $0 }).first(where: { $0.id == dropItemId }),
                             WalletTransaction.canBePerformed(source: item, destination: dropItem) else {
                         state.dropItem = nil
-                        return .none
+                        return checkForScrollPositionChange(state: &state, dragPoint: point)
                     }
                     
                     state.dropItem = dropItem
-                    return .none
+                    return checkForScrollPositionChange(state: &state, dragPoint: point)
                     
                 case .reordering:
                     guard let dropItemId = droppingItemFrames.keys.first,
@@ -369,7 +380,7 @@ public struct WalletFeature {
                           let droppingFrame = droppingItemFrames.first?.value,
                           item.id != dropItem.id,
                           dropItem.type == item.type
-                    else { return .none }
+                    else { return checkForScrollPositionChange(state: &state, dragPoint: point) }
                     
                     let centerX = droppingFrame.origin.x + droppingFrame.size.width / 2
                     let placingBefore: Bool = point.x < centerX
@@ -386,22 +397,55 @@ public struct WalletFeature {
                                 placingBefore: placingBefore,
                                 in: &state.expenses)
                     }
-                    
-                    func reorder(dragItemId: UUID, dropItemId: UUID, placingBefore: Bool, in items: inout [WalletItem]) {
-                        guard let dropItemIdx = items.firstIndex(where: { $0.id == dropItemId }),
-                              let dragItemIdx = items.firstIndex(where: { $0.id == dragItemId }) else { return }
-                        let targetIdx = placingBefore ? dropItemIdx : dropItemIdx + 1
-                        if targetIdx < dragItemIdx {
-                            items.remove(at: dragItemIdx)
-                            items.insert(item, at: targetIdx)
+                    return checkForScrollPositionChange(state: &state, dragPoint: point)
+                }
+                
+                func reorder(dragItemId: UUID, dropItemId: UUID, placingBefore: Bool, in items: inout [WalletItem]) {
+                    guard let dropItemIdx = items.firstIndex(where: { $0.id == dropItemId }),
+                          let dragItemIdx = items.firstIndex(where: { $0.id == dragItemId }) else { return }
+                    let targetIdx = placingBefore ? dropItemIdx : dropItemIdx + 1
+                    if targetIdx < dragItemIdx {
+                        items.remove(at: dragItemIdx)
+                        items.insert(item, at: targetIdx)
+                    } else {
+                        items.insert(item, at: targetIdx)
+                        items.remove(at: dragItemIdx)
+                    }
+                }
+                
+                func checkForScrollPositionChange(state: inout State, dragPoint: CGPoint) -> Effect<WalletFeature.Action> {
+                    if state.accounts.count > 4 {
+                        let inAccountsRow: Bool = point.y > 0 && point.y < WalletView.Constants.accountsViewHeight
+                        if inAccountsRow {
+                            let windowWidth: CGFloat = UIScreen.main.bounds.width
+                            let cornerWidth: CGFloat = 30
+                            let currentPositionXOffset: CGFloat = state.accountsScrollPosition.point?.x ?? 0
+                            let inLeftCornerOfAccounts: Bool = point.x < cornerWidth
+                            let inRightCornerOfAccounts: Bool = point.x > windowWidth - cornerWidth
+                            
+                            if inLeftCornerOfAccounts {
+                                return .run { send in
+                                    let newX: CGFloat = max(0, currentPositionXOffset - windowWidth)
+                                    try? await clock.sleep(for: .seconds(1))
+                                    await send(.accountsScrollPositionChanged(.init(x: newX)), animation: .easeInOut)
+                                }.cancellable(id: CancelID.changeScrollPositionEffectID)
+                            } else if inRightCornerOfAccounts {
+                                return .run { send in
+                                    let newX: CGFloat = currentPositionXOffset + windowWidth
+                                    try? await clock.sleep(for: .seconds(1))
+                                    await send(.accountsScrollPositionChanged(.init(x: newX)), animation: .easeInOut)
+                                }.cancellable(id: CancelID.changeScrollPositionEffectID)
+                            } else {
+                                return .cancel(id: CancelID.changeScrollPositionEffectID)
+                            }
+                            
                         } else {
-                            items.insert(item, at: targetIdx)
-                            items.remove(at: dragItemIdx)
+                            return .cancel(id: CancelID.changeScrollPositionEffectID)
                         }
                     }
-                    
-                    return .none
+                    return .cancel(id: CancelID.changeScrollPositionEffectID)
                 }
+                
             case .onDraggingStopped:
                 switch state.dragMode {
                 case .normal:

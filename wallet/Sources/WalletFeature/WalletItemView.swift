@@ -33,7 +33,7 @@ public struct WalletItemView: View {
         DragGesture(minimumDistance: 5, coordinateSpace: .named("WalletSpace"))
             .onChanged({ [weak store] value in
                 pressingClass.pressing = false
-                store?.send(.onItemDragging(value.translation, value.location, item))
+                store?.send(.onItemDragging(value.translation, value.location, value.time, item))
             })
             .onEnded { [weak store] _ in
                 store?.send(.onDraggingStopped)

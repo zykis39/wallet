@@ -13,8 +13,9 @@ struct AccountsView: View {
         static let minElementWidth: CGFloat = 80
         static let maxElementWidth: CGFloat = 120
     }
-    var store: StoreOf<WalletFeature>
     
+    @Bindable var store: StoreOf<WalletFeature>
+
     var body: some View {
         GeometryReader { proxy in
             VStack(alignment: .leading) {
@@ -37,6 +38,7 @@ struct AccountsView: View {
                 .scrollClipDisabled(true)
                 .scrollTargetBehavior(.paging)
                 .scrollIndicators(.hidden)
+                .scrollPosition($store.accountsScrollPosition.sending(\.accountsScrollPositionChanged))
             }
         }
     }

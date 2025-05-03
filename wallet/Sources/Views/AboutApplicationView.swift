@@ -18,15 +18,13 @@ struct AboutApplicationView: View {
         "Animated Swift Charts",
         "Persistant Storage",
         "Localization (8 languages)",
+        "Accounts/Expenses rearrangment",
         "Currency Converter",
-        "Expenses statistics",
+        "Multi-currency custom transaction rate, depending on the entering currency",
         "Adaptive interface",
     ]
     let plans = [
         "Drag-n-Drop animations",
-        "Transaction commentary",
-        "Accounts/Expenses rearrangment",
-        "Fixing multi-currency transaction rate, depending on the entering currency",
         "double-currency TextField",
     ]
     let contacts = [
