@@ -62,6 +62,12 @@ struct SettingsView: View {
                 }
             }
             
+            #if DEBUG
+            Section("DEBUG") {
+                Button("toggle review") { store.send(.appScore(.presentedChanged(true))) }
+            }
+            #endif
+            
             Button("Settings.About.ButtonTitle") {
                 store.send(.aboutAppPresentedChanged(true))
             }

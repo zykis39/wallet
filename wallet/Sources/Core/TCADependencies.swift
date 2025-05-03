@@ -100,3 +100,17 @@ extension DependencyValues {
         }
     }
 }
+
+// MARK: - AppScoreService
+extension DependencyValues {
+    public var appScoreService: AppScoreServiceProtocol {
+        get { self[AppScoreServiceKey.self].value }
+        set { self[AppScoreServiceKey.self].value = newValue }
+    }
+    
+    private enum AppScoreServiceKey: DependencyKey {
+        static var liveValue: UncheckedSendable<AppScoreServiceProtocol> {
+            return UncheckedSendable(AppScoreService())
+        }
+    }
+}

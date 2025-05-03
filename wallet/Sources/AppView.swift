@@ -28,6 +28,11 @@ struct AppView: View {
                             IconSelectionView(store: scoped)
                         }
                 }
+                .sheet(isPresented: $store.appScore.presented.sending(\.appScore.presentedChanged), content: {
+                    let scoped = store.scope(state: \.appScore, action: \.appScore)
+                    AppScore(store: scoped)
+                    .presentationDetents([.medium])
+                })
                 .navigationDestination(isPresented: $store.settingsPresented.sending(\.settingsPresentedChanged)) {
                     SettingsView(store: store,
                                  selectedLocale: store.selectedLocale,

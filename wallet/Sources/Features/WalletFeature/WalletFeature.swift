@@ -16,6 +16,7 @@ enum AppStorageKey {
     static let selectedLocaleIdentifier = "selectedLocaleIdentifier"
     static let selectedCurrencyCode = "selectedCurrencyCode"
     static let isReorderButtonHidden = "isReorderButtonHidden"
+    static let wasAskedForReview = "wasAskedForReview"
 }
 
 public enum DragMode: Equatable, Sendable {
@@ -35,6 +36,11 @@ public struct WalletFeature {
         var transaction: TransactionFeature.State
         var walletItemEdit: WalletItemEditFeature.State
         var spendings: SpendingsFeature.State
+        var appScore: AppScoreFeature.State
+        
+        // app score
+        var score: Int = 0
+        var review: String = ""
         
         // locale
         var supportedLocales: [Locale] = [
@@ -79,10 +85,12 @@ public struct WalletFeature {
         var settingsPresented: Bool = false
         var aboutAppPresented: Bool = false
         var expensesStatisticsPresented: Bool = false
+        var appScorePresented: Bool = false
         
         static let initial: Self = .init(transaction: .initial,
                                          walletItemEdit: .initial,
                                          spendings: .initial,
+                                         appScore: .initial,
                                          balance: 0,
                                          monthExpenses: 0,
                                          accounts: [],
@@ -95,6 +103,7 @@ public struct WalletFeature {
         case transaction(TransactionFeature.Action)
         case walletItemEdit(WalletItemEditFeature.Action)
         case spendings(SpendingsFeature.Action)
+        case appScore(AppScoreFeature.Action)
         
         // internal
         case start
@@ -119,6 +128,7 @@ public struct WalletFeature {
         case dragModeChanged(DragMode)
         
         case checkLocale
+        case checkIfAppScoreCanBePresented
         // settings
         case selectedLocaleChanged(Locale)
         case selectedCurrencyChanged(Currency)
@@ -153,6 +163,9 @@ public struct WalletFeature {
         Scope(state: \.spendings, action: \.spendings) {
             SpendingsFeature()
         }
+        Scope(state: \.appScore, action: \.appScore) {
+            AppScoreFeature()
+        }
         Reduce { state, action in
             switch action {
             case .start:
@@ -176,6 +189,11 @@ public struct WalletFeature {
                     }
                 }
                 return .none
+            case .checkIfAppScoreCanBePresented:
+                guard state.transactions.count > 10,
+                        !appStorage.bool(forKey: AppStorageKey.wasAskedForReview) else { return .none }
+                defer { appStorage.set(true, forKey: AppStorageKey.wasAskedForReview) }
+                return .send(.appScore(.presentedChanged(true)))
             case .getCurrenciesAndRates:
                 return .run { send in
                     do {
@@ -253,10 +271,7 @@ public struct WalletFeature {
                     selectedCurrency = CurrencyManager.shared.defaultCurrency(for: .current, from: currencies)
                 }
                 guard let selectedCurrency else { return .none }
-                
-                return .run { send in
-                    await send(.selectedCurrencyChanged(selectedCurrency))
-                }
+                return .send(.selectedCurrencyChanged(selectedCurrency))
             case let .conversionRatesFetched(rates):
                 state.rates = rates
                 return .none
@@ -273,9 +288,7 @@ public struct WalletFeature {
                 return .none
             case let .transactionsUpdated(transactions):
                 state.transactions = transactions
-                return .run { send in
-                    await send(.calculateExpenses)
-                }
+                return .send(.calculateExpenses)
             case let .accountsScrollPositionChanged(position):
                 state.accountsScrollPosition = position
                 return .none
@@ -293,9 +306,7 @@ public struct WalletFeature {
                 } catch {
                     analytics.logEvent(.error("WalletItem decoding error: \(error.localizedDescription)"))
                 }
-                return .run { send in
-                    await send(.calculateBalance)
-                }
+                return .send(.calculateBalance)
             case let .saveWalletItems(items):
                 let models = items.map { WalletItemModel(model: $0) }
                 do {
@@ -681,6 +692,10 @@ public struct WalletFeature {
                     return .none
                 }
                 
+                // MARK: - App Score
+            case .appScore:
+                return .none
+                
                 // MARK: - Spendings
             case let .spendings(.recalculateAndPresentSpendings(period)):
                 let spendings = Spending.calculateSpendings(state.transactions,
@@ -715,6 +730,7 @@ public struct WalletFeature {
                                                            amount: transaction.amount))
                     await send(.applyTransaction(transaction))
                     await send(.saveTransaction(transaction))
+                    // TODO: check if need to ask AppScore
                 }
             case .transaction:
                 return .none

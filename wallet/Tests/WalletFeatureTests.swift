@@ -32,7 +32,7 @@ struct WalletFeatureTests {
         
         let item = store.state.accounts.first(where: { $0.name == "Cash" })!
         let updatedItem = WalletItem(id: item.id,
-                                     timestamp: item.timestamp,
+                                     order: item.order,
                                      type: item.type,
                                      name: item.name,
                                      icon: item.icon,
