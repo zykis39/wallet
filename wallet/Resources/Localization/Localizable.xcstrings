@@ -1580,6 +1580,17 @@
         }
       }
     },
+    "Leave a review" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave a review"
+          }
+        }
+      }
+    },
     "Locale" : {
       "extractionState" : "manual",
       "localizations" : {

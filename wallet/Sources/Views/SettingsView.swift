@@ -60,11 +60,11 @@ struct SettingsView: View {
                 Toggle(isOn: $isReorderButtonHidden) {
                     Text("Hide reorder button")
                 }
+                Button("Leave a review") { store.send(.appScore(.presentedChanged(true))) }
             }
             
             #if DEBUG
             Section("DEBUG") {
-                Button("toggle review") { store.send(.appScore(.presentedChanged(true))) }
             }
             #endif
             

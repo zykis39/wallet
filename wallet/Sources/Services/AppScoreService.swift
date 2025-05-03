@@ -43,7 +43,7 @@ final class AppScoreService: AppScoreServiceProtocol {
         
         switch result.result {
         case let .success(res):
-            print("res")
+            print(res)
         case let .failure(error):
             print(error.localizedDescription)
         }
