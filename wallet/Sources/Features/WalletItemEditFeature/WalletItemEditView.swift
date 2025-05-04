@@ -89,8 +89,8 @@ struct WalletItemEditView: View {
                 if store.state.editType == .new {
                     Picker("Currency",
                            selection: $store.item.currencyCode.sending(\.currencyCodeChanged)) {
-                        ForEach(store.state.currencies, id: \.self) { currency in
-                            Text("\(currency.code) (\(currency.fixedSymbol))").tag(currency.fixedSymbol)
+                        ForEach(store.state.currencies, id: \.code) { currency in
+                            Text("\(currency.code) (\(currency.fixedSymbol))").tag(currency.code)
                         }
                     }
                 }

@@ -17,7 +17,9 @@ final class CurrencyFormatter {
             finalValue = self.processDelete(oldValue: oldValue, newValue: newValue)
         }
 
-        return finalValue.replacingOccurrences(of: ",", with: ".")
+        return finalValue
+            .replacingOccurrences(of: ",", with: ".")
+            .replacingOccurrences(of: " ", with: "")
     }
     
     static func processInsert(oldValue: String, newValue: String) -> String {
@@ -38,12 +40,23 @@ final class CurrencyFormatter {
     
     static func representation(for value: Double) -> String {
         guard value != 0 else { return "" }
-        return formatter.string(from: NSNumber(value: value)) ?? ""
+        return formatterWithoutSpaces.string(from: NSNumber(value: value)) ?? ""
     }
     
     static var formatterWithoutZeroSymbol: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+        formatter.decimalSeparator = "."
+        formatter.zeroSymbol = ""
+        return formatter
+    }()
+    
+    static var formatterWithoutSpaces: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = false
         formatter.minimumFractionDigits = 0
         formatter.maximumFractionDigits = 2
         formatter.decimalSeparator = "."

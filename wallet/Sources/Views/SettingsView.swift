@@ -63,11 +63,6 @@ struct SettingsView: View {
                 Button("Leave a review") { store.send(.appScore(.presentedChanged(true))) }
             }
             
-            #if DEBUG
-            Section("DEBUG") {
-            }
-            #endif
-            
             Button("Settings.About.ButtonTitle") {
                 store.send(.aboutAppPresentedChanged(true))
             }
