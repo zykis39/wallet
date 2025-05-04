@@ -12,24 +12,25 @@ struct AppScore: View {
     
     var body: some View {
         VStack(spacing: 24) {
-            Section("Write a review") {
-                RatingView(rating: $store.score.sending(\.scoreChanged))
-                TextEditor(text: $store.review.sending(\.reviewChanged))
-                    .frame(maxHeight: 120)
-                    .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(.primary, lineWidth: 2 / 3)
-                                    .fill(Color.secondary.gradient.opacity(0.075))
-                                    .opacity(0.3)
-                            )
-                Button { [weak store] in
-                    guard let store else { return }
-                    store.send(.sendReview(store.state.score, store.state.review))
-                } label: {
-                    Text("Send")
-                }.buttonStyle(.bordered)
-                Spacer()
-            }
+            Text("Review.Ask.Text")
+                .font(.headline)
+                .multilineTextAlignment(.leading)
+            RatingView(rating: $store.score.sending(\.scoreChanged))
+            TextEditor(text: $store.review.sending(\.reviewChanged))
+                .frame(maxHeight: 120)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(.primary, lineWidth: 2 / 3)
+                        .fill(Color.secondary.gradient.opacity(0.075))
+                        .opacity(0.3)
+                )
+            Button { [weak store] in
+                guard let store else { return }
+                store.send(.sendReview(store.state.score, store.state.review))
+            } label: {
+                Text("Send")
+            }.buttonStyle(.bordered)
+            Spacer()
         }
         .padding()
     }
