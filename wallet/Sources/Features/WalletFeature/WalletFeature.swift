@@ -237,24 +237,25 @@ public struct WalletFeature {
                 }
             case .calculateBalance:
                 let balance: Double = state.accounts.reduce(0) {
-                    if state.selectedCurrency == $1.currency {
+                    if state.selectedCurrency.code == $1.currencyCode {
                         return $0 + $1.balance
                     } else {
-                        let rate = ConversionRate.rate(for: $1.currency, destination: state.selectedCurrency, rates: state.rates)
+                        let rate = ConversionRate.rate(for: $1.currencyCode, destinationCode: state.selectedCurrency.code, rates: state.rates)
                         return $0 + $1.balance * rate
                     }
                 }
                 state.balance = balance
                 return .none
             case .calculateExpenses:
+                let expensesIds = state.expenses.map { $0.id }
                 let monthExpenses: Double = state.transactions
-                    .filter { $0.destination.type == .expenses }
+                    .filter { expensesIds.contains($0.destinationID) }
                     .filter { $0.timestamp.isEqual(to: .now, toGranularity: .month) }
                     .reduce(0) {
-                        if $1.currency == state.selectedCurrency {
+                        if $1.currencyCode == state.selectedCurrency.code {
                             return $0 + $1.amount
                         } else {
-                            let rate = ConversionRate.rate(for: $1.currency, destination: state.selectedCurrency, rates: state.rates)
+                            let rate = ConversionRate.rate(for: $1.currencyCode, destinationCode: state.selectedCurrency.code, rates: state.rates)
                             return $0 + $1.amount * rate
                         }
                     }
@@ -297,9 +298,9 @@ public struct WalletFeature {
                 /// So, filtering happens outside SwiftData, in-memory
                 let itemDescriptor = FetchDescriptor<WalletItemModel>(predicate: #Predicate<WalletItemModel> { _ in true }, sortBy: [ .init(\.order, order: .forward) ])
                 do {
-                    let accounts = try database.fetch(itemDescriptor).filter { $0.type == .account }.map { $0.valueType }
+                    let accounts = try database.fetch(itemDescriptor).filter { $0.type == WalletItem.WalletItemType.account.rawValue }.map { $0.valueType }
                     _ = accounts.map { print("\($0.name): \($0.order)") }
-                    let expenses = try database.fetch(itemDescriptor).filter { $0.type == .expenses }.map { $0.valueType }
+                    let expenses = try database.fetch(itemDescriptor).filter { $0.type == WalletItem.WalletItemType.expenses.rawValue }.map { $0.valueType }
                     _ = expenses.map { print("\($0.name): \($0.order)") }
                     state.accounts = accounts
                     state.expenses = expenses
@@ -323,7 +324,10 @@ public struct WalletFeature {
                 do {
                     let transactions = try database.fetch(transactionsDescriptor).map { $0.valueType }
                     for t in transactions {
-                        print("transaction from: \(t.source.name), to: \(t.destination.name), value: \(t.amount), currency: \(t.currency.code)")
+                        if let source = [state.accounts + state.expenses].flatMap ({ $0 }).first(where: { t.sourceID == $0.id }),
+                           let destination = [state.accounts + state.expenses].flatMap ({ $0 }).first(where: { t.destinationID == $0.id }){
+                            print("transaction from: \(source.name), to: \(destination.name), value: \(t.amount), currency: \(t.currencyCode)")
+                        }
                     }
                     return .run { send in
                         await send(.transactionsUpdated(transactions))
@@ -339,7 +343,7 @@ public struct WalletFeature {
                                type: $0.type,
                                name: $0.name,
                                icon: $0.icon,
-                               currency: currency,
+                               currencyCode: currency.code,
                                balance: $0.balance)
                 }
                 
@@ -349,7 +353,7 @@ public struct WalletFeature {
                                type: $0.type,
                                name: $0.name,
                                icon: $0.icon,
-                               currency: currency,
+                               currencyCode: currency.code,
                                balance: $0.balance)
                 }
                 
@@ -465,6 +469,7 @@ public struct WalletFeature {
                 case .normal:
                     let dragItem = state.dragItem
                     let dropItem = state.dropItem
+                    let currencies = state.currencies
                     
                     state.draggingOffset = .zero
                     state.dragItem = nil
@@ -473,8 +478,9 @@ public struct WalletFeature {
                     guard let dragItem, let dropItem else { return .none }
                     return .run { [rates = state.rates] send in
                         analytics.logEvent(.draggingStopped(source: dragItem.name, destination: dropItem.name))
-                        let rate = ConversionRate.rate(for: dragItem.currency, destination: dropItem.currency, rates: rates)
-                        await send(.transaction(.onItemDropped(dragItem, dropItem, rate)))
+                        let rate = ConversionRate.rate(for: dragItem.currencyCode, destinationCode: dropItem.currencyCode, rates: rates)
+                        
+                        await send(.transaction(.onItemDropped(dragItem, dropItem, rate, currencies)))
                     }
                     
                 case .reordering:
@@ -484,10 +490,10 @@ public struct WalletFeature {
                     return .none
                 }
             case let .itemTapped(item):
-                let transactions = state.transactions.filter { $0.source.id == item.id || $0.destination.id == item.id }
+                let transactions = state.transactions.filter { $0.sourceID == item.id || $0.destinationID == item.id }
                 
-                return .run { [currencies = state.currencies, rates = state.rates] send in
-                    await send(.walletItemEdit(.presentItem(item, transactions, currencies, rates)))
+                return .run { [currencies = state.currencies, rates = state.rates, items = state.accounts + state.expenses] send in
+                    await send(.walletItemEdit(.presentItem(item, items, transactions, currencies, rates)))
                     analytics.logEvent(.itemTapped(itemName: item.name))
                 }
             case let .applyTransaction(transaction):
@@ -495,14 +501,14 @@ public struct WalletFeature {
                 var sourceIndex: Int?
                 var destinationIndex: Int?
                 
-                if let idx = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
+                if let idx = state.accounts.firstIndex(where: { $0.id == transaction.sourceID })
                     {
                     sourceIndex = idx
                 }
-                if let idx = state.expenses.firstIndex(where: { $0.id == transaction.destination.id }) {
+                if let idx = state.expenses.firstIndex(where: { $0.id == transaction.destinationID }) {
                     destinationIndex = idx
                     destinationType = .expenses
-                } else if let idx = state.accounts.firstIndex(where: { $0.id == transaction.destination.id }) {
+                } else if let idx = state.accounts.firstIndex(where: { $0.id == transaction.destinationID }) {
                     destinationIndex = idx
                     destinationType = .account
                 }
@@ -511,8 +517,8 @@ public struct WalletFeature {
                 guard let destinationType,
                       let sourceIndex,
                       let destinationIndex,
-                      let src = state.accounts.first(where: { transaction.source.id == $0.id }),
-                      let dst = [state.accounts, state.expenses].flatMap ({ $0 }).first(where: { transaction.destination.id == $0.id })
+                      let src = state.accounts.first(where: { transaction.sourceID == $0.id }),
+                      let dst = [state.accounts, state.expenses].flatMap ({ $0 }).first(where: { transaction.destinationID == $0.id })
                 else { return .none }
                 
                 let updatedSource = WalletItem(id: src.id,
@@ -520,7 +526,7 @@ public struct WalletFeature {
                                                type: src.type,
                                                name: src.name,
                                                icon: src.icon,
-                                               currency: src.currency,
+                                               currencyCode: src.currencyCode,
                                                balance: src.balance - transaction.amount)
                 
                 let updatedDestination = WalletItem(id: dst.id,
@@ -528,7 +534,7 @@ public struct WalletFeature {
                                                     type: dst.type,
                                                     name: dst.name,
                                                     icon: dst.icon,
-                                                    currency: dst.currency,
+                                                    currencyCode: dst.currencyCode,
                                                     balance: dst.balance + transaction.amount * transaction.rate)
                 
                 switch destinationType {
@@ -552,14 +558,14 @@ public struct WalletFeature {
                 var sourceIndex: Int?
                 var destinationIndex: Int?
                 
-                if let idx = state.accounts.firstIndex(where: { $0.id == transaction.source.id })
+                if let idx = state.accounts.firstIndex(where: { $0.id == transaction.sourceID })
                     {
                     sourceIndex = idx
                 }
-                if let idx = state.expenses.firstIndex(where: { $0.id == transaction.destination.id }) {
+                if let idx = state.expenses.firstIndex(where: { $0.id == transaction.destinationID }) {
                     destinationIndex = idx
                     destinationType = .expenses
-                } else if let idx = state.accounts.firstIndex(where: { $0.id == transaction.destination.id }) {
+                } else if let idx = state.accounts.firstIndex(where: { $0.id == transaction.destinationID }) {
                     destinationIndex = idx
                     destinationType = .account
                 }
@@ -570,8 +576,8 @@ public struct WalletFeature {
                 guard let destinationType,
                       let sourceIndex,
                       let destinationIndex,
-                      let src = state.accounts.first(where: { transaction.source.id == $0.id }),
-                      let dst = [state.accounts, state.expenses].flatMap ({ $0 }).first(where: { transaction.destination.id == $0.id })
+                      let src = state.accounts.first(where: { transaction.sourceID == $0.id }),
+                      let dst = [state.accounts, state.expenses].flatMap ({ $0 }).first(where: { transaction.destinationID == $0.id })
                 else {
                     analytics.logEvent(.error("error, reverting partly applied transaction: \(transaction)"))
                     return .none
@@ -582,7 +588,7 @@ public struct WalletFeature {
                                                type: src.type,
                                                name: src.name,
                                                icon: src.icon,
-                                               currency: src.currency,
+                                               currencyCode: src.currencyCode,
                                                balance: src.balance + transaction.amount)
                 
                 
@@ -591,7 +597,7 @@ public struct WalletFeature {
                                                     type: dst.type,
                                                     name: dst.name,
                                                     icon: dst.icon,
-                                                    currency: dst.currency,
+                                                    currencyCode: dst.currencyCode,
                                                     balance: dst.balance - transaction.amount * transaction.rate)
                 
                 state.accounts[sourceIndex] = updatedSource
@@ -671,7 +677,7 @@ public struct WalletFeature {
                                                  type: item.type,
                                                  name: item.name,
                                                  icon: item.icon,
-                                                 currency: item.currency,
+                                                 currencyCode: item.currencyCode,
                                                  balance: item.balance)
                         state.accounts[idx] = newItem
                     }
@@ -682,7 +688,7 @@ public struct WalletFeature {
                                                  type: item.type,
                                                  name: item.name,
                                                  icon: item.icon,
-                                                 currency: item.currency,
+                                                 currencyCode: item.currencyCode,
                                                  balance: item.balance)
                         state.expenses[idx] = newItem
                     }
@@ -727,10 +733,15 @@ public struct WalletFeature {
                 // MARK: - Transaction
             case let .transaction(.createTransaction(transaction)):
                 state.transactions.append(transaction)
+                let source = [state.accounts + state.expenses].flatMap({ $0 }).first(where: { $0.id == transaction.sourceID })
+                let destination = [state.accounts + state.expenses].flatMap({ $0 }).first(where: { $0.id == transaction.destinationID })
+                
                 return .run { send in
-                    analytics.logEvent(.transactionCreated(source: transaction.source.name,
-                                                           destination: transaction.destination.name,
-                                                           amount: transaction.amount))
+                    if let source, let destination {
+                        analytics.logEvent(.transactionCreated(source: source.name,
+                                                               destination: destination.name,
+                                                               amount: transaction.amount))
+                    }
                     await send(.applyTransaction(transaction))
                     await send(.saveTransaction(transaction))
                     // TODO: check if need to ask AppScore
@@ -741,7 +752,7 @@ public struct WalletFeature {
                 // MARK: - WalletItemEdit
             case let .walletItemEdit(.deleteWalletItem(id, deleteTransactions)):
                 // remove related transactions
-                let transactionsToRemove = deleteTransactions ? state.transactions.filter { $0.source.id == id || $0.destination.id == id } : []
+                let transactionsToRemove = deleteTransactions ? state.transactions.filter { $0.sourceID == id || $0.destinationID == id } : []
                 
                 return .run { [transactionsToRemove] send in
                     for t in transactionsToRemove {
@@ -768,7 +779,7 @@ public struct WalletFeature {
                                              type: item.type,
                                              name: item.name,
                                              icon: item.icon,
-                                             currency: item.currency,
+                                             currencyCode: item.currencyCode,
                                              balance: item.balance)
                 
                 switch item.type {
@@ -778,7 +789,7 @@ public struct WalletFeature {
                     state.expenses.append(orderedItem)
                 }
                 return .run { send in
-                    analytics.logEvent(.itemCreated(itemName: orderedItem.name, currency: orderedItem.currency.code))
+                    analytics.logEvent(.itemCreated(itemName: orderedItem.name, currency: orderedItem.currencyCode))
                     await send(.saveWalletItems([orderedItem]))
                     await send(.calculateBalance)
                 }

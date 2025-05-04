@@ -1,6 +1,7 @@
 import SwiftUI
 import ComposableArchitecture
 import FirebaseCore
+import SwiftData
 
 #if DEBUG
 import Atlantis
@@ -13,6 +14,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 }
+
+let container = SwiftDataContainerProvider.shared.container(inMemory: false)
 
 @main
 struct WalletApp: App {
@@ -37,7 +40,7 @@ struct WalletApp: App {
                 WalletFeature()
 //                    ._printChanges()
             })
-            .modelContainer(SwiftDataContainerProvider.shared.container(inMemory: isTest))
+            .modelContainer(container)
             .preferredColorScheme(.light)
         }
     }

@@ -25,8 +25,13 @@ public struct WalletItemView: View {
         var angle: Double = 0.0
     }
 
-    private var currencyAmount: String {
-        (CurrencyFormatter.formatter.string(from: .init(value: item.balance)) ?? "") + " " + item.currency.fixedSymbol
+    private func currencyAmount(currencies: [Currency]) -> String {
+        let currencySymbol: String = {
+            guard let currency = currencies.first(where: { $0.code == item.currencyCode }) else { return item.currencyCode }
+            return currency.fixedSymbol
+        }()
+        
+        return (CurrencyFormatter.formatter.string(from: .init(value: item.balance)) ?? "") + " " + currencySymbol
     }
     
     private var simpleDrag: some Gesture {
@@ -57,7 +62,7 @@ public struct WalletItemView: View {
                 .frame(width: Constants.size, height: Constants.size)
                 .gesture(simpleDrag)
                 
-            Text(currencyAmount)
+            Text(currencyAmount(currencies: store.state.currencies))
                 .foregroundStyle(Color.walletItemColor(for: item.type))
                 .font(.system(size: 13))
                 .lineLimit(1)

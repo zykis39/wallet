@@ -14,6 +14,7 @@ public struct WalletItemEditFeature {
         var editType: EditType
         var presented: Bool
         var item: WalletItem
+        var items: [WalletItem] // need for transactions source/destination names
         var currencies: [Currency]
         var rates: [ConversionRate]
         var transactions: [WalletTransaction]
@@ -22,11 +23,11 @@ public struct WalletItemEditFeature {
         var iconSelectionPresented: Bool = false
         var showAlert: Bool = false
         
-        static let initial: Self = .init(editType: .new, presented: false, item: .none, currencies: [], rates: [], transactions: [], transactionsForCurrentPeriod: [], transactionsPeriod: .today)
+        static let initial: Self = .init(editType: .new, presented: false, item: .none, items: [], currencies: [], rates: [], transactions: [], transactionsForCurrentPeriod: [], transactionsPeriod: .today)
     }
     
     public enum Action: Sendable {
-        case presentItem(WalletItem, [WalletTransaction], [Currency], [ConversionRate])
+        case presentItem(WalletItem, [WalletItem], [WalletTransaction], [Currency], [ConversionRate])
         case presentNewItem(WalletItem.WalletItemType, Currency, [Currency])
         
         case confirmedTapped
@@ -34,7 +35,7 @@ public struct WalletItemEditFeature {
         case presentedChanged(Bool)
         case nameChanged(String)
         case balanceChanged(Double)
-        case currencyChanged(Currency)
+        case currencyCodeChanged(String)
         case createWalletItem(WalletItem)
         case updateWalletItem(WalletItem)
         case deleteWalletItem(UUID, Bool)
@@ -48,9 +49,10 @@ public struct WalletItemEditFeature {
     public var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {
-            case let .presentItem(item, transactions, currencies, conversionRates):
+            case let .presentItem(item, items, transactions, currencies, conversionRates):
                 state.editType = .edit
                 state.item = item
+                state.items = items
                 state.transactions = transactions
                 state.currencies = currencies
                 state.rates = conversionRates
@@ -74,7 +76,7 @@ public struct WalletItemEditFeature {
                                          type: type,
                                          name: "",
                                          icon: randomIcon,
-                                         currency: currency,
+                                         currencyCode: currency.code,
                                          balance: 0)
                 state.editType = .new
                 state.item = newItem
@@ -107,7 +109,7 @@ public struct WalletItemEditFeature {
                                             type: item.type,
                                             name: name,
                                             icon: item.icon,
-                                            currency: item.currency,
+                                            currencyCode: item.currencyCode,
                                             balance: item.balance)
                 state.item = editedItem
                 return .none
@@ -118,18 +120,18 @@ public struct WalletItemEditFeature {
                                             type: item.type,
                                             name: item.name,
                                             icon: item.icon,
-                                            currency: item.currency,
+                                            currencyCode: item.currencyCode,
                                             balance: balance)
                 state.item = editedItem
                 return .none
-            case let .currencyChanged(currency):
+            case let .currencyCodeChanged(code):
                 let item = state.item
                 let editedItem = WalletItem(id: item.id,
                                             order: item.order,
                                             type: item.type,
                                             name: item.name,
                                             icon: item.icon,
-                                            currency: currency,
+                                            currencyCode: code,
                                             balance: item.balance)
                 state.item = editedItem
                 return .none
@@ -143,7 +145,7 @@ public struct WalletItemEditFeature {
                                             type: item.type,
                                             name: item.name,
                                             icon: icon,
-                                            currency: item.currency,
+                                            currencyCode: item.currencyCode,
                                             balance: item.balance)
                 state.item = editedItem
                 return .run { send in

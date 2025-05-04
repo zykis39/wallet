@@ -18,13 +18,14 @@ public struct TransactionFeature: Sendable {
         var destination: WalletItem
         var sourceDestinationRate: Double
         var commentary: String
+        var currencies: [Currency]
         
-        static let initial: Self = .init(presented: false, amount: 0, source: .none, destination: .none, sourceDestinationRate: 1, commentary: "")
+        static let initial: Self = .init(presented: false, amount: 0, source: .none, destination: .none, sourceDestinationRate: 1, commentary: "", currencies: [])
     }
     
     public enum Action: Sendable {
         // internal
-        case onItemDropped(WalletItem, WalletItem, Double) // rate
+        case onItemDropped(WalletItem, WalletItem, Double, [Currency]) // rate
         case createTransaction(WalletTransaction)
         
         // view
@@ -44,17 +45,18 @@ public struct TransactionFeature: Sendable {
                     await send(.presentedChanged(false))
                     guard state.amount > 0 else { return }
                     
-                    let transaction = WalletTransaction(timestamp: .now, currency: source.currency, amount: state.amount, commentary: state.commentary, rate: rate, source: source, destination: destination)
+                    let transaction = WalletTransaction(timestamp: .now, currencyCode: source.currencyCode, amount: state.amount, commentary: state.commentary, rate: rate, sourceID: source.id, destinationID: destination.id)
                     await send(.createTransaction(transaction))
                 }
             case .cancelTapped:
                 return .run { send in
                     await send(.presentedChanged(false))
                 }
-            case let .onItemDropped(source, destination, rate):
+            case let .onItemDropped(source, destination, rate, currencies):
                 state.sourceDestinationRate = rate
                 state.source = source
                 state.destination = destination
+                state.currencies = currencies
                 return .run { send in
                     await send(.presentedChanged(true))
                 }

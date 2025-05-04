@@ -37,33 +37,33 @@ extension WalletTransaction {
         let dayTransactions: [WalletTransaction] = [
             .init(id: UUID(),
                   timestamp: .makeDate(granularity: .day),
-                  currency: currency,
+                  currencyCode: currency.code,
                   amount: 150,
                   commentary: "day 1",
                   rate: 1.0,
-                  source: WalletItem.defaultAccounts[1],
-                  destination: WalletItem.defaultExpenses[0])
+                  sourceID: WalletItem.defaultAccounts[1].id,
+                  destinationID: WalletItem.defaultExpenses[0].id)
         ]
         
         let weekTransactions: [WalletTransaction] = [
             .init(id: UUID(),
                   timestamp: .makeDate(granularity: .weekday),
-                  currency: currency,
+                  currencyCode: currency.code,
                   amount: 200,
                   commentary: "week 1",
                   rate: 1.0,
-                  source: WalletItem.defaultAccounts[0],
-                  destination: WalletItem.defaultExpenses[1])
+                  sourceID: WalletItem.defaultAccounts[0].id,
+                  destinationID: WalletItem.defaultExpenses[1].id)
         ]
         let monthTransactions: [WalletTransaction] = [
             .init(id: UUID(),
                   timestamp: .makeDate(granularity: .month),
-                  currency: currency,
+                  currencyCode: currency.code,
                   amount: 125,
                   commentary: "month 1",
                   rate: 1.0,
-                  source: WalletItem.defaultAccounts[0],
-                  destination: WalletItem.defaultExpenses[0])
+                  sourceID: WalletItem.defaultAccounts[0].id,
+                  destinationID: WalletItem.defaultExpenses[0].id)
         ]
         
         return [dayTransactions, weekTransactions, monthTransactions].flatMap { $0 }

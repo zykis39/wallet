@@ -22,11 +22,11 @@ final class SwiftDataContainerProvider {
     
     func container(inMemory: Bool) -> ModelContainer {
         do {
-            let configuration = ModelConfiguration(url: URL.documentsDirectory.appending(path: "database.sqlite"))
-            let schema = Schema(versionedSchema: SchemaV1.self)
+            let schema = Schema(versionedSchema: SchemaV2.self)
+            let configuration = ModelConfiguration(nil, schema: schema, url: URL.documentsDirectory.appending(path: "database.sqlite"))
             return try ModelContainer(for: schema,
                                       migrationPlan: MigrationPlan.self,
-                                      configurations: configuration)
+                                      configurations: [configuration])
         } catch {
             fatalError(error.localizedDescription)
         }
@@ -34,14 +34,14 @@ final class SwiftDataContainerProvider {
 }
 
 struct Database {
-    var context: () throws -> ModelContext
+    var context: ModelContext
     
     func save() throws {
-        try context().save()
+        try context.save()
     }
     
     func insert<T>(_ model: T) throws where T: PersistentModel {
-        try context().insert(model)
+        context.insert(model)
     }
     
     func insert<T>(_ models: [T]) throws where T: PersistentModel {
@@ -49,27 +49,23 @@ struct Database {
     }
     
     func delete<T>(_ model: T) throws where T: PersistentModel {
-        try context().delete(model)
+        context.delete(model)
     }
     
     func delete<T>(model: T.Type, where predicate: Predicate<T>? = nil, includeSubclasses: Bool = true) throws where T : PersistentModel {
-        try context().delete(model: model, where: predicate, includeSubclasses: includeSubclasses)
+        try context.delete(model: model, where: predicate, includeSubclasses: includeSubclasses)
     }
     
     func fetch<T>(_ descriptor: FetchDescriptor<T>) throws -> [T] where T : PersistentModel {
-        try context().fetch(descriptor)
+        try context.fetch(descriptor)
     }
 }
 
-let appContext: ModelContext = {
-    let context = ModelContext(SwiftDataContainerProvider.shared.container(inMemory: false))
-    context.autosaveEnabled = false
-    return context
-}()
+let appContext = ModelContext(container)
 
 extension Database: DependencyKey {
-    static let liveValue = Self(context: { appContext })
-    static let testValue = Self(context: { appContext })
+    static let liveValue = Self(context: appContext)
+    static let testValue = Self(context: appContext)
 }
 
 

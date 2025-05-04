@@ -88,7 +88,7 @@ struct WalletItemEditView: View {
                 }
                 if store.state.editType == .new {
                     Picker("Currency",
-                           selection: $store.item.currency.sending(\.currencyChanged)) {
+                           selection: $store.item.currencyCode.sending(\.currencyCodeChanged)) {
                         ForEach(store.state.currencies, id: \.self) { currency in
                             Text("\(currency.code) (\(currency.fixedSymbol))").tag(currency.fixedSymbol)
                         }
@@ -104,11 +104,15 @@ struct WalletItemEditView: View {
                 List {
                     Section {
                         ForEach(store.state.transactionsForCurrentPeriod) { transaction in
-                            let isIncome = (transaction.destination.id == store.item.id) && (store.item.type == .account)
-                            TransactionCell(amount: transaction.representation(for: store.item),
+                            let isIncome = (transaction.destinationID == store.item.id) && (store.item.type == .account)
+                            let currencies = store.state.currencies
+                            let source: WalletItem = store.state.items.first(where: { $0.id == transaction.sourceID }) ?? .none
+                            let destination: WalletItem = store.state.items.first(where: { $0.id == transaction.destinationID }) ?? .none
+                            
+                            TransactionCell(amount: transaction.representation(for: store.item, currencies: currencies),
                                             date: transaction.timestamp.formatted(date: .numeric, time: .omitted),
-                                            source: transaction.source.name,
-                                            destination: transaction.destination.name,
+                                            source: source.name,
+                                            destination: destination.name,
                                             commentary: transaction.commentary,
                                             amountTextColor: isIncome ? .green : .red)
                         }

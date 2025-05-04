@@ -21,6 +21,7 @@ struct WalletFeatureTests {
         let testState = WalletFeature.State(transaction: .initial,
                                             walletItemEdit: .initial,
                                             spendings: .initial,
+                                            appScore: .initial,
                                             balance: 0,
                                             monthExpenses: 0,
                                             accounts: [.card, .cash],
@@ -45,40 +46,5 @@ struct WalletFeatureTests {
         }
         
         await store.receive(\.saveWalletItems)
-    }
-    
-    @Test
-    func testItemUpdateUpdateItemInDatabase() async {
-        // setup
-        let testContext: () -> ModelContext = {
-            ModelContext(SwiftDataContainerProvider.shared.container(inMemory: true))
-        }
-        let database = Database(context: testContext)
-        
-        let testState = WalletFeature.State(transaction: .initial,
-                                            walletItemEdit: .initial,
-                                            spendings: .initial,
-                                            balance: 0,
-                                            monthExpenses: 0,
-                                            accounts: [.card],
-                                            expenses: [.cafe],
-                                            transactions: [])
-        let store = TestStore(initialState: testState) {
-            WalletFeature()
-        } withDependencies: { dependencyValues in
-            dependencyValues.database = database
-        }
-        
-        let items = store.state.accounts + store.state.expenses
-//        await store.send(.saveWalletItems(items))
-        
-        for item in items { try! database.insert(WalletItemModel(model: item)) }
-        try! database.save()
-        
-        // expect database to have entities
-        let itemDescriptor = FetchDescriptor<WalletItemModel>()
-        let models = try! database.fetch(itemDescriptor)
-        let hasChanges = try! database.context().hasChanges
-        print("models: \(models.map { $0.valueType.name })")
     }
 }

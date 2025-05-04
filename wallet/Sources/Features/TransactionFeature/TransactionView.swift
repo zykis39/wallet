@@ -23,6 +23,13 @@ struct TransactionView: View {
     @State var restrictCurrencyChange: Bool = false
     let generator = UINotificationFeedbackGenerator()
     
+    private var sourceCurrencySymbol: String {
+        store.state.currencies.first(where: { $0.code == store.state.source.currencyCode })?.fixedSymbol ?? store.state.source.currencyCode
+    }
+    private var destinationCurrencySymbol: String {
+        store.state.currencies.first(where: { $0.code == store.state.destination.currencyCode })?.fixedSymbol ?? store.state.destination.currencyCode
+    }
+    
     var body: some View {
         VStack(alignment: .trailing) {
             HeaderCancelConfirm(leftSystemImageName: "xmark.circle.fill",
@@ -65,12 +72,12 @@ struct TransactionView: View {
                             amountInDestinationCurrency = destinationString ?? ""
                         }
                     }
-                Text(store.state.source.currency.fixedSymbol)
+                Text(sourceCurrencySymbol)
                     .font(Font.system(size: 60, design: .default))
                     .foregroundStyle(.secondary)
             }
             
-            if store.state.source.currency.code != store.state.destination.currency.code {
+            if store.state.source.currencyCode != store.state.destination.currencyCode {
                 HStack {
                     TextField("", text: $amountInDestinationCurrency)
                         .textFieldStyle(.roundedBorder)
@@ -91,7 +98,7 @@ struct TransactionView: View {
                                 store?.send(.amountChanged(sourceAmount))
                             }
                         }
-                    Text(store.state.destination.currency.fixedSymbol)
+                    Text(destinationCurrencySymbol)
                         .font(Font.system(size: 60, design: .default))
                         .foregroundStyle(.secondary)
                 }

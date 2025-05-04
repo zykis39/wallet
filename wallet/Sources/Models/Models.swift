@@ -10,32 +10,11 @@ import SwiftData
 import ComposableArchitecture
 
 // MARK: - Models
-typealias WalletItemModel = SchemaV1.WalletItemModel
-typealias WalletTransactionModel = SchemaV1.WalletTransactionModel
+typealias WalletItemModel = SchemaV2.WalletItemModel
+typealias WalletTransactionModel = SchemaV2.WalletTransactionModel
+public typealias WalletItem = SchemaV2.WalletItem
+public typealias WalletTransaction = SchemaV2.WalletTransaction
 
-public struct WalletItem: Codable, Hashable, Sendable {
-    public enum WalletItemType: Int, Codable, Equatable, Sendable {
-        case account, expenses
-    }
-
-    let id: UUID
-    let order: UInt
-    let type: WalletItemType
-    let name: String
-    let icon: String
-    let currency: Currency
-    let balance: Double
-    
-    init(id: UUID, order: UInt, type: WalletItemType, name: String, icon: String, currency: Currency, balance: Double) {
-        self.id = id
-        self.order = order
-        self.type = type
-        self.name = name
-        self.icon = icon
-        self.currency = currency
-        self.balance = balance
-    }
-}
 
 public struct Currency: Codable, Sendable, Hashable {
     let name: String
@@ -96,25 +75,6 @@ extension Currency {
                                  code: "USD")
 }
 
-public struct WalletTransaction: Codable, Equatable, Sendable, Identifiable {
-    public var id = UUID()
-    let timestamp: Date
-    let currency: Currency
-    let amount: Double
-    let commentary: String
-    /// source.currency to destination.currency rate
-    let rate: Double
-    
-    let source: WalletItem
-    let destination: WalletItem
-    
-    static func canBePerformed(source: WalletItem, destination: WalletItem) -> Bool {
-        source.type == .account &&
-        (destination.type == .expenses || destination.type == .account) &&
-        source.id != destination.id
-    }
-}
-
 public enum Period: CaseIterable, Sendable {
     case day, week, month
     var representation: LocalizedStringKey {
@@ -155,36 +115,38 @@ extension ConversionRate {
     /// EUR/RUB = EUR/USD * USD/RUB
     /// EUR/RUB = EUR/USD 1/0.9112801449 USD/RUB 84.2370884976 = 92.43819145
     /// target1/target2 = (1 / usd/target1) * usd/target2
-    static func rate(for source: Currency, destination: Currency, rates: [ConversionRate]) -> Double {
-        guard let dollarToSourceRate = rates.filter({ $0.source.code == "USD" && $0.destination.code == source.code }).first,
-              let dollarToDestinationRate = rates.filter({ $0.source.code == "USD" && $0.destination.code == destination.code }).first else { return 1.0 }
+    static func rate(for sourceCode: String, destinationCode: String, rates: [ConversionRate]) -> Double {
+        guard let dollarToSourceRate = rates.filter({ $0.source.code == "USD" && $0.destination.code == sourceCode }).first,
+              let dollarToDestinationRate = rates.filter({ $0.source.code == "USD" && $0.destination.code == destinationCode }).first else { return 1.0 }
         return 1 / dollarToSourceRate.rate * dollarToDestinationRate.rate
     }
 }
 
 extension WalletItem {
-    static let none: Self = .init(id: UUID(), order: 0, type: .account, name: "", icon: "", currency: .USD, balance: 0)
+    static let none: Self = .init(id: UUID(), order: 0, type: .account, name: "", icon: "", currencyCode: Currency.USD.code, balance: 0)
     
     // default accounts
     static let defaultAccounts: [Self] = [card, cash]
-    static let card: Self = .init(id: UUID(), order: 0, type: .account, name: "Card", icon: "creditcard", currency: .USD, balance: 0)
-    static let cash: Self = .init(id: UUID(), order: 1, type: .account, name: "Cash", icon: "wallet.bifold", currency: .USD, balance: 0)
+    static let card: Self = .init(id: UUID(), order: 0, type: .account, name: "Card", icon: "creditcard", currencyCode: Currency.USD.code, balance: 0)
+    static let cash: Self = .init(id: UUID(), order: 1, type: .account, name: "Cash", icon: "wallet.bifold", currencyCode: Currency.USD.code, balance: 0)
     
     // default expences
     static let defaultExpenses: [Self] = [groceries, cafe, transport, shopping, services, entertainments]
-    static let groceries: Self = .init(id: UUID(), order: 0, type: .expenses, name: "Groceries", icon: "carrot.fill", currency: .USD, balance: 0)
-    static let cafe: Self = .init(id: UUID(), order: 1, type: .expenses, name: "Cafe", icon: "fork.knife", currency: .USD, balance: 0)
-    static let transport: Self = .init(id: UUID(), order: 2, type: .expenses, name: "Transport", icon: "bus.fill", currency: .USD, balance: 0)
-    static let shopping: Self = .init(id: UUID(), order: 3, type: .expenses, name: "Shopping", icon: "handbag", currency: .USD, balance: 0)
-    static let services: Self = .init(id: UUID(), order: 4, type: .expenses, name: "Services", icon: "network", currency: .USD, balance: 0)
-    static let entertainments: Self = .init(id: UUID(), order: 5, type: .expenses, name: "Entertainments", icon: "party.popper", currency: .USD, balance: 0)
+    static let groceries: Self = .init(id: UUID(), order: 0, type: .expenses, name: "Groceries", icon: "carrot.fill", currencyCode: Currency.USD.code, balance: 0)
+    static let cafe: Self = .init(id: UUID(), order: 1, type: .expenses, name: "Cafe", icon: "fork.knife", currencyCode: Currency.USD.code, balance: 0)
+    static let transport: Self = .init(id: UUID(), order: 2, type: .expenses, name: "Transport", icon: "bus.fill", currencyCode: Currency.USD.code, balance: 0)
+    static let shopping: Self = .init(id: UUID(), order: 3, type: .expenses, name: "Shopping", icon: "handbag", currencyCode: Currency.USD.code, balance: 0)
+    static let services: Self = .init(id: UUID(), order: 4, type: .expenses, name: "Services", icon: "network", currencyCode: Currency.USD.code, balance: 0)
+    static let entertainments: Self = .init(id: UUID(), order: 5, type: .expenses, name: "Entertainments", icon: "party.popper", currencyCode: Currency.USD.code, balance: 0)
 }
 
 extension WalletTransaction {
-    func representation(for item: WalletItem) -> String {
-        let isIncome = (self.destination.id == item.id) && (item.type == .account)
+    func representation(for item: WalletItem, currencies: [Currency]) -> String {
+        let isIncome = (self.destinationID == item.id) && (item.type == .account)
         let amount = self.amount
-        let currency = self.currency.fixedSymbol
+        let currency: String = {
+            currencies.first(where: { $0.code == self.currencyCode })?.fixedSymbol ?? self.currencyCode
+        }()
         let result = String.init(format: "%@ %@ %@", arguments: [
             isIncome ? "+" : "-",
             CurrencyFormatter.formatter.string(from: NSNumber(value: amount)) ?? "",
@@ -246,15 +208,16 @@ extension Spending {
             case .month: .month
             }
         }()
+        let ids = expenses.map { $0.id }
         let expensesIDs: [UUID: Double] = transactions
-            .filter { $0.destination.type == .expenses }
+            .filter { ids.contains($0.destinationID) }
             .filter { $0.timestamp.isEqual(to: .now, toGranularity: granularity) }
             .reduce(into: [:]) { (result: inout [UUID: Double], transaction: WalletTransaction) in
-                if transaction.currency.code == currency.code {
-                    result[transaction.destination.id, default: 0] += transaction.amount
+                if transaction.currencyCode == currency.code {
+                    result[transaction.destinationID, default: 0] += transaction.amount
                 } else {
-                    let rate = ConversionRate.rate(for: transaction.currency, destination: currency, rates: rates)
-                    result[transaction.destination.id, default: 0] += transaction.amount * rate
+                    let rate = ConversionRate.rate(for: transaction.currencyCode, destinationCode: currency.code, rates: rates)
+                    result[transaction.destinationID, default: 0] += transaction.amount * rate
                 }
             }
         let overallExpenses: Double = expensesIDs.values.reduce(0) { $0 + $1 }
