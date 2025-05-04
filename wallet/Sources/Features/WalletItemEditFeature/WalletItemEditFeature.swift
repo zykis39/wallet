@@ -157,6 +157,7 @@ public struct WalletItemEditFeature {
                 return .none
             case let .deleteTransaction(transaction):
                 state.transactions = state.transactions.filter { $0.id != transaction.id }
+                state.transactionsForCurrentPeriod = state.transactionsForCurrentPeriod.filter { $0.id != transaction.id }
                 return .none
             case let .periodChanged(period):
                 state.transactionsPeriod = period

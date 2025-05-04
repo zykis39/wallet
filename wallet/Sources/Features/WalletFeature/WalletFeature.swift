@@ -322,6 +322,9 @@ public struct WalletFeature {
                 let transactionsDescriptor = FetchDescriptor<WalletTransactionModel>(predicate: #Predicate<WalletTransactionModel> { _ in true }, sortBy: [])
                 do {
                     let transactions = try database.fetch(transactionsDescriptor).map { $0.valueType }
+                    for t in transactions {
+                        print("transaction from: \(t.source.name), to: \(t.destination.name), value: \(t.amount), currency: \(t.currency.code)")
+                    }
                     return .run { send in
                         await send(.transactionsUpdated(transactions))
                     }
