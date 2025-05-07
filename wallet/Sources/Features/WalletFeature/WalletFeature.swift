@@ -326,7 +326,7 @@ public struct WalletFeature {
                     for t in transactions {
                         if let source = [state.accounts + state.expenses].flatMap ({ $0 }).first(where: { t.sourceID == $0.id }),
                            let destination = [state.accounts + state.expenses].flatMap ({ $0 }).first(where: { t.destinationID == $0.id }){
-                            print("transaction from: \(source.name), to: \(destination.name), value: \(t.amount), currency: \(t.currencyCode)")
+                            print("transaction from: \(source.name), to: \(destination.name), value: \(t.amount), currency: \(t.currencyCode), rate: \(t.rate)")
                         }
                     }
                     return .run { send in

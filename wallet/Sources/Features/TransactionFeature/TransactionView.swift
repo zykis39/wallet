@@ -20,6 +20,9 @@ struct TransactionView: View {
     @FocusState var focused: FocusField?
     @State var amountInSourceCurrency: String = ""
     @State var amountInDestinationCurrency: String = ""
+    @State var sourceTextSelection: TextSelection?
+    @State var destinationTextSelection: TextSelection?
+    
     @State var restrictCurrencyChange: Bool = false
     let generator = UINotificationFeedbackGenerator()
     
@@ -35,14 +38,7 @@ struct TransactionView: View {
             HeaderCancelConfirm(leftSystemImageName: "xmark.circle.fill",
                                 rightSystemImageName: "checkmark.circle.fill",
                                 leftAction: { [weak store] in store?.send(.cancelTapped) },
-                                rightAction: {
-                [weak store, generator] in
-                if restrictCurrencyChange,
-                   let sourceAmount = Double(amountInSourceCurrency),
-                   let destinationAmount = Double(amountInDestinationCurrency) {
-                    let rate = destinationAmount / sourceAmount
-                    store?.send(.sourceDestinationRateChanged(rate))
-                }
+                                rightAction: { [weak store, generator] in
                 store?.send(.confirmTapped)
                 generator.notificationOccurred(.success)
             },
@@ -53,7 +49,8 @@ struct TransactionView: View {
             Divider()
             
             HStack {
-                TextField("", text: $amountInSourceCurrency)
+                TextField("", text: $amountInSourceCurrency, selection: $sourceTextSelection, prompt: Text("0"))
+                    .textSelection(.disabled)
                     .textFieldStyle(.roundedBorder)
                     .font(Font.system(size: 60, design: .default))
                     .keyboardType(.decimalPad)
@@ -66,8 +63,14 @@ struct TransactionView: View {
                         self.amountInSourceCurrency = value
                         store?.send(.amountChanged(Double(value) ?? 0))
                         
-                        if !restrictCurrencyChange, let store {
-                            let destinationAmount: Double = (Double(value) ?? 0) * store.state.sourceDestinationRate
+                        if restrictCurrencyChange {
+                            guard let sourceAmount = Double(value),
+                                  let destinationAmount = Double(amountInDestinationCurrency) else { return }
+                            let newRate = destinationAmount / sourceAmount
+                            store?.send(.sourceDestinationRateChanged(newRate))
+                        } else {
+                            guard let rate = store?.state.sourceDestinationRate else { return }
+                            let destinationAmount: Double = (Double(value) ?? 0) * rate
                             let destinationString = CurrencyFormatter.formatterWithoutZeroSymbol.string(from: .init(value: destinationAmount))
                             amountInDestinationCurrency = destinationString ?? ""
                         }
@@ -79,7 +82,8 @@ struct TransactionView: View {
             
             if store.state.source.currencyCode != store.state.destination.currencyCode {
                 HStack {
-                    TextField("", text: $amountInDestinationCurrency)
+                    TextField("", text: $amountInDestinationCurrency, selection: $destinationTextSelection, prompt: Text("0"))
+                        .textSelection(.disabled)
                         .textFieldStyle(.roundedBorder)
                         .font(Font.system(size: 60, design: .default))
                         .keyboardType(.decimalPad)
@@ -91,11 +95,17 @@ struct TransactionView: View {
                             let value = CurrencyFormatter.formattedTextField(oldValue, newValue)
                             self.amountInDestinationCurrency = value
                             
-                            if !restrictCurrencyChange {
+                            if restrictCurrencyChange {
+                                guard let destinationAmount = Double(value),
+                                      let sourceAmount = Double(amountInSourceCurrency) else { return }
+                                let newRate = destinationAmount / sourceAmount
+                                store?.send(.sourceDestinationRateChanged(newRate))
+                            } else {
                                 let sourceAmount: Double = (Double(value) ?? 0) / (store?.state.sourceDestinationRate ?? 1.0)
                                 let sourceString = CurrencyFormatter.formatterWithoutZeroSymbol.string(from: .init(value: sourceAmount))
-                                amountInSourceCurrency = sourceString ?? ""
                                 store?.send(.amountChanged(sourceAmount))
+                                
+                                amountInSourceCurrency = sourceString ?? ""
                             }
                         }
                     Text(destinationCurrencySymbol)
@@ -119,6 +129,9 @@ struct TransactionView: View {
         }
         /// letting user to choose his own conversion rate
         .onChange(of: focused) { oldValue, newValue in
+            destinationTextSelection = .init(insertionPoint: amountInDestinationCurrency.endIndex)
+            sourceTextSelection = .init(insertionPoint: amountInSourceCurrency.endIndex)
+            
             guard amountInSourceCurrency.isEmpty && amountInDestinationCurrency.isEmpty else {
                 if newValue == .destinationTextField {
                     restrictCurrencyChange = true

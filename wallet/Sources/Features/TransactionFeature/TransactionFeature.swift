@@ -57,6 +57,7 @@ public struct TransactionFeature: Sendable {
                 state.source = source
                 state.destination = destination
                 state.currencies = currencies
+                state.commentary = ""
                 return .run { send in
                     await send(.presentedChanged(true))
                 }
