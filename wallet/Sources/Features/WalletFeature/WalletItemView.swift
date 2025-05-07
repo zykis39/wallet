@@ -57,10 +57,21 @@ public struct WalletItemView: View {
                 .lineLimit(1)
                 .foregroundStyle(.secondary)
                 .font(.subheadline)
-            Circle()
-                .fill(Color.walletItemColor(for: item.type).opacity(0.2))
-                .frame(width: Constants.size, height: Constants.size)
-                .gesture(simpleDrag)
+            ZStack {
+                Circle()
+                    .fill(Color.walletItemColor(for: item.type).opacity(0.2))
+                    .gesture(simpleDrag)
+                if let budget = item.monthBudget, budget > 0 {
+                    // TODO: Optimization
+                    let monthTransactions = store.state.transactions
+                        .filter { $0.destinationID == item.id && $0.timestamp.isEqual(to: .now, toGranularity: .month) }
+                    let spendings = monthTransactions.reduce(into: 0) {
+                        $0 += $1.amount * $1.rate
+                    }
+                    let kSpent = min(1, spendings / budget)
+                    Arc(angle: kSpent * 360, color: kSpent == 1 ? .yellow : .green)
+                }
+            }.frame(width: Constants.size, height: Constants.size)
                 
             Text(currencyAmount(currencies: store.state.currencies))
                 .foregroundStyle(Color.walletItemColor(for: item.type))
@@ -68,10 +79,12 @@ public struct WalletItemView: View {
                 .lineLimit(1)
         }
         .background {
-            Circle()
-                .stroke(.gray, lineWidth: 1)
-                .fill(.clear)
-                .frame(width: Constants.size, height: Constants.size)
+            ZStack {
+                Circle()
+                    .stroke(.gray, lineWidth: 1)
+                    .fill(.clear)
+                    .frame(width: Constants.size, height: Constants.size)
+            }
             ZStack {
                 Circle()
                     .fill(Color.walletItemColor(for: item.type))

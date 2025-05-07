@@ -10,10 +10,10 @@ import SwiftData
 import ComposableArchitecture
 
 // MARK: - Models
-typealias WalletItemModel = SchemaV2.WalletItemModel
-typealias WalletTransactionModel = SchemaV2.WalletTransactionModel
-public typealias WalletItem = SchemaV2.WalletItem
-public typealias WalletTransaction = SchemaV2.WalletTransaction
+typealias WalletItemModel = SchemaV3.WalletItemModel
+typealias WalletTransactionModel = SchemaV3.WalletTransactionModel
+public typealias WalletItem = SchemaV3.WalletItem
+public typealias WalletTransaction = SchemaV3.WalletTransaction
 
 
 public struct Currency: Codable, Sendable, Hashable {
@@ -123,21 +123,21 @@ extension ConversionRate {
 }
 
 extension WalletItem {
-    static let none: Self = .init(id: UUID(), order: 0, type: .account, name: "", icon: "", currencyCode: Currency.USD.code, balance: 0)
+    static let none: Self = .init(id: UUID(), order: 0, type: .account, name: "", icon: "", currencyCode: Currency.USD.code, balance: 0, monthBudget: nil)
     
     // default accounts
     static let defaultAccounts: [Self] = [card, cash]
-    static let card: Self = .init(id: UUID(), order: 0, type: .account, name: "Card", icon: "creditcard", currencyCode: Currency.USD.code, balance: 0)
-    static let cash: Self = .init(id: UUID(), order: 1, type: .account, name: "Cash", icon: "wallet.bifold", currencyCode: Currency.USD.code, balance: 0)
+    static let card: Self = .init(id: UUID(), order: 0, type: .account, name: "Card", icon: "creditcard", currencyCode: Currency.USD.code, balance: 0, monthBudget: nil)
+    static let cash: Self = .init(id: UUID(), order: 1, type: .account, name: "Cash", icon: "wallet.bifold", currencyCode: Currency.USD.code, balance: 0, monthBudget: nil)
     
     // default expences
     static let defaultExpenses: [Self] = [groceries, cafe, transport, shopping, services, entertainments]
-    static let groceries: Self = .init(id: UUID(), order: 0, type: .expenses, name: "Groceries", icon: "carrot.fill", currencyCode: Currency.USD.code, balance: 0)
-    static let cafe: Self = .init(id: UUID(), order: 1, type: .expenses, name: "Cafe", icon: "fork.knife", currencyCode: Currency.USD.code, balance: 0)
-    static let transport: Self = .init(id: UUID(), order: 2, type: .expenses, name: "Transport", icon: "bus.fill", currencyCode: Currency.USD.code, balance: 0)
-    static let shopping: Self = .init(id: UUID(), order: 3, type: .expenses, name: "Shopping", icon: "handbag", currencyCode: Currency.USD.code, balance: 0)
-    static let services: Self = .init(id: UUID(), order: 4, type: .expenses, name: "Services", icon: "network", currencyCode: Currency.USD.code, balance: 0)
-    static let entertainments: Self = .init(id: UUID(), order: 5, type: .expenses, name: "Entertainments", icon: "party.popper", currencyCode: Currency.USD.code, balance: 0)
+    static let groceries: Self = .init(id: UUID(), order: 0, type: .expenses, name: "Groceries", icon: "carrot.fill", currencyCode: Currency.USD.code, balance: 0, monthBudget: nil)
+    static let cafe: Self = .init(id: UUID(), order: 1, type: .expenses, name: "Cafe", icon: "fork.knife", currencyCode: Currency.USD.code, balance: 0, monthBudget: nil)
+    static let transport: Self = .init(id: UUID(), order: 2, type: .expenses, name: "Transport", icon: "bus.fill", currencyCode: Currency.USD.code, balance: 0, monthBudget: nil)
+    static let shopping: Self = .init(id: UUID(), order: 3, type: .expenses, name: "Shopping", icon: "handbag", currencyCode: Currency.USD.code, balance: 0, monthBudget: nil)
+    static let services: Self = .init(id: UUID(), order: 4, type: .expenses, name: "Services", icon: "network", currencyCode: Currency.USD.code, balance: 0, monthBudget: nil)
+    static let entertainments: Self = .init(id: UUID(), order: 5, type: .expenses, name: "Entertainments", icon: "party.popper", currencyCode: Currency.USD.code, balance: 0, monthBudget: nil)
 }
 
 extension WalletTransaction {

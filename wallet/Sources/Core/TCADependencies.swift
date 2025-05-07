@@ -22,7 +22,7 @@ final class SwiftDataContainerProvider {
     
     func container(inMemory: Bool) -> ModelContainer {
         do {
-            let schema = Schema(versionedSchema: SchemaV2.self)
+            let schema = Schema(versionedSchema: SchemaV3.self)
             let configuration = ModelConfiguration(nil, schema: schema, url: URL.documentsDirectory.appending(path: "database.sqlite"))
             return try ModelContainer(for: schema,
                                       migrationPlan: MigrationPlan.self,

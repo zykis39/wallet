@@ -10,6 +10,7 @@ import SwiftUI
 struct WalletItemEditView: View {
     @Bindable var store: StoreOf<WalletItemEditFeature>
     @State var balance: String
+    @State var budget: String
 
     var name: Binding<String> {
         Binding<String>(
@@ -40,6 +41,7 @@ struct WalletItemEditView: View {
     init(store: StoreOf<WalletItemEditFeature>) {
         self.store = store
         self.balance = CurrencyFormatter.representation(for: store.state.item.balance)
+        self.budget = CurrencyFormatter.representation(for: store.state.item.monthBudget ?? 0)
     }
     
     var body: some View {
@@ -84,6 +86,16 @@ struct WalletItemEditView: View {
                         let value = CurrencyFormatter.formattedTextField(oldValue, newValue)
                         self.balance = value
                         self.store.send(.balanceChanged(Double(value) ?? 0))
+                    }
+                } else {
+                    TextField("Budget",
+                              text: $budget,
+                              prompt: Text("MonthBudget"))
+                    .keyboardType(.decimalPad)
+                    .onChange(of: budget) { oldValue, newValue in
+                        let value = CurrencyFormatter.formattedTextField(oldValue, newValue)
+                        self.budget = value
+                        self.store.send(.budgetChanged(Double(value) ?? 0))
                     }
                 }
                 if store.state.editType == .new {

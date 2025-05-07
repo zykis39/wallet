@@ -1,15 +1,15 @@
 //
-//  SchemaV2.swift
+//  SchemaV3.swift
 //  wallet
 //
-//  Created by Артём Зайцев on 04.05.2025.
+//  Created by Артём Зайцев on 07.05.2025.
 //
 
 import Foundation
 import SwiftData
 
-public enum SchemaV2: VersionedSchema {
-    public static var versionIdentifier: Schema.Version = .init(2, 0, 0)
+public enum SchemaV3: VersionedSchema {
+    public static var versionIdentifier: Schema.Version = .init(3, 0, 0)
     public static var models: [any PersistentModel.Type] = [
         WalletItemModel.self,
         WalletTransactionModel.self,
@@ -25,8 +25,9 @@ public enum SchemaV2: VersionedSchema {
         var icon: String
         var currencyCode: String
         var balance: Double
+        var monthBudget: Double?
         
-        init(id: UUID, order: UInt, type: Int, name: String, icon: String, currencyCode: String, balance: Double) {
+        init(id: UUID, order: UInt, type: Int, name: String, icon: String, currencyCode: String, balance: Double, monthBudget: Double?) {
             self.id = id
             self.order = order
             self.type = type
@@ -34,6 +35,7 @@ public enum SchemaV2: VersionedSchema {
             self.icon = icon
             self.currencyCode = currencyCode
             self.balance = balance
+            self.monthBudget = monthBudget
         }
         
         convenience init(model: WalletItem) {
@@ -43,7 +45,8 @@ public enum SchemaV2: VersionedSchema {
                       name: model.name,
                       icon: model.icon,
                       currencyCode: model.currencyCode,
-                      balance: model.balance)
+                      balance: model.balance,
+                      monthBudget: model.monthBudget)
         }
         
         var valueType: WalletItem {
@@ -60,7 +63,8 @@ public enum SchemaV2: VersionedSchema {
                          name: self.name,
                          icon: self.icon,
                          currencyCode: self.currencyCode,
-                         balance: self.balance)
+                         balance: self.balance,
+                         monthBudget: self.monthBudget)
         }
     }
 
@@ -86,6 +90,28 @@ public enum SchemaV2: VersionedSchema {
             self.sourceID = sourceID
             self.destinationID = destinationID
         }
+        
+        convenience init(model: WalletTransaction) {
+            self.init(id: model.id,
+                      timestamp: model.timestamp,
+                      currencyCode: model.currencyCode,
+                      amount: model.amount,
+                      commentary: model.commentary,
+                      rate: model.rate,
+                      sourceID: model.sourceID,
+                      destinationID: model.destinationID)
+        }
+        
+        var valueType: WalletTransaction {
+            .init(id: self.id,
+                  timestamp: self.timestamp,
+                  currencyCode: self.currencyCode,
+                  amount: self.amount,
+                  commentary: self.commentary,
+                  rate: self.rate,
+                  sourceID: self.sourceID,
+                  destinationID: self.destinationID)
+        }
     }
     
     // MARK: Value types
@@ -101,8 +127,9 @@ public enum SchemaV2: VersionedSchema {
         let icon: String
         let currencyCode: String
         let balance: Double
+        let monthBudget: Double?
         
-        public init(id: UUID, order: UInt, type: WalletItemType, name: String, icon: String, currencyCode: String, balance: Double) {
+        public init(id: UUID, order: UInt, type: WalletItemType, name: String, icon: String, currencyCode: String, balance: Double, monthBudget: Double?) {
             self.id = id
             self.order = order
             self.type = type
@@ -110,6 +137,7 @@ public enum SchemaV2: VersionedSchema {
             self.icon = icon
             self.currencyCode = currencyCode
             self.balance = balance
+            self.monthBudget = monthBudget
         }
     }
     
@@ -124,60 +152,11 @@ public enum SchemaV2: VersionedSchema {
         
         let sourceID: UUID
         let destinationID: UUID
-    }
-}
-
-class ScopeV12 {
-    @Model
-    final class WalletItemModelV12: Sendable {
-        @Attribute(.unique) var id: UUID
-        var order: UInt
-        var type: SchemaV1.WalletItem.WalletItemType
-        var name: String
-        var icon: String
-        var currency: Currency
-        var currencyCode: String
-        var balance: Double
         
-        init(id: UUID, order: UInt, type: SchemaV1.WalletItem.WalletItemType, name: String, icon: String, currency: Currency, currencyCode: String, balance: Double) {
-            self.id = id
-            self.order = order
-            self.type = type
-            self.name = name
-            self.icon = icon
-            self.currency = currency
-            self.currencyCode = currencyCode
-            self.balance = balance
-        }
-    }
-
-    @Model
-    final class WalletTransactionModelV12: Sendable {
-        @Attribute(.unique) var id: UUID
-        var timestamp: Date
-        var currency: Currency
-        var currencyCode: String
-        var amount: Double
-        var commentary: String
-        var rate: Double
-        
-        var source: SchemaV1.WalletItem
-        var destination: SchemaV1.WalletItem
-        var sourceID: UUID
-        var destinationID: UUID
-        
-        init(id: UUID, timestamp: Date, currency: Currency, currencyCode: String, amount: Double, commentary: String, rate: Double, source: SchemaV1.WalletItem, destination: SchemaV1.WalletItem, sourceID: UUID, destinationID: UUID) {
-            self.id = id
-            self.timestamp = timestamp
-            self.currency = currency
-            self.currencyCode = currencyCode
-            self.amount = amount
-            self.commentary = commentary
-            self.rate = rate
-            self.source = source
-            self.destination = destination
-            self.sourceID = sourceID
-            self.destinationID = destinationID
+        static func canBePerformed(source: WalletItem, destination: WalletItem) -> Bool {
+            source.type == .account &&
+            (destination.type == .expenses || destination.type == .account) &&
+            source.id != destination.id
         }
     }
 }

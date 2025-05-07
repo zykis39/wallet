@@ -35,6 +35,7 @@ public struct WalletItemEditFeature {
         case presentedChanged(Bool)
         case nameChanged(String)
         case balanceChanged(Double)
+        case budgetChanged(Double)
         case currencyCodeChanged(String)
         case createWalletItem(WalletItem)
         case updateWalletItem(WalletItem)
@@ -77,7 +78,8 @@ public struct WalletItemEditFeature {
                                          name: "",
                                          icon: randomIcon,
                                          currencyCode: currency.code,
-                                         balance: 0)
+                                         balance: 0,
+                                         monthBudget: nil)
                 state.editType = .new
                 state.item = newItem
                 state.transactions = []
@@ -110,7 +112,8 @@ public struct WalletItemEditFeature {
                                             name: name,
                                             icon: item.icon,
                                             currencyCode: item.currencyCode,
-                                            balance: item.balance)
+                                            balance: item.balance,
+                                            monthBudget: item.monthBudget)
                 state.item = editedItem
                 return .none
             case let .balanceChanged(balance):
@@ -121,7 +124,20 @@ public struct WalletItemEditFeature {
                                             name: item.name,
                                             icon: item.icon,
                                             currencyCode: item.currencyCode,
-                                            balance: balance)
+                                            balance: balance,
+                                            monthBudget: item.monthBudget)
+                state.item = editedItem
+                return .none
+            case let .budgetChanged(budget):
+                let item = state.item
+                let editedItem = WalletItem(id: item.id,
+                                            order: item.order,
+                                            type: item.type,
+                                            name: item.name,
+                                            icon: item.icon,
+                                            currencyCode: item.currencyCode,
+                                            balance: item.balance,
+                                            monthBudget: budget)
                 state.item = editedItem
                 return .none
             case let .currencyCodeChanged(code):
@@ -132,7 +148,8 @@ public struct WalletItemEditFeature {
                                             name: item.name,
                                             icon: item.icon,
                                             currencyCode: code,
-                                            balance: item.balance)
+                                            balance: item.balance,
+                                            monthBudget: item.monthBudget)
                 state.item = editedItem
                 return .none
             case let .iconSelectionPresentedChanged(presented):
@@ -146,7 +163,8 @@ public struct WalletItemEditFeature {
                                             name: item.name,
                                             icon: icon,
                                             currencyCode: item.currencyCode,
-                                            balance: item.balance)
+                                            balance: item.balance,
+                                            monthBudget: item.monthBudget)
                 state.item = editedItem
                 return .run { send in
                     await send(.iconSelectionPresentedChanged(false))

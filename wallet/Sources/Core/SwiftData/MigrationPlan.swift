@@ -11,6 +11,7 @@ enum MigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] = [
         SchemaV1.self,
         SchemaV2.self,
+        SchemaV3.self,
     ]
     
     /// Миграция должна происходить путём копирования данных из одной таблицы в другую
@@ -118,64 +119,33 @@ enum MigrationPlan: SchemaMigrationPlan {
         try context.save()
     })
     
+    static let migrationV2toV3 = MigrationStage.custom(fromVersion: SchemaV2.self,
+                                                       toVersion: SchemaV3.self,
+                                                       willMigrate: { context in
+        // create empty fields
+        let itemsV2 = try context.fetch(FetchDescriptor<SchemaV2.WalletItemModel>())
+        let itemsV3 = itemsV2.map {
+            SchemaV3.WalletItemModel(id: $0.id,
+                                     order: $0.order,
+                                     type: $0.type,
+                                     name: $0.name,
+                                     icon: $0.icon,
+                                     currencyCode: $0.currencyCode,
+                                     balance: $0.balance,
+                                     monthBudget: nil)
+        }
+        
+        for item in itemsV3 {
+            context.insert(item)
+        }
+        try context.save()
+    }, didMigrate: nil)
+    
     static var stages: [MigrationStage] = [
-        migrationV1toV2
+        migrationV1toV2,
+        migrationV2toV3,
     ]
 }
 
-class ScopeV12 {
-    @Model
-    final class WalletItemModelV12: Sendable {
-        @Attribute(.unique) var id: UUID
-        var order: UInt
-        var type: SchemaV1.WalletItem.WalletItemType
-        var name: String
-        var icon: String
-        var currency: Currency
-        var currencyCode: String
-        var balance: Double
-        
-        init(id: UUID, order: UInt, type: SchemaV1.WalletItem.WalletItemType, name: String, icon: String, currency: Currency, currencyCode: String, balance: Double) {
-            self.id = id
-            self.order = order
-            self.type = type
-            self.name = name
-            self.icon = icon
-            self.currency = currency
-            self.currencyCode = currencyCode
-            self.balance = balance
-        }
-    }
-
-    @Model
-    final class WalletTransactionModelV12: Sendable {
-        @Attribute(.unique) var id: UUID
-        var timestamp: Date
-        var currency: Currency
-        var currencyCode: String
-        var amount: Double
-        var commentary: String
-        var rate: Double
-        
-        var source: SchemaV1.WalletItem
-        var destination: SchemaV1.WalletItem
-        var sourceID: UUID
-        var destinationID: UUID
-        
-        init(id: UUID, timestamp: Date, currency: Currency, currencyCode: String, amount: Double, commentary: String, rate: Double, source: SchemaV1.WalletItem, destination: SchemaV1.WalletItem, sourceID: UUID, destinationID: UUID) {
-            self.id = id
-            self.timestamp = timestamp
-            self.currency = currency
-            self.currencyCode = currencyCode
-            self.amount = amount
-            self.commentary = commentary
-            self.rate = rate
-            self.source = source
-            self.destination = destination
-            self.sourceID = sourceID
-            self.destinationID = destinationID
-        }
-    }
-}
 
 

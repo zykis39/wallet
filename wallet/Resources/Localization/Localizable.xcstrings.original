@@ -59,6 +59,16 @@
         }
       }
     },
+    "0" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "0"
+          }
+        }
+      }
+    },
     "AccountBalance" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1686,6 +1696,22 @@
         }
       }
     },
+    "MonthBudget" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Budget"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бюджет"
+          }
+        }
+      }
+    },
     "Period" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1984,10 +2010,46 @@
     "Review.Ask.Text" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gefällt Ihnen unsere App? Unterstützen Sie uns mit einer kurzen Bewertung im App Store — das hilft uns wirklich, uns zu verbessern. Danke! 💙"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enjoying our app? Support us with a quick review on the App Store — it really helps us improve.\nThank you! 💙"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Te gusta nuestra app? Apóyanos con una reseña rápida en la App Store; realmente nos ayuda a mejorar. ¡Gracias! 💙"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous appréciez notre application ? Soutenez-nous avec un rapide avis sur l'App Store — cela nous aide vraiment à nous améliorer.\nMerci ! 💙"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "נהנים מהאפליקציה שלנו? תמכו בנו עם ביקורת מהירה ב-App Store — זה באמת עוזר לנו להשתפר.\nתודה! 💙"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "क्या आप हमारे ऐप का आनंद ले रहे हैं? ऐप्प स्टोर पर एक त्वरित समीक्षा के साथ हमारा समर्थन करें — इससे हमें सुधार करने में वास्तव में मदद मिलती है। धन्यवाद! 💙"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ti piace la nostra app? Supportaci con una recensione rapida sull'App Store — ci aiuta davvero a migliorare. Grazie! 💙"
           }
         },
         "ru" : {

@@ -344,7 +344,8 @@ public struct WalletFeature {
                                name: $0.name,
                                icon: $0.icon,
                                currencyCode: currency.code,
-                               balance: $0.balance)
+                               balance: $0.balance,
+                               monthBudget: $0.monthBudget)
                 }
                 
                 state.expenses = WalletItem.defaultExpenses.map {
@@ -354,7 +355,8 @@ public struct WalletFeature {
                                name: $0.name,
                                icon: $0.icon,
                                currencyCode: currency.code,
-                               balance: $0.balance)
+                               balance: $0.balance,
+                               monthBudget: $0.monthBudget)
                 }
                 
                 return .run { [accounts = state.accounts, expenses = state.expenses] send in
@@ -527,7 +529,8 @@ public struct WalletFeature {
                                                name: src.name,
                                                icon: src.icon,
                                                currencyCode: src.currencyCode,
-                                               balance: src.balance - transaction.amount)
+                                               balance: src.balance - transaction.amount,
+                                               monthBudget: src.monthBudget)
                 
                 let updatedDestination = WalletItem(id: dst.id,
                                                     order: dst.order,
@@ -535,7 +538,8 @@ public struct WalletFeature {
                                                     name: dst.name,
                                                     icon: dst.icon,
                                                     currencyCode: dst.currencyCode,
-                                                    balance: dst.balance + transaction.amount * transaction.rate)
+                                                    balance: dst.balance + transaction.amount * transaction.rate,
+                                                    monthBudget: dst.monthBudget)
                 
                 switch destinationType {
                 case .account:
@@ -589,7 +593,8 @@ public struct WalletFeature {
                                                name: src.name,
                                                icon: src.icon,
                                                currencyCode: src.currencyCode,
-                                               balance: src.balance + transaction.amount)
+                                               balance: src.balance + transaction.amount,
+                                               monthBudget: src.monthBudget)
                 
                 
                 let updatedDestination = WalletItem(id: dst.id,
@@ -598,7 +603,8 @@ public struct WalletFeature {
                                                     name: dst.name,
                                                     icon: dst.icon,
                                                     currencyCode: dst.currencyCode,
-                                                    balance: dst.balance - transaction.amount * transaction.rate)
+                                                    balance: dst.balance - transaction.amount * transaction.rate,
+                                                    monthBudget: dst.monthBudget)
                 
                 state.accounts[sourceIndex] = updatedSource
                 switch destinationType {
@@ -678,7 +684,8 @@ public struct WalletFeature {
                                                  name: item.name,
                                                  icon: item.icon,
                                                  currencyCode: item.currencyCode,
-                                                 balance: item.balance)
+                                                 balance: item.balance,
+                                                 monthBudget: item.monthBudget)
                         state.accounts[idx] = newItem
                     }
                     
@@ -689,7 +696,8 @@ public struct WalletFeature {
                                                  name: item.name,
                                                  icon: item.icon,
                                                  currencyCode: item.currencyCode,
-                                                 balance: item.balance)
+                                                 balance: item.balance,
+                                                 monthBudget: item.monthBudget)
                         state.expenses[idx] = newItem
                     }
                     
@@ -780,7 +788,8 @@ public struct WalletFeature {
                                              name: item.name,
                                              icon: item.icon,
                                              currencyCode: item.currencyCode,
-                                             balance: item.balance)
+                                             balance: item.balance,
+                                             monthBudget: item.monthBudget)
                 
                 switch item.type {
                 case .account:
