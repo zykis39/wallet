@@ -516,15 +516,14 @@ public struct WalletFeature {
                     destinationType = .account
                 }
                 
-                /// prevent transaction to be partly applied
-                guard let destinationType,
-                      let sourceIndex,
-                      let destinationIndex,
-                      let src = state.accounts.first(where: { transaction.sourceID == $0.id }),
-                      let dst = [state.accounts, state.expenses].flatMap ({ $0 }).first(where: { transaction.destinationID == $0.id })
-                else { return .none }
+                /// transaction can be partly applied
+                /// example: we removed source of transaction, but we want to revent balance from destination
+                 
+                var updatedSource: WalletItem?
+                var updatedDestination: WalletItem?
                 
-                let updatedSource = WalletItem(id: src.id,
+                if let src = state.accounts.first(where: { transaction.sourceID == $0.id }) {
+                    updatedSource = WalletItem(id: src.id,
                                                order: src.order,
                                                type: src.type,
                                                name: src.name,
@@ -532,8 +531,9 @@ public struct WalletFeature {
                                                currencyCode: src.currencyCode,
                                                balance: src.balance - transaction.amount,
                                                monthBudget: src.monthBudget)
-                
-                let updatedDestination = WalletItem(id: dst.id,
+                }
+                if let dst = [state.accounts, state.expenses].flatMap ({ $0 }).first(where: { transaction.destinationID == $0.id }) {
+                    updatedDestination = WalletItem(id: dst.id,
                                                     order: dst.order,
                                                     type: dst.type,
                                                     name: dst.name,
@@ -541,20 +541,25 @@ public struct WalletFeature {
                                                     currencyCode: dst.currencyCode,
                                                     balance: dst.balance + transaction.amount * transaction.rate,
                                                     monthBudget: dst.monthBudget)
-                
-                switch destinationType {
-                case .account:
+                }
+                if let updatedSource, let sourceIndex {
                     state.accounts[sourceIndex] = updatedSource
-                    state.accounts[destinationIndex] = updatedDestination
-                    break
-                case .expenses:
-                    state.accounts[sourceIndex] = updatedSource
-                    state.expenses[destinationIndex] = updatedDestination
-                    break
+                }
+                if let destinationType, let updatedDestination, let destinationIndex {
+                    switch destinationType {
+                    case .account:
+                        state.accounts[destinationIndex] = updatedDestination
+                        break
+                    case .expenses:
+                        state.expenses[destinationIndex] = updatedDestination
+                        break
+                    }
                 }
                 
-                return .run { send in
-                    await send(.saveWalletItemsToDB([updatedSource, updatedDestination]))
+                return .run { [updatedSource, updatedDestination] send in
+                    let items = [updatedSource, updatedDestination].compactMap { $0 }
+                    guard items.count > 0 else { return }
+                    await send(.saveWalletItemsToDB(items))
                     await send(.calculateBalance)
                     await send(.calculateExpenses)
                 }
@@ -576,20 +581,14 @@ public struct WalletFeature {
                     destinationType = .account
                 }
                 
-                /// prevent transaction to be partly applied
-                /// may be partially apply is not that bad
-                /// example: partially revert transaction after deleting expense/account
-                guard let destinationType,
-                      let sourceIndex,
-                      let destinationIndex,
-                      let src = state.accounts.first(where: { transaction.sourceID == $0.id }),
-                      let dst = [state.accounts, state.expenses].flatMap ({ $0 }).first(where: { transaction.destinationID == $0.id })
-                else {
-                    analytics.logEvent(.error("error, reverting partly applied transaction: \(transaction)"))
-                    return .none
-                }
-                                      
-                let updatedSource = WalletItem(id: src.id,
+                /// transaction can be partly applied
+                /// example: we removed source of transaction, but we want to revent balance from destination
+                 
+                var updatedSource: WalletItem?
+                var updatedDestination: WalletItem?
+                
+                if let src = state.accounts.first(where: { transaction.sourceID == $0.id }) {
+                    updatedSource = WalletItem(id: src.id,
                                                order: src.order,
                                                type: src.type,
                                                name: src.name,
@@ -597,9 +596,10 @@ public struct WalletFeature {
                                                currencyCode: src.currencyCode,
                                                balance: src.balance + transaction.amount,
                                                monthBudget: src.monthBudget)
+                }
                 
-                
-                let updatedDestination = WalletItem(id: dst.id,
+                if let dst = [state.accounts, state.expenses].flatMap ({ $0 }).first(where: { transaction.destinationID == $0.id }) {
+                    updatedDestination = WalletItem(id: dst.id,
                                                     order: dst.order,
                                                     type: dst.type,
                                                     name: dst.name,
@@ -607,19 +607,27 @@ public struct WalletFeature {
                                                     currencyCode: dst.currencyCode,
                                                     balance: dst.balance - transaction.amount * transaction.rate,
                                                     monthBudget: dst.monthBudget)
-                
-                state.accounts[sourceIndex] = updatedSource
-                switch destinationType {
-                case .account:
-                    state.accounts[destinationIndex] = updatedDestination
-                    break
-                case .expenses:
-                    state.expenses[destinationIndex] = updatedDestination
-                    break
                 }
                 
-                return .run { send in
-                    await send(.saveWalletItemsToDB([updatedSource, updatedDestination]))
+                if let updatedSource, let sourceIndex {
+                    state.accounts[sourceIndex] = updatedSource
+                }
+                
+                if let updatedDestination, let destinationIndex, let destinationType {
+                    switch destinationType {
+                    case .account:
+                        state.accounts[destinationIndex] = updatedDestination
+                        break
+                    case .expenses:
+                        state.expenses[destinationIndex] = updatedDestination
+                        break
+                    }
+                }
+                
+                return .run { [updatedSource, updatedDestination] send in
+                    let items = [updatedSource, updatedDestination].compactMap { $0 }
+                    guard items.count > 0 else { return }
+                    await send(.saveWalletItemsToDB(items))
                     await send(.calculateBalance)
                     await send(.calculateExpenses)
                 }
