@@ -143,6 +143,10 @@ extension WalletItem {
 extension WalletTransaction {
     func representation(for item: WalletItem, currencies: [Currency]) -> String {
         let isIncome = (self.destinationID == item.id) && (item.type == .account)
+        return representation(isIncome: isIncome, currencies: currencies)
+    }
+    
+    func representation(isIncome: Bool, currencies: [Currency]) -> String {
         let amount = self.amount
         let currency: String = {
             currencies.first(where: { $0.code == self.currencyCode })?.fixedSymbol ?? self.currencyCode

@@ -44,8 +44,7 @@ struct AppView: View {
                     }
                 }
                 .navigationDestination(isPresented: $store.spendings.presented.sending(\.spendings.presentedChanged)) {
-                    let scoped = store.scope(state: \.spendings, action: \.spendings)
-                    SpendingsStatisticsView(store: scoped)
+                    TransactionsSpendingsView(store: store)
                 }
         }
         .environment(\.locale, store.selectedLocale)

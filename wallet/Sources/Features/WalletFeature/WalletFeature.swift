@@ -116,14 +116,15 @@ public struct WalletFeature {
         case conversionRatesFetched([ConversionRate])
         case readWalletItems
         case readTransactions
-        case saveWalletItems([WalletItem])
-        case deleteTransactions([UUID])
+        case saveWalletItemsToDB([WalletItem])
+        case deleteTransaction(UUID)
+        case deleteTransactionsFromDB([UUID])
         case deleteWalletItem(UUID)
         case generateDefaultWalletItems(Currency)
         case generateTestTransactions(Currency)
         case applyTransaction(WalletTransaction)
-        case revertTransaction(WalletTransaction)
-        case saveTransaction(WalletTransaction)
+        case revertTransaction(UUID)
+        case saveTransactionToDB(WalletTransaction)
         case transactionsUpdated([WalletTransaction])
         case dragModeChanged(DragMode)
         
@@ -308,7 +309,7 @@ public struct WalletFeature {
                     analytics.logEvent(.error("WalletItem decoding error: \(error.localizedDescription)"))
                 }
                 return .send(.calculateBalance)
-            case let .saveWalletItems(items):
+            case let .saveWalletItemsToDB(items):
                 let models = items.map { WalletItemModel(model: $0) }
                 do {
                     try database.insert(models)
@@ -360,7 +361,7 @@ public struct WalletFeature {
                 }
                 
                 return .run { [accounts = state.accounts, expenses = state.expenses] send in
-                    await send(.saveWalletItems(accounts + expenses))
+                    await send(.saveWalletItemsToDB(accounts + expenses))
                     await send(.calculateBalance)
                 }
             case let .generateTestTransactions(currency):
@@ -369,7 +370,7 @@ public struct WalletFeature {
                 return .run { send in
                     for t in transactions {
                         await send(.applyTransaction(t))
-                        await send(.saveTransaction(t))
+                        await send(.saveTransactionToDB(t))
                     }
                 }
             case let .itemFrameChanged(itemId, frame):
@@ -553,11 +554,12 @@ public struct WalletFeature {
                 }
                 
                 return .run { send in
-                    await send(.saveWalletItems([updatedSource, updatedDestination]))
+                    await send(.saveWalletItemsToDB([updatedSource, updatedDestination]))
                     await send(.calculateBalance)
                     await send(.calculateExpenses)
                 }
-            case let .revertTransaction(transaction):
+            case let .revertTransaction(transactionID):
+                guard let transaction = state.transactions.first(where: { $0.id == transactionID }) else { return .none }
                 var destinationType: WalletItem.WalletItemType?
                 var sourceIndex: Int?
                 var destinationIndex: Int?
@@ -617,11 +619,11 @@ public struct WalletFeature {
                 }
                 
                 return .run { send in
-                    await send(.saveWalletItems([updatedSource, updatedDestination]))
+                    await send(.saveWalletItemsToDB([updatedSource, updatedDestination]))
                     await send(.calculateBalance)
                     await send(.calculateExpenses)
                 }
-            case let .saveTransaction(transaction):
+            case let .saveTransactionToDB(transaction):
                 do {
                     try database.insert(WalletTransactionModel(model: transaction))
                     try database.save()
@@ -629,7 +631,12 @@ public struct WalletFeature {
                     analytics.logEvent(.error("error, applying transaction to DB: \(error)"))
                 }
                 return .none
-            case let .deleteTransactions(transactionIds):
+            case let .deleteTransaction(transactionID):
+                return .run { send in
+                    await send(.revertTransaction(transactionID))
+                    await send(.deleteTransactionsFromDB([transactionID]))
+                }
+            case let .deleteTransactionsFromDB(transactionIds):
                 // remove from memory
                 state.transactions = state.transactions.filter { !transactionIds.contains($0.id) }
                 
@@ -702,7 +709,7 @@ public struct WalletFeature {
                     }
                     
                     return .run { [items = state.accounts + state.expenses] send in
-                        await send(.saveWalletItems(items))
+                        await send(.saveWalletItemsToDB(items))
                     }
                     
                 case .reordering:
@@ -751,7 +758,7 @@ public struct WalletFeature {
                                                                amount: transaction.amount))
                     }
                     await send(.applyTransaction(transaction))
-                    await send(.saveTransaction(transaction))
+                    await send(.saveTransactionToDB(transaction))
                     // TODO: check if need to ask AppScore
                 }
             case .transaction:
@@ -765,10 +772,10 @@ public struct WalletFeature {
                 return .run { [transactionsToRemove] send in
                     for t in transactionsToRemove {
                         // restore balance of affected accounts/expenses
-                        await send(.revertTransaction(t))
+                        await send(.revertTransaction(t.id))
                     }
                     // clear DB
-                    await send(.deleteTransactions(transactionsToRemove.map { $0.id }))
+                    await send(.deleteTransactionsFromDB(transactionsToRemove.map { $0.id }))
                     await send(.deleteWalletItem(id))
                     // close sheet
                     await send(.walletItemEdit(.presentedChanged(false)))
@@ -799,7 +806,7 @@ public struct WalletFeature {
                 }
                 return .run { send in
                     analytics.logEvent(.itemCreated(itemName: orderedItem.name, currency: orderedItem.currencyCode))
-                    await send(.saveWalletItems([orderedItem]))
+                    await send(.saveWalletItemsToDB([orderedItem]))
                     await send(.calculateBalance)
                 }
             case let .walletItemEdit(.updateWalletItem(item)):
@@ -812,13 +819,12 @@ public struct WalletFeature {
                     state.expenses[index] = item
                 }
                 return .run { send in
-                    await send(.saveWalletItems([item]))
+                    await send(.saveWalletItemsToDB([item]))
                     await send(.calculateBalance)
                 }
             case let .walletItemEdit(.deleteTransaction(transaction)):
                 return .run { send in
-                    await send(.revertTransaction(transaction))
-                    await send(.deleteTransactions([transaction.id]))
+                    await send(.deleteTransaction(transaction.id))
                 }
             case .walletItemEdit:
                 return .none
