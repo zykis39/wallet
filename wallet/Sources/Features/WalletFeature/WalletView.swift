@@ -26,6 +26,7 @@ struct WalletView: View {
             VStack(alignment: .center) {
                 HeaderWallet(balance: store.state.balance,
                              expenses: store.state.monthExpenses,
+                             budget: store.state.budget,
                              currency: store.state.selectedCurrency,
                              leftSystemImageName: "gearshape.fill",
                              rightSystemImageName: "chart.bar.xaxis",

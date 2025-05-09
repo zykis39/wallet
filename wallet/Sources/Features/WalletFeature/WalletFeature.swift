@@ -65,6 +65,7 @@ public struct WalletFeature {
         // data
         var balance: Double
         var monthExpenses: Double
+        var budget: Double
         var accounts: [WalletItem]
         var expenses: [WalletItem]
         var transactions: [WalletTransaction]
@@ -93,6 +94,7 @@ public struct WalletFeature {
                                          appScore: .initial,
                                          balance: 0,
                                          monthExpenses: 0,
+                                         budget: 0,
                                          accounts: [],
                                          expenses: [],
                                          transactions: [])
@@ -110,7 +112,7 @@ public struct WalletFeature {
         case readSettings
         case getCurrenciesAndRates
         case prepareItemsAndTransactions
-        case calculateBalance
+        case calculateBalanceAndBudget
         case calculateExpenses
         case currenciesFetched([Currency])
         case conversionRatesFetched([ConversionRate])
@@ -236,7 +238,7 @@ public struct WalletFeature {
                         await send(.readTransactions)
                     }
                 }
-            case .calculateBalance:
+            case .calculateBalanceAndBudget:
                 let balance: Double = state.accounts.reduce(0) {
                     if state.selectedCurrency.code == $1.currencyCode {
                         return $0 + $1.balance
@@ -246,6 +248,18 @@ public struct WalletFeature {
                     }
                 }
                 state.balance = balance
+                
+                let budget: Double = state.expenses.reduce(0) {
+                    if state.selectedCurrency.code == $1.currencyCode, let budget = $1.monthBudget {
+                        return $0 + budget
+                    } else if let budget = $1.monthBudget {
+                        let rate = ConversionRate.rate(for: $1.currencyCode, destinationCode: state.selectedCurrency.code, rates: state.rates)
+                        return $0 + budget * rate
+                    } else {
+                        return $0
+                    }
+                }
+                state.budget = budget
                 return .none
             case .calculateExpenses:
                 let expensesIds = state.expenses.map { $0.id }
@@ -308,7 +322,7 @@ public struct WalletFeature {
                 } catch {
                     analytics.logEvent(.error("WalletItem decoding error: \(error.localizedDescription)"))
                 }
-                return .send(.calculateBalance)
+                return .send(.calculateBalanceAndBudget)
             case let .saveWalletItemsToDB(items):
                 let models = items.map { WalletItemModel(model: $0) }
                 do {
@@ -362,7 +376,7 @@ public struct WalletFeature {
                 
                 return .run { [accounts = state.accounts, expenses = state.expenses] send in
                     await send(.saveWalletItemsToDB(accounts + expenses))
-                    await send(.calculateBalance)
+                    await send(.calculateBalanceAndBudget)
                 }
             case let .generateTestTransactions(currency):
                 let transactions = WalletTransaction.testTransactions(currency)
@@ -560,7 +574,7 @@ public struct WalletFeature {
                     let items = [updatedSource, updatedDestination].compactMap { $0 }
                     guard items.count > 0 else { return }
                     await send(.saveWalletItemsToDB(items))
-                    await send(.calculateBalance)
+                    await send(.calculateBalanceAndBudget)
                     await send(.calculateExpenses)
                 }
             case let .revertTransaction(transactionID):
@@ -628,7 +642,7 @@ public struct WalletFeature {
                     let items = [updatedSource, updatedDestination].compactMap { $0 }
                     guard items.count > 0 else { return }
                     await send(.saveWalletItemsToDB(items))
-                    await send(.calculateBalance)
+                    await send(.calculateBalanceAndBudget)
                     await send(.calculateExpenses)
                 }
             case let .saveTransactionToDB(transaction):
@@ -815,7 +829,7 @@ public struct WalletFeature {
                 return .run { send in
                     analytics.logEvent(.itemCreated(itemName: orderedItem.name, currency: orderedItem.currencyCode))
                     await send(.saveWalletItemsToDB([orderedItem]))
-                    await send(.calculateBalance)
+                    await send(.calculateBalanceAndBudget)
                 }
             case let .walletItemEdit(.updateWalletItem(item)):
                 switch item.type {
@@ -828,7 +842,7 @@ public struct WalletFeature {
                 }
                 return .run { send in
                     await send(.saveWalletItemsToDB([item]))
-                    await send(.calculateBalance)
+                    await send(.calculateBalanceAndBudget)
                 }
             case let .walletItemEdit(.deleteTransaction(transaction)):
                 return .run { send in

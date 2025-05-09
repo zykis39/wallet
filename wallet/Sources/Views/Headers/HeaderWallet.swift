@@ -9,6 +9,7 @@ import SwiftUI
 struct HeaderWallet: View {
     let balance: Double
     let expenses: Double
+    let budget: Double
     let currency: Currency
     
     let leftSystemImageName: String
@@ -17,9 +18,10 @@ struct HeaderWallet: View {
     let rightAction: () -> Void
     let imageSize: CGFloat
     
-    init(balance: Double, expenses: Double, currency: Currency, leftSystemImageName: String, rightSystemImageName: String, leftAction: @escaping () -> Void, rightAction: @escaping () -> Void, imageSize: CGFloat) {
+    init(balance: Double, expenses: Double, budget: Double, currency: Currency, leftSystemImageName: String, rightSystemImageName: String, leftAction: @escaping () -> Void, rightAction: @escaping () -> Void, imageSize: CGFloat) {
         self.balance = balance
         self.expenses = expenses
+        self.budget = budget
         self.currency = currency
         self.leftSystemImageName = leftSystemImageName
         self.rightSystemImageName = rightSystemImageName
@@ -29,6 +31,8 @@ struct HeaderWallet: View {
     }
     
     var body: some View {
+        let showBudget: Bool = budget > 0
+        
         HStack {
             Button {
                 leftAction()
@@ -45,6 +49,7 @@ struct HeaderWallet: View {
                 Text("Balance")
                     .opacity(0.54)
                 Text((CurrencyFormatter.formatter.string(for: balance) ?? "0") + " " + (currency.fixedSymbol))
+                    .font(showBudget ? .footnote : .body)
             }
             
             Spacer()
@@ -53,9 +58,21 @@ struct HeaderWallet: View {
                 Text("Expenses")
                     .opacity(0.54)
                 Text((CurrencyFormatter.formatter.string(for: expenses) ?? "0") + " " + (currency.fixedSymbol))
+                    .font(showBudget ? .footnote : .body)
             }
             
             Spacer()
+            
+            if showBudget {
+                VStack {
+                    Text("Planned")
+                        .opacity(0.54)
+                    Text((CurrencyFormatter.formatter.string(for: budget) ?? "0") + " " + (currency.fixedSymbol))
+                        .font(showBudget ? .footnote : .body)
+                }
+                
+                Spacer()
+            }
             
             Divider()
             Button {
@@ -67,6 +84,7 @@ struct HeaderWallet: View {
             }
         }
         .tint(.gray)
-        .padding()
+        .padding(.vertical, 8)
+        .padding(.horizontal, 8)
     }
 }

@@ -27,11 +27,11 @@ struct ArcShape : Shape {
     
     func path(in rect: CGRect) -> Path {
         var p = Path()
-        let centerX = rect.width / 2 - lineWidth / 8
-        let centerY = rect.height / 2 - lineWidth / 4
+        let centerX = rect.width / 2
+        let centerY = rect.height / 2
 
         p.addArc(center: CGPoint(x: centerX, y: centerY),
-                 radius: rect.width / 2 - lineWidth / 4,
+                 radius: rect.width / 2,
                  startAngle: .degrees(-90),
                  endAngle: .degrees(-90 + angle),
                  clockwise: false)
