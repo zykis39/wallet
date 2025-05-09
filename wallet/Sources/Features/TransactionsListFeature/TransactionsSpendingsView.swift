@@ -20,14 +20,14 @@ struct TransactionsSpendingsView: View {
     
     var body: some View {
         TabView(selection: $tabSelection) {
-            Tab(tabSelection.localized(),
+            Tab("Transactions".localized(),
                 systemImage: "chart.bar.horizontal.page.fill",
-                value: tabSelection.localized()) {
+                value: "Transactions".localized()) {
                 TransactionsListView(store: store)
             }
-            Tab(tabSelection.localized(),
+            Tab("Spendings".localized(),
                 systemImage: "chart.pie.fill",
-                value: tabSelection.localized()) {
+                value: "Spendings".localized()) {
                 SpendingsStatisticsView(store: scoped)
             }
         }
