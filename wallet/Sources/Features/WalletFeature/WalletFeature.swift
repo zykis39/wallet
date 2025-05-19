@@ -625,9 +625,13 @@ public struct WalletFeature {
                 
                 if let updatedSource, let sourceIndex {
                     state.accounts[sourceIndex] = updatedSource
+                } else {
+                    analytics.logEvent(.error("error, reverting transaction (possible account deletion) \(updatedSource?.name ?? "")"))
                 }
                 
-                if let updatedDestination, let destinationIndex, let destinationType {
+                if let updatedDestination,
+                    let destinationIndex,
+                    let destinationType {
                     switch destinationType {
                     case .account:
                         state.accounts[destinationIndex] = updatedDestination
@@ -636,6 +640,8 @@ public struct WalletFeature {
                         state.expenses[destinationIndex] = updatedDestination
                         break
                     }
+                } else {
+                    analytics.logEvent(.error("error, reverting transaction (possible expense deletion) \(updatedDestination?.name ?? "")"))
                 }
                 
                 return .run { [updatedSource, updatedDestination] send in
