@@ -113,7 +113,8 @@ public struct WalletFeature {
         case getCurrenciesAndRates
         case prepareItemsAndTransactions
         case calculateBalanceAndBudget
-        case calculateExpenses
+        case calculateMonthExpenses
+        case calculateExpensesBalance
         case currenciesFetched([Currency])
         case conversionRatesFetched([ConversionRate])
         case readWalletItems
@@ -261,7 +262,7 @@ public struct WalletFeature {
                 }
                 state.budget = budget
                 return .none
-            case .calculateExpenses:
+            case .calculateMonthExpenses:
                 let expensesIds = state.expenses.map { $0.id }
                 let monthExpenses: Double = state.transactions
                     .filter { expensesIds.contains($0.destinationID) }
@@ -276,6 +277,37 @@ public struct WalletFeature {
                     }
                 state.monthExpenses = monthExpenses
                 return .none
+            case .calculateExpensesBalance:
+                var zeroBalanceExpenses = state.expenses.map {
+                    WalletItem(id: $0.id,
+                               order: $0.order,
+                               type: $0.type,
+                               name: $0.name,
+                               icon: $0.icon,
+                               currencyCode: $0.currencyCode,
+                               balance: 0,
+                               monthBudget: $0.monthBudget)
+                }
+                
+                for transaction in state.transactions {
+                    guard let expenseIndex = zeroBalanceExpenses.firstIndex(where: { $0.id == transaction.destinationID }) else { continue }
+                    var expense = zeroBalanceExpenses[expenseIndex]
+                    let newBalance = expense.balance + transaction.amount * transaction.rate
+                    expense = WalletItem(id: expense.id,
+                                         order: expense.order,
+                                         type: expense.type,
+                                         name: expense.name,
+                                         icon: expense.icon,
+                                         currencyCode: expense.currencyCode,
+                                         balance: newBalance,
+                                         monthBudget: expense.monthBudget)
+                    zeroBalanceExpenses[expenseIndex] = expense
+                }
+                state.expenses = zeroBalanceExpenses
+                
+                return .run { [expenses = state.expenses] send in
+                    await send(.saveWalletItemsToDB(expenses))
+                }
             case let .currenciesFetched(currencies):
                 state.currencies = currencies
                 
@@ -304,7 +336,10 @@ public struct WalletFeature {
                 return .none
             case let .transactionsUpdated(transactions):
                 state.transactions = transactions
-                return .send(.calculateExpenses)
+                return .run { send in
+                    await send(.calculateMonthExpenses)
+                    await send(.calculateExpensesBalance)
+                }
             case let .accountsScrollPositionChanged(position):
                 state.accountsScrollPosition = position
                 return .none
@@ -575,7 +610,7 @@ public struct WalletFeature {
                     guard items.count > 0 else { return }
                     await send(.saveWalletItemsToDB(items))
                     await send(.calculateBalanceAndBudget)
-                    await send(.calculateExpenses)
+                    await send(.calculateMonthExpenses)
                 }
             case let .revertTransaction(transactionID):
                 guard let transaction = state.transactions.first(where: { $0.id == transactionID }) else { return .none }
@@ -649,7 +684,7 @@ public struct WalletFeature {
                     guard items.count > 0 else { return }
                     await send(.saveWalletItemsToDB(items))
                     await send(.calculateBalanceAndBudget)
-                    await send(.calculateExpenses)
+                    await send(.calculateMonthExpenses)
                 }
             case let .saveTransactionToDB(transaction):
                 do {
