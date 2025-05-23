@@ -3,6 +3,7 @@ import ComposableArchitecture
 
 struct WalletView: View {
     @Bindable var store: StoreOf<WalletFeature>
+    @Environment(\.scenePhase) var scenePhase
     
     public init(store: StoreOf<WalletFeature>) {
         self.store = store
@@ -94,6 +95,11 @@ struct WalletView: View {
                 WalletItemView(store: store, item: store.state.dragItem ?? .none, tag: "DragItem")
                     .position(x: store.state.draggingLocation.x,
                               y: store.state.draggingLocation.y)
+            }
+        }
+        .onChange(of: scenePhase) { oldValue, newValue in
+            if newValue == .active {
+                store.send(.resetDrag)
             }
         }
     }

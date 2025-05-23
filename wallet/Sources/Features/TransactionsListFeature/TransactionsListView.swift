@@ -125,12 +125,13 @@ struct TView: View {
         
         let source: WalletItem = items.first(where: { $0.id == transaction.sourceID }) ?? .none
         let destination: WalletItem = items.first(where: { $0.id == transaction.destinationID }) ?? .none
+        let isExpense = destination.type == .expenses
         
         TransactionCell(amount: transaction.representation(isIncome: false, currencies: currencies),
                         date: transaction.timestamp.formatted(date: .numeric, time: .omitted),
                         source: source.name,
                         destination: destination.name,
                         commentary: transaction.commentary,
-                        amountTextColor: .red)
+                        amountTextColor: isExpense ? .red : .secondary)
     }
 }

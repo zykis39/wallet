@@ -34,9 +34,9 @@ struct SpendingsStatisticsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                let s = abs(proxy.size.width - 48)
+                let s = abs(proxy.size.width - 96)
                 ZStack {
-                    PieChartsView(data: $store.chartSections.sending(\.chartSectionsChanged), animation: animation, size: proxy.size.width)
+                    PieChartsView(data: $store.chartSections.sending(\.chartSectionsChanged), animation: animation, size: s)
                     VStack {
                         Text("Total:")
                             .foregroundStyle(.secondary)
@@ -48,28 +48,30 @@ struct SpendingsStatisticsView: View {
                 .padding(.vertical, 16)
                 
                 if hasTransactions {
-                    Grid(alignment: .center) {
-                        Divider()
-                        ForEach(store.state.spendings, id: \.name) { item in
-                            GridRow {
-                                Text(LocalizedStringKey(item.name))
-                                Text((CurrencyFormatter.formatter.string(from: .init(value: item.percent * 100)) ?? "") + "%")
-                                Text((CurrencyFormatter.formatter.string(from: .init(value: item.expenses)) ?? "") + " " + item.currency.fixedSymbol)
-                            }
-                            .background {
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(item.color)
-                                    .padding(.horizontal, -10)
-                                    .padding(.vertical, -2)
-                            }
-                            .foregroundStyle(.white)
-                            
-                            if item != store.state.spendings.last {
-                                Divider()
+                    ScrollView(.vertical) {
+                        Grid(alignment: .center) {
+                            Divider()
+                            ForEach(store.state.spendings, id: \.name) { item in
+                                GridRow {
+                                    Text(LocalizedStringKey(item.name))
+                                    Text((CurrencyFormatter.formatter.string(from: .init(value: item.percent * 100)) ?? "") + "%")
+                                    Text((CurrencyFormatter.formatter.string(from: .init(value: item.expenses)) ?? "") + " " + item.currency.fixedSymbol)
+                                }
+                                .background {
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(item.color)
+                                        .padding(.horizontal, -10)
+                                        .padding(.vertical, -2)
+                                }
+                                .foregroundStyle(.white)
+                                
+                                if item != store.state.spendings.last {
+                                    Divider()
+                                }
                             }
                         }
+                        .animation(animation, value: store.state.spendings)
                     }
-                    .animation(animation, value: store.state.spendings)
                     
                     Spacer()
                 } else {
@@ -80,7 +82,6 @@ struct SpendingsStatisticsView: View {
                     Spacer()
                 }
             }
-            .padding()
             .navigationTitle("Expenses")
         }
     }

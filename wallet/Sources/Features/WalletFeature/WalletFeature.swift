@@ -130,6 +130,7 @@ public struct WalletFeature {
         case saveTransactionToDB(WalletTransaction)
         case transactionsUpdated([WalletTransaction])
         case dragModeChanged(DragMode)
+        case resetDrag
         
         case checkLocale
         case checkIfAppScoreCanBePresented
@@ -778,6 +779,11 @@ public struct WalletFeature {
                 case .reordering:
                     return .none
                 }
+            case .resetDrag:
+                state.draggingOffset = .zero
+                state.dragItem = nil
+                state.dropItem = nil
+                return .none
                 
                 // MARK: - App Score
             case .appScore:

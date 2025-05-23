@@ -34,6 +34,8 @@ struct TransactionView: View {
     }
     
     var body: some View {
+        let oneCurrency: Bool = store.state.source.currencyCode == store.state.destination.currencyCode
+        
         VStack(alignment: .trailing) {
             HeaderCancelConfirm(leftSystemImageName: "xmark.circle.fill",
                                 rightSystemImageName: "checkmark.circle.fill",
@@ -63,6 +65,7 @@ struct TransactionView: View {
                         self.amountInSourceCurrency = value
                         store?.send(.amountChanged(Double(value) ?? 0))
                         
+                        guard !oneCurrency else { return }
                         if restrictCurrencyChange {
                             guard let sourceAmount = Double(value),
                                   let destinationAmount = Double(amountInDestinationCurrency) else { return }
@@ -80,7 +83,7 @@ struct TransactionView: View {
                     .foregroundStyle(.secondary)
             }
             
-            if store.state.source.currencyCode != store.state.destination.currencyCode {
+            if !oneCurrency {
                 HStack {
                     TextField("", text: $amountInDestinationCurrency, selection: $destinationTextSelection, prompt: Text("0"))
                         .textSelection(.disabled)

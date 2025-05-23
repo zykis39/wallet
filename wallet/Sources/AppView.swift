@@ -12,6 +12,12 @@ struct AppView: View {
     
     init(store: StoreOf<WalletFeature>) {
         self.store = store
+
+        UITabBar.appearance().isTranslucent = false
+        UITabBar.appearance().barTintColor = UIColor(named: "Secondary")
+        UINavigationBar.appearance().isTranslucent = false
+        UINavigationBar.appearance().barTintColor = UIColor(named: "Secondary")
+        
         store.send(.start)
     }
     
