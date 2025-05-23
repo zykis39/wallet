@@ -31,7 +31,6 @@ struct AboutApplicationView: View {
         "Author: Artem Zaitsev",
         "Telegram: @zykis",
         "WhatsApp: +7(915)369-50-22",
-        "Sources: https://github.com/zykis39/wallet",
     ]
     
     var body: some View {
