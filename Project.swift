@@ -29,6 +29,7 @@ let project = Project(
                 .external(name: "FirebaseCrashlytics"),
                 .external(name: "Alamofire"),
                 .external(name: "Atlantis"),
+                .external(name: "AppsFlyerLib"),
             ],
             settings: .settings(base: [
                 "OTHER_LDFLAGS": ["-ObjC"],

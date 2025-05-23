@@ -6,6 +6,7 @@
 //
 import FirebaseAnalytics
 import FirebaseCrashlytics
+import AppsFlyerLib
 
 public enum Event {
     case error(String)
@@ -27,28 +28,64 @@ final class FirebaseAnalyticsClient: AnalyticsClient {
     func logEvent(_ event: Event) {
         switch event {
         case let .error(message):
-            Analytics.logEvent("error", parameters: ["message": message])
+            let name = "error"
+            let parameters = ["message": message]
+            
+            Analytics.logEvent(name, parameters: parameters)
+            AppsFlyerLib.shared().logEvent(name, withValues: parameters)
             Crashlytics.crashlytics().log(message)
         case let .appStarted(firstLaunch):
-            Analytics.logEvent("AppStarted", parameters: ["firstLaunch": firstLaunch])
+            let name = "AppStarted"
+            let parameters = ["firstLaunch": firstLaunch]
+            
+            Analytics.logEvent(name, parameters: parameters)
+            AppsFlyerLib.shared().logEvent(name, withValues: parameters)
         case let .draggingStopped(source, destination):
-            Analytics.logEvent("DraggingStopped", parameters: ["source": source,
-                                                               "destination": destination])
+            let name = "DraggingStopped"
+            let parameters = ["source": source,
+                              "destination": destination]
+            
+            Analytics.logEvent(name, parameters: parameters)
+            AppsFlyerLib.shared().logEvent(name, withValues: parameters)
         case let .itemTapped(itemName):
-            Analytics.logEvent("ItemTapped", parameters: ["itemName": itemName])
+            let name = "ItemTapped"
+            let parameters = ["itemName": itemName]
+            
+            Analytics.logEvent(name, parameters: parameters)
+            AppsFlyerLib.shared().logEvent(name, withValues: parameters)
         case let .itemCreated(itemName, currency):
-            Analytics.logEvent("ItemCreated", parameters: ["itemName": itemName,
-                                                           "currency": currency])
+            let name = "ItemCreated"
+            let parameters = ["itemName": itemName,
+                              "currency": currency]
+            
+            Analytics.logEvent(name, parameters: parameters)
+            AppsFlyerLib.shared().logEvent(name, withValues: parameters)
         case let .transactionCreated(source, destination, amount):
-            Analytics.logEvent("TransactionCreated", parameters: ["source": source,
-                                                                  "destination": destination,
-                                                                  "amount": amount])
+            let name = "TransactionCreated"
+            let parameters = ["source": source,
+                              "destination": destination,
+                              "amount": amount] as [String : Any]
+            
+            Analytics.logEvent(name, parameters: parameters)
+            AppsFlyerLib.shared().logEvent(name, withValues: parameters)
         case .aboutScreenTransition:
-            Analytics.logEvent("AboutScreenTransition", parameters: nil)
+            let name = "AboutScreenTransition"
+            let parameters: [String: Any]? = nil
+            
+            Analytics.logEvent(name, parameters: parameters)
+            AppsFlyerLib.shared().logEvent(name, withValues: parameters)
         case .scoreScreenTransition:
-            Analytics.logEvent("ScoreScreenTransition", parameters: nil)
+            let name = "ScoreScreenTransition"
+            let parameters: [String: Any]? = nil
+            
+            Analytics.logEvent(name, parameters: parameters)
+            AppsFlyerLib.shared().logEvent(name, withValues: parameters)
         case .expensesStatisticsScreenTransition:
-            Analytics.logEvent("ExpensesStatisticsScreenTransition", parameters: nil)
+            let name = "ExpensesStatisticsScreenTransition"
+            let parameters: [String: Any]? = nil
+            
+            Analytics.logEvent(name, parameters: parameters)
+            AppsFlyerLib.shared().logEvent(name, withValues: parameters)
         }
     }
 }

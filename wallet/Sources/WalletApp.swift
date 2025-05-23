@@ -2,6 +2,7 @@ import SwiftUI
 import ComposableArchitecture
 import FirebaseCore
 import SwiftData
+import AppsFlyerLib
 
 #if DEBUG
 import Atlantis
@@ -12,6 +13,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         FirebaseApp.configure()
         return true
+    }
+    
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        AppsFlyerLib.shared().start()
     }
 }
 
@@ -31,6 +36,8 @@ struct WalletApp: App {
     init() {
         #if DEBUG
         Atlantis.start()
+        AppsFlyerLib.shared().appsFlyerDevKey = "HtE7sJcX3FGUzJFbeVAkvJ"
+        AppsFlyerLib.shared().appleAppID = "6744027421"
         #endif
     }
     
