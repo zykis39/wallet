@@ -161,45 +161,127 @@ extension WalletTransaction {
 }
 
 extension WalletItem {
-    static let accountsSystemIconNames: [String] = [
-        "creditcard",
-        "wallet.bifold",
-        "banknote",
-        "rublesign.bank.building.fill",
-        "eurosign.bank.building.fill",
-        "dollarsign.bank.building.fill",
-        "dollarsign",
+    enum ExpenseCategory: String, Hashable, CaseIterable {
+        case finances, transport, shopping, food, home, healthcare, beauty, entertainments, services, sport
+    }
+    
+    static let accountsSystemIconNames: [ExpenseCategory: [String]] = [
+        .finances: [
+            "creditcard",
+            "wallet.bifold",
+            "banknote",
+            "rublesign.bank.building.fill",
+            "eurosign.bank.building.fill",
+            "dollarsign.bank.building.fill",
+            "dollarsign",
+            "bitcoinsign.circle.fill",
+            "chart.bar.xaxis.ascending.badge.clock",
+        ]
     ]
-    static let expensesSystemIconNames: [String] = [
-        // home
-        "house",
-        "house.fill",
+    
+    
+    static let expensesSystemIconNames: [ExpenseCategory: [String]] = [
+        .finances: [
+            "creditcard",
+            "wallet.bifold",
+            "banknote",
+            "rublesign.bank.building.fill",
+            "eurosign.bank.building.fill",
+            "dollarsign.bank.building.fill",
+            "dollarsign",
+            "bitcoinsign.circle.fill",
+            "chart.bar.xaxis.ascending.badge.clock",
+        ],
         
-        // food
-        "carrot.fill",
-        "fork.knife",
+        .transport: [
+            "fuelpump.fill",
+            "car.badge.gearshape.fill",
+            "car",
+            "bus.fill",
+            "motorcycle.fill",
+            "scooter",
+            "airplane",
+            "airplane.departure",
+        ],
         
-        // transport
-        "car",
-        "bus.fill",
-        "airplane",
+        .shopping: [
+            "cart.fill",
+            "handbag",
+            "camera.fill",
+            "tshirt.fill",
+            "gamecontroller.fill",
+            "smartphone",
+            "macbook",
+            "gift.fill",
+            "shoe.fill",
+            "washer.fill",
+            "applewatch",
+        ],
         
-        // healthcare
-        "figure.run",
-        "cross",
+        .food: [
+            "wineglass.fill",
+            "fish.fill",
+            "carrot.fill",
+            "fork.knife",
+            "cup.and.saucer.fill",
+            "cup.and.heat.waves.fill",
+        ],
         
-        // services
-        "network",
-        "cellularbars",
+        .home: [
+            "air.conditioner.horizontal.fill",
+            "paintbrush.fill",
+            "key.fill",
+            "pc",
+            "hammer.fill",
+            "toilet.fill",
+            "house",
+            "house.fill",
+        ],
         
-        // shopping
-        "handbag",
+        .healthcare: [
+            "figure.run",
+            "cross",
+            "heart.text.clipboard.fill",
+            "bolt.heart.fill",
+            "heart.fill",
+            "figure.mind.and.body",
+            "stethoscope",
+            "syringe.fill",
+            "pill.fill",
+            "pills.fill",
+        ],
         
-        // entertainment
-        "party.popper",
-        "popcorn",
-        "movieclapper",
-        "birthday.cake",
+        .beauty: [
+            "eyebrow",
+        ],
+        
+        .entertainments: [
+            "party.popper",
+            "popcorn",
+            "movieclapper",
+            "birthday.cake",
+            "music.note",
+            "music.microphone",
+        ],
+        
+        .services: [
+            "phone.badge.waveform.fill",
+            "network",
+            "wifi",
+            "wifi.circle.fill",
+            "cellularbars",
+            "lightbulb.max.fill",
+            "drop.fill",
+        ],
+        
+        .sport: [
+            "basketball.fill",
+            "bicycle",
+            "figure.skiing.downhill",
+            "figure.hiking",
+            "figure.martial.arts",
+            "figure.strengthtraining.traditional"
+        ],
     ]
 }
 

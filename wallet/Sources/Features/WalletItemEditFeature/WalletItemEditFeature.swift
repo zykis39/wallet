@@ -66,9 +66,9 @@ public struct WalletItemEditFeature {
                 let randomIcon: String = {
                     switch type {
                     case .account:
-                        WalletItem.accountsSystemIconNames.randomElement() ?? ""
+                        WalletItem.accountsSystemIconNames[.finances]?.randomElement() ?? ""
                     case .expenses:
-                        WalletItem.expensesSystemIconNames.randomElement() ?? ""
+                        WalletItem.expensesSystemIconNames[.food]?.randomElement() ?? ""
                     }
                 }()
                 

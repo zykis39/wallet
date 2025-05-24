@@ -13,7 +13,7 @@ struct IconSelectionView: View {
         self.store = store
     }
     
-    var icons: [String] {
+    var icons: [WalletItem.ExpenseCategory: [String]] {
         switch store.item.type {
         case .account:
             WalletItem.accountsSystemIconNames
@@ -22,21 +22,38 @@ struct IconSelectionView: View {
         }
     }
     
+    var categories: [WalletItem.ExpenseCategory] {
+        switch store.item.type {
+        case .account:
+            return [.finances]
+        case .expenses:
+            return WalletItem.ExpenseCategory.allCases
+        }
+    }
+    
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 64, maximum: 80))]) {
-                ForEach(icons, id: \.self) { icon in
-                    ZStack {
-                        Circle()
-                            .fill(Color.walletItemColor(for: store.item.type))
-                        Image(systemName: icon)
-                            .resizable()
-                            .foregroundStyle(.white)
-                            .padding(16)
-                            .clipShape(.circle)
-                            .aspectRatio(contentMode: .fit)
-                    }.onTapGesture {
-                        store.send(.iconSelected(icon))
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 64, maximum: 80), spacing: 24)],
+                      alignment: .leading,
+                      spacing: 24) {
+                ForEach(categories, id: \.self) { category in
+                    Section(header:
+                                Text(category.rawValue.capitalized.localized()).foregroundStyle(.secondary)
+                    ) {
+                        ForEach(icons[category, default: []], id: \.self) { icon in
+                            ZStack {
+                                Circle()
+                                    .fill(Color.walletItemColor(for: store.item.type))
+                                Image(systemName: icon)
+                                    .resizable()
+                                    .foregroundStyle(.white)
+                                    .padding(16)
+                                    .clipShape(.circle)
+                                    .aspectRatio(contentMode: .fit)
+                            }.onTapGesture {
+                                store.send(.iconSelected(icon))
+                            }
+                        }
                     }
                 }
             }
