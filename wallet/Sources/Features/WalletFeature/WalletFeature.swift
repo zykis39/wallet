@@ -842,9 +842,7 @@ public struct WalletFeature {
                 
                 // MARK: - TransactionsList
             case let .transactionsList(.deleteTransaction(id)):
-                state.transactions = state.transactions.filter { $0.id != id }
                 return .send(.deleteTransaction(id))
-                
             case .transactionsList:
                 return .none
                 
