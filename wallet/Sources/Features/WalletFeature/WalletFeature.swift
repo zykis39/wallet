@@ -36,6 +36,7 @@ public struct WalletFeature {
         var transaction: TransactionFeature.State
         var walletItemEdit: WalletItemEditFeature.State
         var spendings: SpendingsFeature.State
+        var transactionsList: TransactionsListFeature.State
         var appScore: AppScoreFeature.State
         
         // app score
@@ -91,6 +92,7 @@ public struct WalletFeature {
         static let initial: Self = .init(transaction: .initial,
                                          walletItemEdit: .initial,
                                          spendings: .initial,
+                                         transactionsList: .initial,
                                          appScore: .initial,
                                          balance: 0,
                                          monthExpenses: 0,
@@ -105,6 +107,7 @@ public struct WalletFeature {
         case transaction(TransactionFeature.Action)
         case walletItemEdit(WalletItemEditFeature.Action)
         case spendings(SpendingsFeature.Action)
+        case transactionsList(TransactionsListFeature.Action)
         case appScore(AppScoreFeature.Action)
         
         // internal
@@ -167,6 +170,9 @@ public struct WalletFeature {
         }
         Scope(state: \.spendings, action: \.spendings) {
             SpendingsFeature()
+        }
+        Scope(state: \.transactionsList, action: \.transactionsList) {
+            TransactionsListFeature()
         }
         Scope(state: \.appScore, action: \.appScore) {
             AppScoreFeature()
@@ -740,8 +746,53 @@ public struct WalletFeature {
                     analytics.logEvent(.aboutScreenTransition)
                 }
             case .presentSpendings:
-                return .run { [period = state.spendings.period] send in
+                let items = [state.accounts + state.expenses].flatMap { $0 }
+                var transactions: [TransactionsListFeature.State.Period: [WalletTransaction]] = [:]
+                
+                let todayTransactions = state.transactions
+                    .filter { $0.timestamp.isEqual(to: .now, toGranularity: .day) }
+                    .sorted(by: { $0.timestamp > $1.timestamp })
+                
+                let yesterdayTransactions = state.transactions
+                    .filter { t in
+                        Calendar.current.isDateInYesterday(t.timestamp) &&
+                        !todayTransactions.contains(where: { today in today.id == t.id })
+                    }
+                    .sorted(by: { $0.timestamp > $1.timestamp })
+                let weekTransactions = state.transactions
+                    .filter { $0.timestamp.isEqual(to: .now, toGranularity: .weekOfYear) }
+                    .filter { t in
+                        !todayTransactions.contains(where: { today in today.id == t.id }) &&
+                        !yesterdayTransactions.contains(where: { today in today.id == t.id })
+                    }
+                    .sorted(by: { $0.timestamp > $1.timestamp })
+                let monthTransactions = state.transactions
+                    .filter { $0.timestamp.isEqual(to: .now, toGranularity: .month) }
+                    .filter { t in
+                        !todayTransactions.contains(where: { today in today.id == t.id }) &&
+                        !yesterdayTransactions.contains(where: { today in today.id == t.id }) &&
+                        !weekTransactions.contains(where: { today in today.id == t.id })
+                    }
+                    .sorted(by: { $0.timestamp > $1.timestamp })
+                let allTransactions = state.transactions
+                    .filter { $0.timestamp.isEqual(to: .now, toGranularity: .month) }
+                    .filter { t in
+                        !todayTransactions.contains(where: { today in today.id == t.id }) &&
+                        !yesterdayTransactions.contains(where: { today in today.id == t.id }) &&
+                        !weekTransactions.contains(where: { today in today.id == t.id }) &&
+                        !monthTransactions.contains(where: { today in today.id == t.id })
+                    }
+                    .sorted(by: { $0.timestamp > $1.timestamp })
+                
+                transactions[.today] = todayTransactions
+                transactions[.yesterday] = yesterdayTransactions
+                transactions[.thisWeek] = weekTransactions
+                transactions[.thisMonth] = monthTransactions
+                transactions[.all] = allTransactions
+                
+                return .run { [period = state.spendings.period, transactions, items, currencies = state.currencies] send in
                     await send(.spendings(.recalculateAndPresentSpendings(period)))
+                    await send(.transactionsList(.presentTransactionsList(transactions, items, currencies)))
                 }
             case let .dragModeChanged(dragMode):
                 state.dragMode = dragMode
@@ -787,6 +838,14 @@ public struct WalletFeature {
                 
                 // MARK: - App Score
             case .appScore:
+                return .none
+                
+                // MARK: - TransactionsList
+            case let .transactionsList(.deleteTransaction(id)):
+                state.transactions = state.transactions.filter { $0.id != id }
+                return .send(.deleteTransaction(id))
+                
+            case .transactionsList:
                 return .none
                 
                 // MARK: - Spendings

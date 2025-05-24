@@ -44,11 +44,11 @@ struct PieChartsView: View {
     }
 }
 
-#Preview {
-    PieChartsView(data:
-        Binding.constant([
-            PieChartSection(name: "Cafe", angle: 200, middleAngle: 100-90, icon: "fork.knife", color: .blue),
-            PieChartSection(name: "Groceries", angle: 160, middleAngle: 280-90, icon: "carrot.fill", color: .green)
-        ]),
-                  animation: .easeInOut, size: 360)
-}
+//#Preview {
+//    PieChartsView(data:
+//        Binding.constant([
+//            PieChartSection(name: "Cafe", angle: 200, middleAngle: 100-90, icon: "fork.knife", color: .blue),
+//            PieChartSection(name: "Groceries", angle: 160, middleAngle: 280-90, icon: "carrot.fill", color: .green)
+//        ]),
+//                  animation: .easeInOut, size: 360)
+//}

@@ -1,5 +1,5 @@
 //
-//  SpendingsStatisticsView.swift
+//  SpendingsView.swift
 //  wallet
 //
 //  Created by Артём Зайцев on 01.04.2025.
@@ -8,7 +8,7 @@
 import ComposableArchitecture
 import SwiftUI
 
-struct SpendingsStatisticsView: View {
+struct SpendingsView: View {
     @Bindable var store: StoreOf<SpendingsFeature>
     let animation = Animation.easeInOut(duration: 0.3)
     
