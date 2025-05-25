@@ -231,10 +231,12 @@ public struct WalletFeature {
                 if !wasLaunchedBefore {
                     appStorage.set(true, forKey: AppStorageKey.wasLaunchedBefore)
                 }
+                let currencyCode = state.selectedCurrency.code
+                let locale = state.selectedLocale.identifier
                 
                 return .run { [currencies = state.currencies] send in
                     if !wasLaunchedBefore {
-                        analytics.logEvent(.appStarted(firstLaunch: !wasLaunchedBefore))
+                        analytics.logEvent(.appStarted(firstLaunch: !wasLaunchedBefore, currencyCode: currencyCode, locale: locale))
                         let currency = CurrencyManager.shared.defaultCurrency(for: .current, from: currencies)
                         
                         await send(.generateDefaultWalletItems(currency))
@@ -536,8 +538,8 @@ public struct WalletFeature {
                     
                     guard let dragItem, let dropItem else { return .none }
                     return .run { [rates = state.rates] send in
-                        analytics.logEvent(.draggingStopped(source: dragItem.name, destination: dropItem.name))
                         let rate = ConversionRate.rate(for: dragItem.currencyCode, destinationCode: dropItem.currencyCode, rates: rates)
+                        analytics.logEvent(.transactionScreenTransition(source: dragItem.name, destination: dropItem.name, rate: rate))
                         
                         await send(.transaction(.onItemDropped(dragItem, dropItem, rate, currencies)))
                     }
@@ -553,7 +555,7 @@ public struct WalletFeature {
                 
                 return .run { [currencies = state.currencies, rates = state.rates, items = state.accounts + state.expenses] send in
                     await send(.walletItemEdit(.presentItem(item, items, transactions, currencies, rates)))
-                    analytics.logEvent(.itemTapped(itemName: item.name))
+                    analytics.logEvent(.itemTapped(name: item.name))
                 }
             case let .applyTransaction(transaction):
                 var destinationType: WalletItem.WalletItemType?
@@ -879,9 +881,11 @@ public struct WalletFeature {
                 
                 return .run { send in
                     if let source, let destination {
-                        analytics.logEvent(.transactionCreated(source: source.name,
-                                                               destination: destination.name,
-                                                               amount: transaction.amount))
+                        analytics.logEvent(
+                            .transactionCreated(source: source.name,
+                                                destination: destination.name,
+                                                amount: transaction.amount,
+                                                rate: transaction.rate))
                     }
                     await send(.applyTransaction(transaction))
                     await send(.saveTransactionToDB(transaction))
@@ -892,8 +896,13 @@ public struct WalletFeature {
                 
                 // MARK: - WalletItemEdit
             case let .walletItemEdit(.deleteWalletItem(id, deleteTransactions)):
+                let item = [state.accounts + state.expenses].flatMap { $0 }.first(where: { $0.id == id })
                 // remove related transactions
                 let transactionsToRemove = deleteTransactions ? state.transactions.filter { $0.sourceID == id || $0.destinationID == id } : []
+                
+                analytics.logEvent(.itemDeleted(name: item?.name ?? "",
+                                                hasTransactions: !transactionsToRemove.isEmpty,
+                                                deleteTransactions: deleteTransactions))
                 
                 return .run { [transactionsToRemove] send in
                     for t in transactionsToRemove {
@@ -931,7 +940,7 @@ public struct WalletFeature {
                     state.expenses.append(orderedItem)
                 }
                 return .run { send in
-                    analytics.logEvent(.itemCreated(itemName: orderedItem.name, currency: orderedItem.currencyCode))
+                    analytics.logEvent(.itemCreated(name: orderedItem.name, icon: orderedItem.icon, currency: orderedItem.currencyCode))
                     await send(.saveWalletItemsToDB([orderedItem]))
                     await send(.calculateBalanceAndBudget)
                 }
@@ -949,6 +958,14 @@ public struct WalletFeature {
                     await send(.calculateBalanceAndBudget)
                 }
             case let .walletItemEdit(.deleteTransaction(transaction)):
+                let items = [state.accounts + state.expenses].flatMap { $0 }
+                if let source = items.first(where: { $0.id == transaction.sourceID }),
+                   let destination = items.first(where: { $0.id == transaction.destinationID }) {
+                    analytics.logEvent(.transactionDeleted(source: source.name,
+                                                           destination: destination.name, amount: transaction.amount,
+                                                           rate: transaction.rate))
+                }
+                
                 return .run { send in
                     await send(.deleteTransaction(transaction.id))
                 }

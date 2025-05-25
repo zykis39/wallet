@@ -47,6 +47,7 @@ public struct WalletItemEditFeature {
         case showAlertChanged(Bool)
     }
     
+    @Dependency(\.analytics) var analytics
     public var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {
@@ -118,6 +119,10 @@ public struct WalletItemEditFeature {
                 return .none
             case let .balanceChanged(balance):
                 let item = state.item
+                analytics.logEvent(.itemBalanceChanged(name: item.name,
+                                                       oldBalance: item.balance,
+                                                       newBalance: balance))
+                
                 let editedItem = WalletItem(id: item.id,
                                             order: item.order,
                                             type: item.type,
@@ -130,6 +135,10 @@ public struct WalletItemEditFeature {
                 return .none
             case let .budgetChanged(budget):
                 let item = state.item
+                analytics.logEvent(.itemBudgetChanged(name: item.name,
+                                                      oldBudget: item.monthBudget,
+                                                      newBudget: budget))
+                
                 let editedItem = WalletItem(id: item.id,
                                             order: item.order,
                                             type: item.type,
@@ -142,6 +151,9 @@ public struct WalletItemEditFeature {
                 return .none
             case let .currencyCodeChanged(code):
                 let item = state.item
+                analytics.logEvent(.itemCurrencyChanged(name: item.name,
+                                                        oldCurrency: item.currencyCode,
+                                                        newCurrency: code))
                 let editedItem = WalletItem(id: item.id,
                                             order: item.order,
                                             type: item.type,
@@ -153,10 +165,16 @@ public struct WalletItemEditFeature {
                 state.item = editedItem
                 return .none
             case let .iconSelectionPresentedChanged(presented):
+                if presented {
+                    analytics.logEvent(.iconSelectionScreenTransition(item: state.item.name))
+                }
                 state.iconSelectionPresented = presented
                 return .none
             case let .iconSelected(icon):
                 let item = state.item
+                analytics.logEvent(.itemIconChanged(name: item.name,
+                                                    oldIcon: item.icon,
+                                                    newIcon: icon))
                 let editedItem = WalletItem(id: item.id,
                                             order: item.order,
                                             type: item.type,
