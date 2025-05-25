@@ -309,7 +309,7 @@ extension Spending {
         let overallExpenses: Double = expensesIDs.values.reduce(0) { $0 + $1 }
         /// sorting by UUID instead of spendings value to prevent
         /// PieChart animation breaking due to items reordering
-        let items = expensesIDs.sorted { $0.key > $1.key }.enumerated().compactMap { (index, item) -> Spending? in
+        let items = expensesIDs.sorted { $0.value > $1.value }.enumerated().compactMap { (index, item) -> Spending? in
             guard let walletItem = expenses.first(where: { $0.id == item.key }) else { return nil }
             let percent = item.value / overallExpenses
             return Spending(

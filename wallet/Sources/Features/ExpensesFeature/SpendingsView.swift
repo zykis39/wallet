@@ -50,27 +50,23 @@ struct SpendingsView: View {
                 if hasTransactions {
                     ScrollView(.vertical) {
                         Grid(alignment: .center) {
-                            Divider()
                             ForEach(store.state.spendings, id: \.name) { item in
+                                Divider()
                                 GridRow {
+                                    SmallColorView(color: item.color)
                                     Text(LocalizedStringKey(item.name))
+                                        .gridColumnAlignment(.leading)
                                     Text((CurrencyFormatter.formatter.string(from: .init(value: item.percent * 100)) ?? "") + "%")
+                                        .gridColumnAlignment(.trailing)
                                     Text((CurrencyFormatter.formatter.string(from: .init(value: item.expenses)) ?? "") + " " + item.currency.fixedSymbol)
+                                        .gridColumnAlignment(.trailing)
                                 }
-                                .background {
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(item.color)
-                                        .padding(.horizontal, -10)
-                                        .padding(.vertical, -2)
-                                }
-                                .foregroundStyle(.white)
-                                
-                                if item != store.state.spendings.last {
-                                    Divider()
-                                }
+                                .foregroundStyle(.secondary)
+                                Divider()
                             }
                         }
                         .animation(animation, value: store.state.spendings)
+                        .padding(.horizontal, 24)
                     }
                     
                     Spacer()
@@ -84,5 +80,16 @@ struct SpendingsView: View {
             }
             .navigationTitle("Expenses")
         }
+    }
+}
+
+struct SmallColorView: View {
+    let color: Color
+    
+    var body: some View {
+        color
+            .frame(width: 20, height: 20)
+//            .clipShape(.rect)
+            .cornerRadius(8)
     }
 }
