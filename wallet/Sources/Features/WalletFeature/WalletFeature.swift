@@ -59,6 +59,7 @@ public struct WalletFeature {
         var selectedLocale: Locale = .current
         var selectedCurrency: Currency = .USD
         var isReorderButtonHidden: Bool = true
+        var expensesGranularity: ExpensesGranularity = .month
         
         var currencies: [Currency] = [.USD]
         var rates: [ConversionRate] = []
@@ -116,7 +117,7 @@ public struct WalletFeature {
         case getCurrenciesAndRates
         case prepareItemsAndTransactions
         case calculateBalanceAndBudget
-        case calculateMonthExpenses
+        case calculateExpenses
         case calculateExpensesBalance
         case currenciesFetched([Currency])
         case conversionRatesFetched([ConversionRate])
@@ -271,11 +272,16 @@ public struct WalletFeature {
                 }
                 state.budget = budget
                 return .none
-            case .calculateMonthExpenses:
+            case .calculateExpenses:
                 let expensesIds = state.expenses.map { $0.id }
                 let monthExpenses: Double = state.transactions
                     .filter { expensesIds.contains($0.destinationID) }
-                    .filter { $0.timestamp.isEqual(to: .now, toGranularity: .month) }
+                    .filter {
+                        switch state.expensesGranularity {
+                        case .month: $0.timestamp.isEqual(to: .now, toGranularity: .month)
+                        case .week: $0.timestamp.isEqual(to: .now, toGranularity: .weekOfMonth)
+                        }
+                    }
                     .reduce(0) {
                         if $1.currencyCode == state.selectedCurrency.code {
                             return $0 + $1.amount
@@ -298,7 +304,13 @@ public struct WalletFeature {
                                monthBudget: $0.monthBudget)
                 }
                 
-                for transaction in state.transactions {
+                let currentPeriodTransactions = state.transactions.filter {
+                    switch state.expensesGranularity {
+                    case .week: $0.timestamp.isEqual(to: .now, toGranularity: .weekOfMonth)
+                    case .month: $0.timestamp.isEqual(to: .now, toGranularity: .month)
+                    }
+                }
+                for transaction in currentPeriodTransactions {
                     guard let expenseIndex = zeroBalanceExpenses.firstIndex(where: { $0.id == transaction.destinationID }) else { continue }
                     var expense = zeroBalanceExpenses[expenseIndex]
                     let newBalance = expense.balance + transaction.amount * transaction.rate
@@ -346,7 +358,7 @@ public struct WalletFeature {
             case let .transactionsUpdated(transactions):
                 state.transactions = transactions
                 return .run { send in
-                    await send(.calculateMonthExpenses)
+                    await send(.calculateExpenses)
                     await send(.calculateExpensesBalance)
                 }
             case let .accountsScrollPositionChanged(position):
@@ -619,7 +631,7 @@ public struct WalletFeature {
                     guard items.count > 0 else { return }
                     await send(.saveWalletItemsToDB(items))
                     await send(.calculateBalanceAndBudget)
-                    await send(.calculateMonthExpenses)
+                    await send(.calculateExpenses)
                 }
             case let .revertTransaction(transactionID):
                 guard let transaction = state.transactions.first(where: { $0.id == transactionID }) else { return .none }
@@ -693,7 +705,7 @@ public struct WalletFeature {
                     guard items.count > 0 else { return }
                     await send(.saveWalletItemsToDB(items))
                     await send(.calculateBalanceAndBudget)
-                    await send(.calculateMonthExpenses)
+                    await send(.calculateExpenses)
                 }
             case let .saveTransactionToDB(transaction):
                 do {
@@ -973,5 +985,12 @@ public struct WalletFeature {
                 return .none
             }
         }
+    }
+}
+
+extension WalletFeature.State {
+    
+    enum ExpensesGranularity {
+        case week, month
     }
 }
