@@ -10,40 +10,48 @@ import SwiftUI
 
 struct TransactionsListView: View {
     @Bindable var store: StoreOf<TransactionsListFeature>
+    var hasTransactions: Bool {
+        !store.state.transactions.allSatisfy { $0.value.isEmpty }
+    }
     
     var body: some View {
         VStack {
-            List {
-                let items = store.state.items
-                let currencies = store.state.currencies
-                TSection(name: "Today",
-                         transactions: store.state.transactions[.today, default: []],
-                         items: items,
-                         currencies: currencies,
-                         store: store)
-                TSection(name: "Yesterday",
-                         transactions: store.state.transactions[.yesterday, default: []],
-                         items: items,
-                         currencies: currencies,
-                         store: store)
-                TSection(name: "This week",
-                         transactions: store.state.transactions[.thisWeek, default: []],
-                         items: items,
-                         currencies: currencies,
-                         store: store)
-                TSection(name: "This month",
-                         transactions: store.state.transactions[.thisMonth, default: []],
-                         items: items,
-                         currencies: currencies,
-                         store: store)
-                TSection(name: "All",
-                         transactions: store.state.transactions[.all, default: []],
-                         items: items,
-                         currencies: currencies,
-                         store: store)
+            if hasTransactions {
+                List {
+                    let items = store.state.items
+                    let currencies = store.state.currencies
+                    TSection(name: "Today",
+                             transactions: store.state.transactions[.today, default: []],
+                             items: items,
+                             currencies: currencies,
+                             store: store)
+                    TSection(name: "Yesterday",
+                             transactions: store.state.transactions[.yesterday, default: []],
+                             items: items,
+                             currencies: currencies,
+                             store: store)
+                    TSection(name: "This week",
+                             transactions: store.state.transactions[.thisWeek, default: []],
+                             items: items,
+                             currencies: currencies,
+                             store: store)
+                    TSection(name: "This month",
+                             transactions: store.state.transactions[.thisMonth, default: []],
+                             items: items,
+                             currencies: currencies,
+                             store: store)
+                    TSection(name: "All",
+                             transactions: store.state.transactions[.all, default: []],
+                             items: items,
+                             currencies: currencies,
+                             store: store)
+                }
+                .listStyle(.plain)
+                .tint(.black)
+            } else {
+                TransactionsZeroScreen()
+                Spacer()
             }
-            .listStyle(.plain)
-            .tint(.black)
         }
         .navigationTitle("Transactions")
     }

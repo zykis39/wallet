@@ -34,20 +34,21 @@ struct SpendingsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                let s = abs(proxy.size.width - 96)
-                ZStack {
-                    PieChartsView(data: $store.chartSections.sending(\.chartSectionsChanged), animation: animation, size: s)
-                    VStack {
-                        Text("Total:")
-                            .foregroundStyle(.secondary)
-                        Text((CurrencyFormatter.formatter.string(from: .init(value: total)) ?? "") + " " + store.state.currency.fixedSymbol)
-                            .font(.system(size: 24))
-                    }
-                }
-                .frame(width: s, height: s)
-                .padding(.vertical, 16)
                 
                 if hasTransactions {
+                    let s = abs(proxy.size.width - 96)
+                    ZStack {
+                        PieChartsView(data: $store.chartSections.sending(\.chartSectionsChanged), animation: animation, size: s)
+                        VStack {
+                            Text("Total:")
+                                .foregroundStyle(.secondary)
+                            Text((CurrencyFormatter.formatter.string(from: .init(value: total)) ?? "") + " " + store.state.currency.fixedSymbol)
+                                .font(.system(size: 24))
+                        }
+                    }
+                    .frame(width: s, height: s)
+                    .padding(.vertical, 16)
+                    
                     ScrollView(.vertical) {
                         Grid(alignment: .center) {
                             ForEach(store.state.spendings, id: \.name) { item in
@@ -68,14 +69,9 @@ struct SpendingsView: View {
                         .animation(animation, value: store.state.spendings)
                         .padding(.horizontal, 24)
                     }
-                    
                     Spacer()
                 } else {
-                    Spacer()
-                    Text("Statistics.Zeroscreen.description")
-                        .font(.system(size: 32))
-                        .multilineTextAlignment(.center)
-                    Spacer()
+                    TransactionsZeroScreen()
                 }
             }
             .navigationTitle("Expenses")

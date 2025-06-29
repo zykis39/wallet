@@ -2002,6 +2002,16 @@
         }
       }
     },
+    "No transactions yet" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пока нет транзакций"
+          }
+        }
+      }
+    },
     "Period" : {
       "extractionState" : "manual",
       "localizations" : {
